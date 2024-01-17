@@ -3,6 +3,10 @@ struct Ultraspherical <: Basis
     GD::GridDomain
 end
 
+function iscompatible(US1::Ultraspherical,US2::Ultraspherical)
+    US1.λ == US2.λ && US1.GD == US2.GD
+end
+
 function d(j,λ)
     j*sqrt(2*(j + 2λ)/j*(λ+1)/(2λ+1))
 end

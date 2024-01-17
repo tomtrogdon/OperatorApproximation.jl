@@ -4,7 +4,7 @@ using SparseArrays, LinearAlgebra, Plots
 import Plots: plot, +, -, *
 import LinearAlgebra: I, Matrix
 
-export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval
+export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval, GridValues
 
 include("Domain.jl")
 include("Basis.jl")
