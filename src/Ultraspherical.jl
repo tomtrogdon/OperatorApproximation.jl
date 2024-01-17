@@ -3,6 +3,10 @@ struct Ultraspherical <: Basis
     GD::GridDomain
 end
 
+function d(j,λ)
+    j*sqrt(2*(j + 2λ)/j*(λ+1)/(2λ+1))
+end
+
 function *(D::Derivative,domain::Ultraspherical)
     if D.order == 1
         range = Ultraspherical(domain.λ+1,domain.GD)

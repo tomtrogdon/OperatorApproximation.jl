@@ -1,4 +1,27 @@
-abstract type AbstractOperator end
+abstract type Operator end
+
+abstract type AbstractOperator <: Operator end
+
+struct SumOfOperators{T} <: Operator where T
+    Ops::Vector{T}
+    c::Vector
+end
+
+function *(c::Number,L::Operator)
+    SumOfOperators([L],[c])
+end
+
+function +(S1::SumOfOperators{T1},S2::SumOfOperators{T2}) where {T1 <: AbstractOperator, T2 <:AbstractOperator}
+    SumOfOperators(vcat(S1.Ops,S2.Ops),vcat(S1.c,S2.c))
+end
+
+function +(S1::AbstractOperator,S2::SumOfOperators{T2}) where {T2 <:AbstractOperator}
+    (1*S1) + S2
+end
+
+function +(S2::SumOfOperators{T2},S1::AbstractOperator) where {T2 <:AbstractOperator}
+    S2 + (1*S1)
+end
 
 struct Derivative <: AbstractOperator
     order::Integer
@@ -28,9 +51,9 @@ function *(Op1::CollocatedOperator,Op2::AbstractOperator)
     CollocatedOperator(Op1.Op*Op2)
 end
 
-abstract type LazyOperator end
+abstract type LazyOperator <: Operator end
 
-struct ConcreteOperator{D<:Basis,R<:Basis} 
+struct ConcreteOperator{D<:Basis,R<:Basis} <: Operator
     domain::D
     range::R
     L::LazyOperator
