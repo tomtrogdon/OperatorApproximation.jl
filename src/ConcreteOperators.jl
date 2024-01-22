@@ -164,7 +164,7 @@ function *(M::Multiplication, Op::ConcreteOperator{D,R}) where {D, R <: GridValu
     ConcreteOperator(Op.domain,Op.range,MM*Op.L)
 end
 
-function Matrix(Op::VariableCollocatedBandedOperator,n,m)
+function Matrix(Op::VariableCollocatedBandedOperator,n,m)  # need to map the values.
     Diagonal(Op.M.GV.GD.grid(n))*Matrix(Op.Op,n,m)
 end
 
