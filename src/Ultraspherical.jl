@@ -22,16 +22,24 @@ function *(D::Derivative,domain::Ultraspherical)
 end
 
 function *(E::Evaluation,domain::Ultraspherical)
-    range = GridValues(domain.GD) # Should adapt based on something?
+    if typeof(E.GD) <: NullGrid
+        range = GridValues(domain.GD) # Should adapt based on something?
+    else
+        range = GridValues(E.GD) # Should adapt based on something?
+    end
     op = UltrasphericalEvaluation(domain.λ,range)
     ConcreteOperator(domain,range,op)
 end
 
 function *(E::Evaluation,C::ConcreteOperator{Dom,Ultraspherical}) where Dom <: Basis
     λ = C.range.λ
-    range = GridValues(C.domain.GD) # Should adapt based on something?
-        L = UltrasphericalEvaluation(λ,range)*C.L
-        ConcreteOperator(C.domain,range,L)
+    if typeof(E.GD) <: NullGrid
+        range = GridValues(C.domain.GD) # Should adapt based on something?
+    else
+        range = GridValues(E.GD) # Should adapt based on something?
+    end
+    L = UltrasphericalEvaluation(λ,range)*C.L
+    ConcreteOperator(C.domain,range,L)
 end
 
 function *(D::Derivative,Dc::ConcreteOperator{Dom,Ultraspherical}) where Dom <: Basis
@@ -49,7 +57,7 @@ function *(D::Derivative,Dc::ConcreteOperator{Dom,Ultraspherical}) where Dom <: 
 end
 
 function *(Op::CollocatedOperator,domain::Ultraspherical)
-    Evaluation()*(Op.Op*domain)
+    Evaluation(Op.GD)*(Op.Op*domain)
 end
 
 function poly(λ::Number,n,z::Vector)

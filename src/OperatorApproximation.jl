@@ -4,11 +4,12 @@ using SparseArrays, LinearAlgebra, Plots
 import Plots: plot, +, -, *
 import LinearAlgebra: I, Matrix
 
-export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval, GridValues
+export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval, GridValues, ConcreteOperator, ℳ, 𝒟, ℰ, Multiplication
 
 include("Domain.jl")
 include("Basis.jl")
-include("Operators.jl")
+include("AbstractOperators.jl")
+include("ConcreteOperators.jl")
 include("Jacobi.jl")
 include("Ultraspherical.jl")
 

@@ -1,4 +1,4 @@
-Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi )
+Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation

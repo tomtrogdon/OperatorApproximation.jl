@@ -1,56 +1,3 @@
-abstract type Operator end
-
-abstract type AbstractOperator <: Operator end
-
-struct SumOfOperators{T} <: Operator where T
-    Ops::Vector{T}
-    c::Vector
-end
-
-function *(c::Number,L::Operator)
-    SumOfOperators([L],[c])
-end
-
-function +(S1::SumOfOperators{T1},S2::SumOfOperators{T2}) where {T1 <: AbstractOperator, T2 <:AbstractOperator}
-    SumOfOperators(vcat(S1.Ops,S2.Ops),vcat(S1.c,S2.c))
-end
-
-function +(S1::AbstractOperator,S2::SumOfOperators{T2}) where {T2 <:AbstractOperator}
-    (1*S1) + S2
-end
-
-function +(S2::SumOfOperators{T2},S1::AbstractOperator) where {T2 <:AbstractOperator}
-    S2 + (1*S1)
-end
-
-struct Derivative <: AbstractOperator
-    order::Integer
-end
-
-struct Evaluation <: AbstractOperator end
-
-struct Multiplication <: AbstractOperator
-    f::Function
-end
-
-struct CollocatedOperator <: AbstractOperator
-   Op::AbstractOperator
-end
-
-Derivative() = Derivative(1)
-
-function *(D1::Derivative,D2::Derivative)
-    Derivative(D1.order + D2.order)
-end
-
-function *(E::Evaluation,Op::AbstractOperator)
-    CollocatedOperator(Op)
-end
-
-function *(Op1::CollocatedOperator,Op2::AbstractOperator)
-    CollocatedOperator(Op1.Op*Op2)
-end
-
 abstract type LazyOperator <: Operator end
 
 struct ConcreteOperator{D<:Basis,R<:Basis} <: Operator
@@ -59,10 +6,20 @@ struct ConcreteOperator{D<:Basis,R<:Basis} <: Operator
     L::LazyOperator
 end
 
+struct SumOfConcreteOperators{T} <: Operator where T
+    Ops::Vector{T}
+    c::Vector
+end
+
 struct BandedOperator <: LazyOperator
     nm::Integer
     np::Integer
     A::Function
+end
+
+struct GridMultiplication <: LazyOperator
+    GV::GridValues
+    f::Function
 end
 
 abstract type BasisEvaluationOperator <: LazyOperator end
@@ -71,6 +28,10 @@ struct OPEvaluationOperator <: BasisEvaluationOperator  ## Add CollocatedOperato
     grid::Function
     a::Function
     b::Function
+end
+
+function +(Op1::ConcreteOperator,Op2::ConcreteOperator) # need to check that the range and domain are compatible.
+    SumOfConcreteOperators([Op1;Op2],[1;1])
 end
 
 function Matrix(Op::OPEvaluationOperator,n,m)
@@ -142,6 +103,23 @@ function *(E::BasisEvaluationOperator,A::MultipliedBandedOperator)
     CollocatedBandedOperator(A.V,E)
 end
 
+struct VariableCollocatedBandedOperator <: LazyOperator
+    M::GridMultiplication
+    Op::LazyOperator
+end
+
+function *(M::GridMultiplication,Op::CollocatedBandedOperator)
+    VariableCollocatedBandedOperator(M,Op)
+end
+
+function *(M::GridMultiplication,Op::OPEvaluationOperator)
+    VariableCollocatedBandedOperator(M,Op)
+end
+
+function *(VC::VariableCollocatedBandedOperator,L::LazyOperator)
+    VariableCollocatedBandedOperator(VC.M,VC.Op*L)
+end
+
 function Matrix(Op::MultipliedBandedOperator,n,m)
     cols = m
     rows = max(cols+Op.V[end].nm,1)
@@ -174,4 +152,22 @@ function Matrix(Op::CollocatedBandedOperator,n,m)
     rows = n
     A = Matrix(Op.E,rows,cols)*A
     A
+end
+
+function *(M::CollocatedMultiplication, Op::ConcreteOperator{D,R}) where {D, R <: GridValues}
+    MM = GridMultiplication(Op.range,M.f)
+    ConcreteOperator(Op.domain,Op.range,MM*Op.L)
+end
+
+function *(M::Multiplication, Op::ConcreteOperator{D,R}) where {D, R <: GridValues}
+    MM = GridMultiplication(Op.range,M.f)
+    ConcreteOperator(Op.domain,Op.range,MM*Op.L)
+end
+
+function Matrix(Op::VariableCollocatedBandedOperator,n,m)
+    Diagonal(Op.M.GV.GD.grid(n))*Matrix(Op.Op,n,m)
+end
+
+function Matrix(Op::SumOfConcreteOperators,n,m)
+    sum( [Op.c[i]*Matrix(Op.Ops[i],n,m) for i in length(Op.c)])
 end
