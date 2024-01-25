@@ -6,23 +6,39 @@ struct ConcreteOperator{D<:Basis,R<:Basis} <: Operator
     L::LazyOperator
 end
 
-struct SumOfConcreteOperators{T} <: Operator where T
+struct SumOfConcreteOperators{D<:Basis,R<:Basis,T} <: Operator where T
+    domain::D
+    range::R
     Ops::Vector{T}
     c::Vector
 end
 
-struct BandedOperator <: LazyOperator
+abstract type BandedOperator <: LazyOperator end
+
+struct SingleBandedOperator <: LazyOperator
     nm::Integer
     np::Integer
     A::Function
 end
 
-struct GridMultiplication <: LazyOperator
+abstract type GridOperator <: LazyOperator end
+
+# struct DiagonalLazyOperator <: GridOperator
+#     diag::Function
+# end
+
+struct GridMultiplication <: GridOperator
     GV::GridValues
     f::Function
 end
 
-abstract type BasisEvaluationOperator <: LazyOperator end
+abstract type LazyCollocatedOperator <: LazyOperator end
+abstract type BasisEvaluationOperator <: LazyCollocatedOperator end
+
+struct GridTimesCollocated <: LazyOperator
+    GOps::Vector{GridOperator}
+    C::LazyCollocatedOperator
+end
 
 struct OPEvaluationOperator <: BasisEvaluationOperator  ## Add CollocatedOperator?
     grid::Function
@@ -31,14 +47,15 @@ struct OPEvaluationOperator <: BasisEvaluationOperator  ## Add CollocatedOperato
 end
 
 function +(Op1::ConcreteOperator,Op2::ConcreteOperator) # need to check that the range and domain are compatible.
-    SumOfConcreteOperators([Op1;Op2],[1;1])
+    #Check domain and range here    
+    SumOfConcreteOperators(Op1.domain,Op1.range,[Op1;Op2],[1;1])
 end
 
 function Matrix(Op::OPEvaluationOperator,n,m)
     poly(Op.a,Op.b,m,Op.grid(n)) 
  end
 
- function Matrix(Op::BandedOperator,n,m)
+ function Matrix(Op::SingleBandedOperator,n,m)
     A = spzeros(n,m)
     if Op.nm > n
         nm = n
@@ -70,19 +87,19 @@ function Matrix(Op::OPEvaluationOperator,n,m)
     A
 end
 
-struct MultipliedBandedOperator <: LazyOperator
-    V::Vector{BandedOperator}
+struct MultipliedBandedOperator <: BandedOperator
+    V::Vector{SingleBandedOperator}
 end
 
-function *(A::BandedOperator,B::BandedOperator)
+function *(A::SingleBandedOperator,B::SingleBandedOperator)
     MultipliedBandedOperator([A;B])
 end
 
-function *(A::BandedOperator,B::MultipliedBandedOperator)
+function *(A::SingleBandedOperator,B::MultipliedBandedOperator)
     MultipliedBandedOperator(vcat([A],B.V))
 end
     
-function *(B::MultipliedBandedOperator,A::BandedOperator)
+function *(B::MultipliedBandedOperator,A::SingleBandedOperator)
     MultipliedBandedOperator(vcat(B.V,[A]))
 end
         
@@ -90,12 +107,12 @@ function *(B::MultipliedBandedOperator,A::MultipliedBandedOperator)
     MultipliedBandedOperator(vcat(B.V,A.V))
 end
 
-struct CollocatedBandedOperator <: LazyOperator
-    V::Vector{BandedOperator}
+struct CollocatedBandedOperator <: LazyCollocatedOperator
+    V::Vector{SingleBandedOperator}
     E::BasisEvaluationOperator
 end
 
-function *(E::BasisEvaluationOperator,A::BandedOperator)
+function *(E::BasisEvaluationOperator,A::SingleBandedOperator)
     CollocatedBandedOperator([A],E)
 end
 
@@ -103,21 +120,35 @@ function *(E::BasisEvaluationOperator,A::MultipliedBandedOperator)
     CollocatedBandedOperator(A.V,E)
 end
 
-struct VariableCollocatedBandedOperator <: LazyOperator
-    M::GridMultiplication
-    Op::LazyOperator
-end
+# function ToDiag(M::GridMultiplication)
+#     DiagonalLazyOperator(n -> M.f.(M.GV.GD.grid(n)))
+# end
 
 function *(M::GridMultiplication,Op::CollocatedBandedOperator)
-    VariableCollocatedBandedOperator(M,Op)
+    GridTimesCollocated([M],Op)
 end
 
-function *(M::GridMultiplication,Op::OPEvaluationOperator)
-    VariableCollocatedBandedOperator(M,Op)
+function *(M::GridMultiplication,Op::LazyCollocatedOperator)
+    GridTimesCollocated([M],Op)
 end
 
-function *(VC::VariableCollocatedBandedOperator,L::LazyOperator)
-    VariableCollocatedBandedOperator(VC.M,VC.Op*L)
+# function *(M::GridMultiplication,Op::OPEvaluationOperator)
+#     ToDiag(M)*Op
+# end
+
+function Matrix(M::GridMultiplication,n,m)
+    nm = max(n,m)
+    X = M.GV.GD.D.map.(M.GV.GD.grid(nm))
+    A = Diagonal(M.f.(X))
+    A[1:n,1:m] |> sparse
+end
+
+function Matrix(Op::GridTimesCollocated,n,m)
+    A = Matrix(Op.C,n,m)
+    for i = length(Op.GOps):-1:1
+        A = Matrix(Op.GOps[i],n,n)*A
+    end
+    A
 end
 
 function Matrix(Op::MultipliedBandedOperator,n,m)
@@ -144,6 +175,7 @@ function Matrix(Op::CollocatedBandedOperator,n,m)
     rows = max(cols+Op.V[end].nm,1)
     A = Matrix(Op.V[end],rows,cols)
     for j = length(Op.V)-1:-1:1
+    
         cols = rows
         rows = max(cols + Op.V[j].nm,1)
         A = Matrix(Op.V[j],rows,cols)*A
@@ -164,10 +196,15 @@ function *(M::Multiplication, Op::ConcreteOperator{D,R}) where {D, R <: GridValu
     ConcreteOperator(Op.domain,Op.range,MM*Op.L)
 end
 
-function Matrix(Op::VariableCollocatedBandedOperator,n,m)  # need to map the values.
-    Diagonal(Op.M.GV.GD.grid(n))*Matrix(Op.Op,n,m)
+function Matrix(Op::SumOfConcreteOperators,n,m)
+    # TODO: check domain & range
+    sum( [Op.c[i]*Matrix(Op.Ops[i],n,m) for i in length(Op.c)])
 end
 
-function Matrix(Op::SumOfConcreteOperators,n,m)
-    sum( [Op.c[i]*Matrix(Op.Ops[i],n,m) for i in length(Op.c)])
+function changegrid(C::ConcreteOperator{GridValues,Ran},GV::GridValues) where Ran <: Basis
+    ConcreteOperator(C.domain,GV,C.L)
+end
+
+function changegrid(C::SumOfConcreteOperators{GridValues,Ran},GV::GridValues) where Ran <: Basis
+    ConcreteOperator(C.domain,GV,C.L)
 end

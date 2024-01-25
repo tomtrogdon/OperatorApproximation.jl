@@ -1,7 +1,6 @@
 abstract type Domain end
 abstract type GridDomain <: Domain end
-
-struct NullGrid <: GridDomain end
+#struct NullGrid <: GridDomain end
 
 M = (A,B,x) -> (B - A)/2*x .+ (B + A)/2  # from I to [A,B]
 iM = (A,B,x) -> 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
@@ -38,6 +37,6 @@ struct ChebyshevMappedInterval <: GridDomain
     D::Domain
     grid::Function
     function ChebyshevMappedInterval(a,b)
-        return new(MappedInterval(a,b),Tgrid)
+        return new(MappedInterval(a,b), Tgrid)
     end
 end
