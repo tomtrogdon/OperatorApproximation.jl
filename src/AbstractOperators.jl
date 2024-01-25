@@ -35,29 +35,23 @@ struct Derivative <: AbstractOperator
     order::Integer
 end
 
-struct Evaluation <: AbstractOperator
-    GD::GridDomain
-end
-
-Evaluation() = Evaluation(NullGrid())
-
-ℰ = x -> Evaluation(x)
-𝒟 = x -> Derivative(x)
+struct Evaluation <: AbstractOperator end
 
 struct Multiplication <: AbstractOperator
     f::Function
 end
 
-ℳ = f -> Multiplication(f)
-
 struct CollocatedOperator <: AbstractOperator
    Op::AbstractOperator
-   GD::GridDomain
 end
 
 struct CollocatedMultiplication <: AbstractOperator
     f::Function
 end
+
+struct LeftBoundaryFunctional <: AbstractOperator end
+
+struct RightBoundaryFunctional <: AbstractOperator end
 
 Derivative() = Derivative(1)
 
@@ -75,10 +69,10 @@ function *(E::Evaluation,Op::ProductOfAbstractOperators)
 end
 
 function *(E::Evaluation,Op::AbstractOperator)
-    CollocatedOperator(Op,E.GD)
+    CollocatedOperator(Op)
 end
 
-function *(M::Multiplication,Op2::AbstractOperator)
+function *(M::AbstractOperator,Op2::AbstractOperator)
     ProductOfAbstractOperators([M;Op2])
 end
 
@@ -87,11 +81,15 @@ function *(M::Multiplication,Op::CollocatedOperator)
 end
 
 function *(Op1::CollocatedOperator,Op2::AbstractOperator)
-    CollocatedOperator(Op1.Op*Op2,Op1.GD)
+    CollocatedOperator(Op1.Op*Op2)
 end
 
 function *(E::Evaluation,M::Multiplication)
-    ProductOfAbstractOperators([M;E])  # Note that this is an approximation.
+    ProductOfAbstractOperators([CollocatedMultiplication(M.f);E])  # Note that this is an approximation.
+end
+
+function *(M::Multiplication,E::Evaluation)
+    ProductOfAbstractOperators([CollocatedMultiplication(M.f);E])  # Note that this is an approximation.
 end
 
 function *(P::ProductOfAbstractOperators,Op::AbstractOperator)
@@ -107,5 +105,6 @@ function *(Op::ProductOfAbstractOperators,sp::Basis)
 end
 
 function *(Op::SumOfAbstractOperators,sp::Basis)
-    SumOfConcreteOperators([op*sp for op in Op.Ops],Op.c)
+    ops = [op*sp for op in Op.Ops]
+    SumOfConcreteOperators(ops[1].domain,ops[1].range,ops ,Op.c)
 end
