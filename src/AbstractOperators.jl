@@ -15,8 +15,16 @@ function *(c::Number,L::Operator)
     SumOfAbstractOperators([L],[c])
 end
 
+function -(L::Operator)
+    (-1)*L
+end
+
 function +(Op1::AbstractOperator,Op2::AbstractOperator)
     SumOfAbstractOperators([Op1;Op2],[1;1])
+end
+
+function -(Op1::AbstractOperator,Op2::AbstractOperator)
+    SumOfAbstractOperators([Op1;Op2],[1;-1])
 end
 
 function +(S1::SumOfAbstractOperators{T1},S2::SumOfAbstractOperators{T2}) where {T1 <: AbstractOperator, T2 <:AbstractOperator}
@@ -49,9 +57,18 @@ struct CollocatedMultiplication <: AbstractOperator
     f::Function
 end
 
+struct Projector <: AbstractOperator
+    N::Integer
+end
+
 struct LeftBoundaryFunctional <: AbstractOperator end
 
 struct RightBoundaryFunctional <: AbstractOperator end
+
+struct BoundaryFunctional <: AbstractOperator
+    A::Matrix
+    B::Matrix
+end
 
 Derivative() = Derivative(1)
 
@@ -108,3 +125,5 @@ function *(Op::SumOfAbstractOperators,sp::Basis)
     ops = [op*sp for op in Op.Ops]
     SumOfConcreteOperators(ops[1].domain,ops[1].range,ops ,Op.c)
 end
+
+

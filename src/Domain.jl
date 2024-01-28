@@ -16,8 +16,8 @@ struct UnitInterval <: Domain
 end
 
 struct MappedInterval <: Domain
-    map::Function
-    imap::Function
+    map::Function # maps from I to interval
+    imap::Function # the inverse map
     a
     b
     function MappedInterval(a,b)

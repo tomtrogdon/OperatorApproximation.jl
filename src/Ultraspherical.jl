@@ -3,6 +3,14 @@ struct Ultraspherical <: Basis
     GD::GridDomain
 end
 
+function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
+    n = P.c |> length
+    λ = P.basis.λ
+    x = P.basis.GD.D.imap(X)
+    a,b = Jacobi_ab(λ - 1/2, λ- 1/2)
+    (hcat(e(1,n) |> sparse,(Jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
+end
+
 function iscompatible(US1::Ultraspherical,US2::Ultraspherical)
     US1.λ == US2.λ && US1.GD == US2.GD
 end
@@ -15,7 +23,7 @@ function *(D::Derivative,domain::Ultraspherical)
     if D.order == 1
         range = Ultraspherical(domain.λ+1,domain.GD)
         dom = domain.GD.D
-        ConcreteOperator(domain,range,SingleBandedOperator(-1,1, (i,j) -> 2/(dom.b-dom.a)*d(j-1,domain.λ)))
+        ConcreteLazyOperator(domain,range,SingleBandedOperator(-1,1, (i,j) -> 2/(dom.b-dom.a)*d(j-1,domain.λ)))
     else
         Derivative(D.order-1)*(Derivative(1)*domain)
     end
@@ -24,17 +32,17 @@ end
 function *(E::Evaluation,domain::Ultraspherical)
     range = GridValues(domain.GD) # inherit the GD
     op = UltrasphericalEvaluation(domain.λ,range)
-    ConcreteOperator(domain,range,op)
+    ConcreteLazyOperator(domain,range,op)
 end
 
-function *(E::Evaluation,C::ConcreteOperator{Dom,Ultraspherical}) where Dom <: Basis
+function *(E::Evaluation,C::ConcreteLazyOperator{Dom,Ultraspherical}) where Dom <: Basis
     λ = C.range.λ
     range = GridValues(C.range.GD) # Should adapt based on something?
     L = UltrasphericalEvaluation(λ,range)*C.L
-    ConcreteOperator(C.domain,range,L)
+    ConcreteLazyOperator(C.domain,range,L)
 end
 
-function *(D::Derivative,Dc::ConcreteOperator{Dom,Ultraspherical}) where Dom <: Basis
+function *(D::Derivative,Dc::ConcreteLazyOperator{Dom,Ultraspherical}) where Dom <: Basis
     if D.order == 1 
         a = Dc.range.GD.D.a
         b = Dc.range.GD.D.b
@@ -42,7 +50,7 @@ function *(D::Derivative,Dc::ConcreteOperator{Dom,Ultraspherical}) where Dom <: 
         range = Ultraspherical(λ+1,Dc.range.GD)
         domain = Dc.domain
         L = SingleBandedOperator( -1, 1, (i,j) -> 2/(b-a)*d(j-1,λ))*Dc.L
-        ConcreteOperator(domain,range,L)
+        ConcreteLazyOperator(domain,range,L)
     else
         Derivative(D.order-1)*(Derivative(1)*Dc)
     end
@@ -62,7 +70,7 @@ function UltrasphericalEvaluation(λ,GV::GridValues)
     OPEvaluationOperator(GV.GD.grid,a,b)
 end
 
-struct UltrasphericalPointFunctional
+struct UltrasphericalPointFunctional  #TODO: Use parametric type?
     basis::Ultraspherical
     c::Number
 end
@@ -83,4 +91,11 @@ function Matrix(UPF::UltrasphericalPointFunctional,k,n)
         V = vcat(V,poly(λ + i,n,[c])*Matrix(Derivative(i)*UPF.basis,n,n))
     end
     V
+end
+
+function Matrix(BF::ConcreteBoundaryFunctional{T},n) where T <: Ultraspherical
+    Lr = RightBoundaryFunctional()*BF.domain
+    Ll = LeftBoundaryFunctional()*BF.domain
+    k = size(BF.A)[1]
+    BF.A*Matrix(Ll,k,n) + BF.B*Matrix(Lr,k,n)
 end
