@@ -192,6 +192,24 @@ function Matrix(Op::MultipliedBandedOperator,n,m)
     A
 end
 
+function *(Op::SingleBandedOperator,c::Vector)
+    n = length(c)
+    m = max(Op.nm + n,1)
+    Matrix(Op,m,n)*c
+end
+
+function *(Op::MultipliedBandedOperator,c::Vector)
+    cols = length(c)
+    rows = max(cols+Op.V[end].nm,1)
+    v = Matrix(Op.V[end],rows,cols)*c
+    for j = length(Op.V)-1:-1:1
+        cols = rows
+        rows = max(cols + Op.V[j].nm,1)
+        v = Matrix(Op.V[j],rows,cols)*v
+    end
+    v
+end
+
 function Matrix(Op::ConcreteLazyOperator,n,m)
     Matrix(Op.L,n,m)
 end
