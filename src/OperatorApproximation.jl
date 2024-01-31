@@ -48,9 +48,9 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
 
 include("Domain.jl")
 include("Basis.jl")
-include("BasisExpansion.jl")
 include("AbstractOperators.jl")
 include("ConcreteOperators.jl")
+include("BasisExpansion.jl")
 include("Jacobi.jl")
 include("Ultraspherical.jl")
 
