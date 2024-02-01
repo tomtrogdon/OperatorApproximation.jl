@@ -48,10 +48,12 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
 
 include("Domain.jl")
 include("Basis.jl")
+include("ArgNum.jl")
 include("AbstractOperators.jl")
 include("ConcreteOperators.jl")
 include("BasisExpansion.jl")
 include("Jacobi.jl")
+include("Cauchy.jl")
 include("Ultraspherical.jl")
 
 N = "adaptive"
