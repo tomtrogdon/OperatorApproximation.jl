@@ -1,11 +1,9 @@
 module OperatorApproximation
 
 using SparseArrays, LinearAlgebra, Plots
-import Plots: plot
-import Base: +, -, *, \
-import LinearAlgebra: I, Matrix
-
-
+import Plots: plot, plot!
+import Base: +, -, *, \, length, sqrt, /, iterate, log
+import LinearAlgebra: I, Matrix, norm
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
      GridValues, ConcreteOperator, Multiplication, ChebyshevMappedInterval, MappedInterval,

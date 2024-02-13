@@ -113,16 +113,6 @@ function QuadDiagonal(J::SymTridiagonal)
    QuadDiagonal(diag(J,-1) |> complex, diag(J) |> complex, diag(J,1) |> complex, fill(0.0im,length(diag(J))-2)) 
 end
 
-function pad(v,n)
-    if length(v) == n
-        return v
-    elseif length(v) < n
-        return vcat(v,zeros(typeof(v[1]),n-length(v)))
-    else
-        return v[1:n]
-    end
-end
-
 function cauchy_off(a,b,nn,z)
     n = 3
     A = Jacobi(a,b,n) - z*I |> QuadDiagonal;
