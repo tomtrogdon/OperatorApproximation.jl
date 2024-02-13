@@ -10,7 +10,7 @@ import LinearAlgebra: I, Matrix
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
      GridValues, ConcreteOperator, Multiplication, ChebyshevMappedInterval, MappedInterval,
      LeftBoundaryFunctional, RightBoundaryFunctional, Projector, canonicalBC, BasisExpansion,
-     BoundaryFunctional
+     BoundaryFunctional, setN, setbasis
 
      struct StandardBasisVector
         j::Integer
@@ -56,10 +56,18 @@ include("Jacobi.jl")
 include("Cauchy.jl")
 include("Ultraspherical.jl")
 
-N = "adaptive"
+global N = "adaptive"
+function setN(n)
+    global N = n
+end
+
+global basis = Ultraspherical(0.0,ChebyshevInterval())
+function setbasis(b)
+    global basis = b
+end
+
 Nmax = 10000
 tol = 1e-14
-basis = Ultraspherical(0.0,ChebyshevInterval())
 
 function \(L::Vector{ConcreteOperator},b::Vector,N::Integer)
     Ops = []; rhss = []
