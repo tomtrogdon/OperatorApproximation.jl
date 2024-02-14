@@ -49,6 +49,8 @@ struct Multiplication <: AbstractOperator
     f::Function
 end
 
+struct Conversion <: AbstractOperator end
+
 struct CollocatedOperator <: AbstractOperator
    Op::AbstractOperator
 end

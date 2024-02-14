@@ -158,6 +158,6 @@ function cauchy(a,b,seed,n,z::Number)
     c[1:n+1]
 end
 
-function cauchy(a,b,seed,n,z::Vector)
+function cauchy(a,b,seed,n,z::Vector)  # vectorize!
     vcat(map(zz -> cauchy(a,b,seed,n,zz) |> transpose, z)...)
 end

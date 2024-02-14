@@ -3,6 +3,39 @@ struct BasisExpansion{T<:Basis}
     c::Vector
 end
 
+struct transform
+    grid::Function
+    tocoef::Function
+end
+
+struct plan_transform
+    n::Integer
+    grid::Function
+    tocoef::Function
+end
+
+function (tf::transform)(n)
+    plan_transform(n,tf.grid,tf.tocoef)
+end
+
+function *(tf::plan_transform,f::Function)
+    tf.tocoef(f.(tf.grid(tf.n)))
+end
+
+function *(tf::plan_transform,v::vector)
+    tf.tocoef(v)
+end
+
+function *(tf::transform,v::Vector)
+    n = length(v)
+    tf(n)*v
+end
+
+function BasisExpansion(f::Function,b::Basis,n::Integer)
+    tf = get_transform(b.Domain,b)
+    BasisExpansion(b,tf(n)*f)
+end
+
 function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
@@ -45,4 +78,8 @@ end
 
 function *(c::Number,f::BasisExpansion)
     BasisExpansion(f.basis, c*f.c)
+end
+
+function -(f::BasisExpansion,g::BasisExpansion)
+    f + (-1)*g
 end

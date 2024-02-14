@@ -1,3 +1,9 @@
+struct Jacobi <: Basis
+    α::Number
+    β::Number
+    GD::GridDomain
+end
+
 Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation
@@ -10,22 +16,22 @@ function Jacobi_ab(a,b) #TODO: simplify evaluation
                                                                 # to the Jacobi parameters after the fact
 end
 
-function Jacobi(a,b,n) # creates (n + 1) x (n+1) Jacobi matrix
+function jacobi(a,b,n) # creates (n + 1) x (n+1) Jacobi matrix
    SymTridiagonal([a(i) for i in 0:n],[b(i) for i in 0:n-1])
 end
 
 function Interp_transform(a,b,n)
-    E = Jacobi(a,b,n) |> eigen
+    E = jacobi(a,b,n) |> eigen
     return E.values, E.vectors*(Diagonal(E.vectors[1,:]))
 end
 
 function Gauss_quad(a,b,n)
-    E = Jacobi(a,b,n) |> eigen
+    E = jacobi(a,b,n) |> eigen
     return E.values, abs2.(E.vectors[1,:])
 end
 
 function Interp_transform(f::Function,a,b,n)
-    E = Jacobi(a,b,n) |> eigen
+    E = jacobi(a,b,n) |> eigen
     E.vectors*(Diagonal(E.vectors[1,:])*map(f,E.values))
 end
 
