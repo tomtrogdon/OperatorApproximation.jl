@@ -1,12 +1,11 @@
 abstract type Domain end
-abstract type GridDomain <: Domain end
-#struct NullGrid <: GridDomain end
+abstract type Interval <: Domain end
+abstract type GridDomain end
 
 M = (A,B,x) -> (B - A)/2*x .+ (B + A)/2  # from I to [A,B]
 iM = (A,B,x) -> 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
 
-#TODO:  Define Interval <: Domain
-struct UnitInterval <: Domain
+struct UnitInterval <: Interval
     map::Function
     imap::Function
     a
@@ -16,7 +15,7 @@ struct UnitInterval <: Domain
     end
 end
 
-struct MappedInterval <: Domain
+struct MappedInterval <: Interval
     map::Function # maps from I to interval
     imap::Function # the inverse map
     a

@@ -22,7 +22,7 @@ function *(tf::plan_transform,f::Function)
     tf.tocoef(f.(tf.grid(tf.n)))
 end
 
-function *(tf::plan_transform,v::vector)
+function *(tf::plan_transform,v::Vector)
     tf.tocoef(v)
 end
 

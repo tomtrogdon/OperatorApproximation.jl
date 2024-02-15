@@ -3,7 +3,11 @@ struct Ultraspherical <: Basis
     GD::GridDomain
 end
 
-function get_transform(GD::ChebyshevInterval,b::Ultraspherical)
+function isconvertible(b1::Ultraspherical,b2::GridValues)
+    iscompatible(b1.GD,b1,GD)
+end
+
+function get_transform(b1::GridValues,b2::Ultraspherical)
     #TODO
 end
 
@@ -12,7 +16,7 @@ function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
     λ = P.basis.λ
     x = P.basis.GD.D.imap(X)
     a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
-    (hcat(e(1,n) |> sparse,(Jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
+    (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
 end
 
 function iscompatible(US1::Ultraspherical,US2::Ultraspherical)

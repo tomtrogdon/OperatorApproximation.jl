@@ -36,6 +36,7 @@ struct GridMultiplication <: GridOperator
 end
 
 abstract type LazyCollocatedOperator <: LazyOperator end
+
 abstract type BasisEvaluationOperator <: LazyCollocatedOperator end
 
 struct GridTimesCollocated <: LazyOperator
