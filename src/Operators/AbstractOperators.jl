@@ -1,3 +1,15 @@
+#### SETTING UP A NEW OPERATOR ####
+# (1) Set up an abstract operator type.   If the range will vary based on the setting,
+#     have that be the only field.
+# (2) Within the directory for a given basis, create a file for this operator.
+#     Within this file describe how the product of the abstract operator should behave
+#     on the basis.  The result should be a ConcreteOperator, with domain and range identified.
+#     It could be the case that the product of this ConcreteOperator and another is not defined
+#     or is ambiguious.  In this case, new ConcreteOperator structs may have be written.
+
+
+
+
 abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
