@@ -15,7 +15,6 @@ E = Conversion(gv);
 M = Multiplication(x -> x);
 D = Derivative();
 Op = E*D^2 - M*E
-Matrix(Op*sp,10,10)
 
 lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
 rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
