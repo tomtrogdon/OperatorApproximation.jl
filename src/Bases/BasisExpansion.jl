@@ -3,38 +3,52 @@ struct BasisExpansion{T<:Basis}
     c::Vector
 end
 
-struct transform
-    grid::Function
-    tocoef::Function
+### NEEDS TO BE FINISHED ###
+struct Transform{T<:Basis}
+    basis::T
 end
 
-struct plan_transform
-    n::Integer
-    grid::Function
-    tocoef::Function
+function (tf::Transform)(f::BasisExpansion)
+    if isconvertible(f.basis,T.basis)
+        return Conversion(T.basis)*f
+    else
+        @error "Not convertible.  Need to discretize."
+    end
 end
 
-function (tf::transform)(n)
-    plan_transform(n,tf.grid,tf.tocoef)
+struct plan_transform{T<:Basis}
+    basis::T
+    n::Integer # redundant
+    grid::Vector
+    tocoef::Function
 end
 
 function *(tf::plan_transform,f::Function)
-    tf.tocoef(f.(tf.grid(tf.n)))
+    tf.tocoef(f.(tf.grid))
 end
 
-function *(tf::plan_transform,v::vector)
+function *(tf::plan_transform,v::Vector)
     tf.tocoef(v)
 end
 
-function *(tf::transform,v::Vector)
-    n = length(v)
-    tf(n)*v
+function *(tf::plan_transform,f::BasisExpansion)
+    if isconvertible(f.basis,tf.basis)
+       g = Conversion(tf.basis)*f
+       return BasisExpansion(g.basis,g[1:tf.n])
+    else
+        return tf*(x -> f(x))
+    end
 end
 
-function BasisExpansion(f::Function,b::Basis,n::Integer)
-    tf = get_transform(b.Domain,b)
-    BasisExpansion(b,tf(n)*f)
+function *(tf::Transform,v::Vector)
+    tf(length(v))*v
 end
+
+# function BasisExpansion(f::Function,b::Basis,n::Integer)
+#     tf = get_transform(b.Domain,b)
+#     BasisExpansion(b,tf(n)*f)
+# end
+####################
 
 function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
@@ -46,15 +60,6 @@ function plot!(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     plot!(x,f.(x))
-end
-
-function *(Op::AbstractOperator,f::BasisExpansion)
-    Opc = Op*f.basis
-    Opc*f
-end
-
-function *(Op::ConcreteLazyOperator,f::BasisExpansion)
-    BasisExpansion(Op.range,Op.L*f.c)
 end
 
 function pad(v,n)

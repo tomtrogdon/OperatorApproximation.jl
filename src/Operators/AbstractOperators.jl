@@ -1,3 +1,15 @@
+#### SETTING UP A NEW OPERATOR ####
+# (1) Set up an abstract operator type.   If the range will vary based on the setting,
+#     have that be the only field.
+# (2) Within the directory for a given basis, create a file for this operator.
+#     Within this file describe how the product of the abstract operator should behave
+#     on the basis.  The result should be a ConcreteOperator, with domain and range identified.
+#     It could be the case that the product of this ConcreteOperator and another is not defined
+#     or is ambiguious.  In this case, new ConcreteOperator structs may have be written.
+
+
+
+
 abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
@@ -43,34 +55,23 @@ struct Derivative <: AbstractOperator
     order::Integer
 end
 
-struct Evaluation <: AbstractOperator end
+function Evaluation()
+    Conversion(gridvals)
+end
+
+function Evaluation(b::T) where T <: GridValues
+    Conversion(b)
+end
 
 struct Multiplication <: AbstractOperator
     f::Function
 end
 
-struct Conversion <: AbstractOperator end
-
-struct CollocatedOperator <: AbstractOperator
-   Op::AbstractOperator
+### SEMI ABSTRACT OPERATOR ###
+struct Conversion <: AbstractOperator
+    range::Basis
 end
-
-struct CollocatedMultiplication <: AbstractOperator
-    f::Function
-end
-
-struct Projector <: AbstractOperator
-    N::Integer
-end
-
-struct LeftBoundaryFunctional <: AbstractOperator end
-
-struct RightBoundaryFunctional <: AbstractOperator end
-
-struct BoundaryFunctional <: AbstractOperator
-    A::Matrix
-    B::Matrix
-end
+###
 
 Derivative() = Derivative(1)
 
@@ -78,37 +79,12 @@ function *(D1::Derivative,D2::Derivative)
     Derivative(D1.order + D2.order)
 end
 
-function *(E::Evaluation,Op::ProductOfAbstractOperators)
-    if typeof(Op.Ops[1]) <: Multiplication
-        PoO = ProductOfAbstractOperators(Op.Ops[2:end])
-        CollocatedMultiplication(Op.Ops[1].f)*(E*PoO)
-    else
-        CollocatedOperator(Op,E.GD)
-    end
-end
-
-function *(E::Evaluation,Op::AbstractOperator)
-    CollocatedOperator(Op)
+function ^(D1::Derivative,k::Integer)
+    Derivative(k*D1.order)
 end
 
 function *(M::AbstractOperator,Op2::AbstractOperator)
     ProductOfAbstractOperators([M;Op2])
-end
-
-function *(M::Multiplication,Op::CollocatedOperator)
-    ProductOfAbstractOperators([CollocatedMultiplication(M.f);Op])
-end
-
-function *(Op1::CollocatedOperator,Op2::AbstractOperator)
-    CollocatedOperator(Op1.Op*Op2)
-end
-
-function *(E::Evaluation,M::Multiplication)
-    ProductOfAbstractOperators([CollocatedMultiplication(M.f);E])  # Note that this is an approximation.
-end
-
-function *(M::Multiplication,E::Evaluation)
-    ProductOfAbstractOperators([CollocatedMultiplication(M.f);E])  # Note that this is an approximation.
 end
 
 function *(P::ProductOfAbstractOperators,Op::AbstractOperator)
@@ -128,4 +104,7 @@ function *(Op::SumOfAbstractOperators,sp::Basis)
     SumOfConcreteOperators(ops[1].domain,ops[1].range,ops ,Op.c)
 end
 
-
+function *(Op::AbstractOperator,f::BasisExpansion)
+    Opc = Op*f.basis
+    Opc*f
+end
