@@ -1,9 +1,3 @@
-struct Jacobi <: Basis
-    α::Number
-    β::Number
-    GD::GridDomain
-end
-
 Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation
@@ -53,3 +47,21 @@ end
 function poly(a,b,n,z::Vector)
     vcat(map(zz -> poly(a,b,n,zz) |> transpose , z)...)
 end
+
+function JacobiW(a,b,x)
+    c = (_₂F₁(1, -a, 2+b, -1))/(1+b) + (_₂F₁(1, -b, 2+a, -1))/(1+a)
+    return 1/c*(1-x)^a*(1+x)^b
+end
+
+function JacobiWconst(a,b)
+    c = (_₂F₁(1, -a, 2+b, -1))/(1+b) + (_₂F₁(1, -b, 2+a, -1))/(1+a)
+    return 1/c
+end
+
+normalization(n::Int,α::Real,β::Real) = 2^(α+β)*gamma(n+α+1)*gamma(n+β+1)/gamma(2n+α+β+2)
+#stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
+    #(x = 2/(1-z);normalization(n,α,β)*HypergeometricFunctions.mxa_₂F₁(n+1,n+α+1,2n+α+β+2,x))
+stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
+    (x = 2/(1-z);HypergeometricFunctions.mxa_₂F₁(n+1,n+α+1,2n+α+β+2,x))/2
+stieltjesjacobimoment(α::Real,β::Real,z) = stieltjesjacobimoment(α,β,0,z)
+JacobiSeed(α,β,z) = 1im/(2*pi)*stieltjesjacobimoment(α,β,z)

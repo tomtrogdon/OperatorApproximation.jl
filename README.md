@@ -8,18 +8,29 @@ An example:
 ```
 using OperatorApproximation, Plots, SpecialFunctions
 
+R = 30;
+sp = Ultraspherical(0.0,ChebyshevMappedInterval(-R,R));
+gv = GridValues(ChebyshevMappedInterval(-R,R));
+E = Conversion(gv);
+M = Multiplication(x -> x);
 D = Derivative();
-E = Evaluation();
-X = Multiplication(x -> x);
-B = BoundaryFunctional(canonicalBC(1,1)...)
-L = E*D*D - X*E
-R = 40
-b = [airyai(-R);airyai(R)]
-f = x -> 0
-setbasis(Ultraspherical(0,ChebyshevMappedInterval(-R,R)));
-setN("adaptive")
-@time u = [B;L]\[b,f]
-u.c
+Op = E*D^2 - M*E
+Matrix(Op*sp,10,10)
+
+lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
+rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
+
+setbasis(sp)
+setgrid(gv)
+
+u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
 
 plot(u;dx=0.001)
 ```
+
+
+The structure of the code is as follows:
+
+* The core of the code is the Domain and Bases.   The Bases directory contains one file for each basis that is implemented.  This has the specific functions for performing all the core tasks for a given basis.  
+* The implementation of operators occurs in two steps.  The first is the definition of an AbstractOperator that is then turned to a ConcreteOperator of an appropriate type when it acts on a Basis.
+* The details of this conversion should be implemented for each AbstractOperator in a file in the subdirectory of the Operators directory corresponding to the basis under consideration.  When implementing a new operator, it should be categorized by basis on which it acts.
