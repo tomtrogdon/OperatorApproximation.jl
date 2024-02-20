@@ -21,7 +21,10 @@ function *(Op::AbstractOperator,C::ConcreteLazyOperator)
     (Op*C.range)*C
 end
 
-function *(Op::SumOfAbstractOperators,C::ConcreteLazyOperator)
+function *(Op::SumOfAbstractOperators,C::ConcreteLazyOperator)  #TODO: Enforce domain/range
+    if Op.domain != C.range
+        @error "Domain-range mismatch."
+    end
     ops = [op*C for op in Op.Ops]
     SumOfConcreteOperators(ops[1].domain,ops[1].range,ops,Op.c)
 end
