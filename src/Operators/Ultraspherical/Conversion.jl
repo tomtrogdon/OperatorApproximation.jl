@@ -2,6 +2,10 @@ function isconvertible(b1::Ultraspherical,b2::DiscreteBasis)
     iscompatible(b1.GD,b2.GD)
 end
 
+function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
+    iscompatible(b1.GD,b2.GD)
+end
+
 function conversion(b1::Ultraspherical,b2::GridValues)
     basegrid =  n -> b2.GD.grid(n)
     # In principle, we need to do this:

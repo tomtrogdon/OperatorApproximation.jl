@@ -6,10 +6,6 @@
 #     on the basis.  The result should be a ConcreteOperator, with domain and range identified.
 #     It could be the case that the product of this ConcreteOperator and another is not defined
 #     or is ambiguious.  In this case, new ConcreteOperator structs may have be written.
-
-
-
-
 abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
@@ -64,7 +60,7 @@ function Evaluation(b::T) where T <: GridValues
 end
 
 struct Multiplication <: AbstractOperator
-    f::Function
+    f::Union{Function,BasisExpansion}
 end
 
 ### SEMI ABSTRACT OPERATOR ###

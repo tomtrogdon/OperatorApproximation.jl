@@ -19,6 +19,33 @@ function Interp_transform(a,b,n)
     return E.values, E.vectors*(Diagonal(E.vectors[1,:]))
 end
 
+function OPMultiplication(a::Function,b::Function,α::Function,β::Function,c::Vector,u::Union{Array,SparseMatrixCSC})
+    ## α, β give the recurrence coefficients for the basis used
+    # on the domain of the operator.  a, b give the recurrence coefficitions
+    # for the basis used for the function doing the multiplication.       
+    n = size(u)[1] + length(c) + 3
+    J = jacobi(α,β,n-1)
+    #display(J)
+    shape = size(u)
+    shape = tuple(length(c)+ 3,shape[2:end]...)
+    U = vcat(u,zeros(shape)) |> sparse # TODO: Better way to do this?
+    p = U # p_0
+    q = c[1]*p
+    polder = p
+    p = J*p - a(0)*p # compute p_1
+    p /= b(0)
+    q += c[2]*p
+    pold = p
+    for j = 3:length(c) # compute p_n
+        p = J*pold - a(j-2)*pold - b(j-3)*polder
+        p /= b(j-2)
+        q += c[j]*p
+        polder = pold
+        pold = p
+    end
+    q |> sparse
+end
+
 function Gauss_quad(a,b,n)
     E = jacobi(a,b,n) |> eigen
     return E.values, abs2.(E.vectors[1,:])

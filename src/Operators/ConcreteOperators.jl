@@ -21,7 +21,7 @@ function *(Op::AbstractOperator,C::ConcreteLazyOperator)
     (Op*C.range)*C
 end
 
-function *(Op::SumOfAbstractOperators,C::ConcreteLazyOperator)  #TODO: Enforce domain/range
+function *(Op::SumOfAbstractOperators,C::ConcreteLazyOperator)
     if Op.domain != C.range
         @error "Domain-range mismatch."
     end
@@ -30,10 +30,25 @@ function *(Op::SumOfAbstractOperators,C::ConcreteLazyOperator)  #TODO: Enforce d
 end
 
 abstract type BandedOperator <: LazyOperator end
+abstract type SingleBandedOperator <: BandedOperator end
 abstract type DenseOperator <: LazyOperator end
 abstract type BasisEvaluationOperator <: DenseOperator end  # Always true for spectral methods
 
-struct SingleBandedOperator <: BandedOperator
+mutable struct SemiLazyBandedOperator <: SingleBandedOperator
+    const nm::Integer
+    const np::Integer
+    const mat::Function
+    A::SparseMatrixCSC
+end
+
+function Matrix(Op::SemiLazyBandedOperator,n,m)
+    if n > size(Op.A)[1] || m > size(Op.A)[2]
+        Op.A = Op.mat(max(n,m))
+    end
+    Op.A[1:n,1:m]
+end
+
+struct BasicBandedOperator <: SingleBandedOperator
     nm::Integer
     np::Integer
     A::Function
@@ -56,7 +71,7 @@ function +(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator) # need to check 
     SumOfConcreteOperators(Op1.domain,Op1.range,[Op1;Op2],[1;1])
 end
 
- function Matrix(Op::SingleBandedOperator,n,m)
+ function Matrix(Op::BasicBandedOperator,n,m)
     A = spzeros(n,m)
     if Op.nm > n
         nm = n
