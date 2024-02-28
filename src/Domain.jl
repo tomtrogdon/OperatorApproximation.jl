@@ -66,9 +66,9 @@ struct UltraInterval <: GridDomain
     D::Domain
     λ::Number
     grid::Function
-    function UltrasphericalInterval(λ)
+    function UltraInterval(λ)
         a, b = Jacobi_ab(λ - 1/2,λ - 1/2)
-        gridfun = n -> Gauss_quad(a,b,n)
+        gridfun = n -> Gauss_quad(a,b,n-1)[1]
         return new(UnitInterval(), λ, gridfun)
     end
 end
@@ -82,5 +82,28 @@ struct ChebyshevMappedInterval <: GridDomain
     grid::Function
     function ChebyshevMappedInterval(a,b)
         return new(MappedInterval(a,b), Tgrid)
+    end
+end
+
+struct JacobiMappedInterval <: GridDomain
+    D::Domain
+    α::Float64
+    β::Float64
+    grid::Function
+    function JacobiMappedInterval(a,b,α,β)
+        A, B = Jacobi_ab(λ - 1/2,λ - 1/2)
+        gridfun = n -> Gauss_quad(A,B,n-1)[1]
+        return new(MappedInterval(a,b), α, β, gridfun)
+    end
+end
+
+struct UltraMappedInterval <: GridDomain
+    D::Domain
+    λ::Float64
+    grid::Function
+    function UltraMappedInterval(a,b,λ)
+        A, B = Jacobi_ab(λ - 1/2,λ - 1/2)
+        gridfun = n -> Gauss_quad(A,B,n-1)[1]
+        return new(MappedInterval(a,b), λ, gridfun)
     end
 end

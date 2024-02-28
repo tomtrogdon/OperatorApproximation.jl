@@ -51,14 +51,6 @@ struct Derivative <: AbstractOperator
     order::Integer
 end
 
-function Evaluation()
-    Conversion(gridvals)
-end
-
-function Evaluation(b::T) where T <: GridValues
-    Conversion(b)
-end
-
 struct Multiplication <: AbstractOperator
     f::Union{Function,BasisExpansion}
 end
@@ -67,7 +59,6 @@ end
 struct Conversion <: AbstractOperator
     range::Basis
 end
-###
 
 Derivative() = Derivative(1)
 

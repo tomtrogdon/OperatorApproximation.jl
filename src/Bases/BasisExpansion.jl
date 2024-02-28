@@ -3,52 +3,26 @@ struct BasisExpansion{T<:Basis}
     c::Vector
 end
 
-### NEEDS TO BE FINISHED ###
-struct Transform{T<:Basis}
-    basis::T
+function BasisExpansion(f::BasisExpansion,sp::Basis)
+    Conversion(sp)*f
 end
 
-function (tf::Transform)(f::BasisExpansion)
-    if isconvertible(f.basis,T.basis)
-        return Conversion(T.basis)*f
-    else
-        @error "Not convertible.  Need to discretize."
+# This is, in effect, a projection.
+function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
+    # Would produce incorrect results for DiscreteBasis input
+    if f.basis <: DiscreteBasis
+        @error "Unable to project a DiscreteBasis"
+        return
     end
-end
-
-struct plan_transform{T<:Basis}
-    basis::T
-    n::Integer # redundant
-    grid::Vector
-    tocoef::Function
-end
-
-function *(tf::plan_transform,f::Function)
-    tf.tocoef(f.(tf.grid))
-end
-
-function *(tf::plan_transform,v::Vector)
-    tf.tocoef(v)
-end
-
-function *(tf::plan_transform,f::BasisExpansion)
-    if isconvertible(f.basis,tf.basis)
-       g = Conversion(tf.basis)*f
-       return BasisExpansion(g.basis,g[1:tf.n])
-    else
-        return tf*(x -> f(x))
+    g = Conversion(sp)*f
+    if g.c < N
+        @error "Input dimension too small"
+        return
     end
+    BasisExpansion(g.basis,g.c[1:N])
 end
 
-function *(tf::Transform,v::Vector)
-    tf(length(v))*v
-end
-
-# function BasisExpansion(f::Function,b::Basis,n::Integer)
-#     tf = get_transform(b.Domain,b)
-#     BasisExpansion(b,tf(n)*f)
-# end
-####################
+### needs to be extended
 
 function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1

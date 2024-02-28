@@ -33,6 +33,7 @@ abstract type BandedOperator <: LazyOperator end
 abstract type SingleBandedOperator <: BandedOperator end
 abstract type DenseOperator <: LazyOperator end
 abstract type BasisEvaluationOperator <: DenseOperator end  # Always true for spectral methods
+abstract type NaiveTransform <: DenseOperator end
 
 mutable struct SemiLazyBandedOperator <: SingleBandedOperator
     const nm::Integer
@@ -138,6 +139,8 @@ function Matrix(Op::MultipliedBandedOperator,n,m)
     A
 end
 
+
+## TODO: Multiplication routines could be possibly simplified
 function *(Op::SingleBandedOperator,c::Vector)
     n = length(c)
     m = max(Op.nm + n,1)
@@ -247,6 +250,16 @@ struct FixedGridOPEvaluationOperator <: BasisEvaluationOperator  ## Add Collocat
     b::Function
 end
 
+mutable struct OPEigenTransform <: NaiveTransform
+    # TODO: Set up to remember matrix
+    const a::Function # Jacobi coefficients
+    const b::Function
+    A::Matrix
+    function OPEigenTransform(a,b)
+        return new(a,b,hcat(1.0))
+    end
+end
+
 function Matrix(Op::OPEvaluationOperator,n,m)
     poly(Op.a,Op.b,m,Op.grid(n)) 
 end
@@ -264,11 +277,35 @@ function Matrix(Op::FixedGridOPEvaluationOperator,m)  # only one dim for Functio
     return poly(Op.a,Op.b,m,Op.grid)
 end
 
+function Matrix(Op::OPEigenTransform,n)
+    if size(Op.A)[1] == n
+        return Op.A
+    end
+    Op.A = Interp_transform(Op.a,Op.b,n-1)[2]
+    return Op.A
+end
+
+function Matrix(Op::OPEigenTransform,n,m)
+    if size(Op.A)[1] != m
+        Op.A = Interp_transform(Op.a,Op.b,m-1)[2]
+    end
+    if n == m
+        return Op.A
+    elseif n < m
+        return Op.A[1:n,1:m]
+    else
+        return vcat(Op.A,zeros(n-m,m))
+    end
+end
+
+# TODO: Use Clenshaw
+function *(Op::DenseOperator,v::Vector)
+    Matrix(Op,length(v))*v
+end
+
 function rank(OP::ConcreteOperator)
     dim(OP.range)
 end
-
-## Need to figure out operator Multiplication here.
 
 include("GridValues/GridValues.jl")
 include("Jacobi/Jacobi.jl")
