@@ -44,6 +44,7 @@ end
 
 
 @testset "OperatorApproximation.jl: Airy equation" begin
+    # test collocation
     R = 30;
     sp = Ultraspherical(0.0,ChebyshevMappedInterval(-R,R));
     gv = GridValues(ChebyshevMappedInterval(-R,R));
@@ -57,4 +58,24 @@ end
     setgrid(gv)
     u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
     @test abs(u(0) - airyai(0)) < 1e-10
+
+    # test sparse method
+    R = 30;
+    sp = Ultraspherical(0.0,UltraMappedInterval(-R,R,2.0)); #choose this grid domain
+    # because it is inherited by the inferred spaces
+    # so it needs to be compatible for a projection of the
+    # right-hand side function
+    sp2 = Ultraspherical(2.0,UltraMappedInterval(-R,R,2.0));
+    gv = GridValues(ChebyshevMappedInterval(-R,R));
+    E = Conversion(gv);
+    M = Multiplication(x -> x);
+    D = Derivative();
+    Op = D^2 - Conversion(sp2)*M
+    lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
+    rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
+    setbasis(sp)
+    setgrid(gv)
+    u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
+    @test abs(u(0) - airyai(0)) < 1e-10
 end
+

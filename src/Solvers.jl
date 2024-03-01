@@ -16,6 +16,7 @@ function \(L::Vector{ConcreteOperator},b::Vector,N::Integer)
     for i = 1:length(L)
         if !isfinite(rank(L[i]))
             Op = vcat(Op,Matrix(L[i],N-k,N))
+            display(L[i].range)
             temp = BasisExpansion(b[i],L[i].range,N-k)
             rhs = vcat(rhs,temp.c)
         end

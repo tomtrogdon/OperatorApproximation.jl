@@ -3,6 +3,10 @@ struct BasisExpansion{T<:Basis}
     c::Vector
 end
 
+function BasisExpansion(f::Function,basis::Basis,N::Integer)
+    Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
+end
+
 function BasisExpansion(f::BasisExpansion,sp::Basis)
     Conversion(sp)*f
 end
@@ -23,7 +27,6 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
 end
 
 ### needs to be extended
-
 function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
