@@ -46,6 +46,14 @@ struct ChebyshevInterval <: GridDomain
     end
 end
 
+struct PeriodicInterval <: GridDomain
+    D::Domain
+    grid::Function
+    function PeriodicInterval()
+        return new(UnitInterval(), Pgrid)
+    end
+end
+
 struct JacobiInterval <: GridDomain
     D::Domain
     α::Number
@@ -82,6 +90,14 @@ struct ChebyshevMappedInterval <: GridDomain
     grid::Function
     function ChebyshevMappedInterval(a,b)
         return new(MappedInterval(a,b), Tgrid)
+    end
+end
+
+struct PeriodicMappedInterval <: GridDomain
+    D::Domain
+    grid::Function
+    function PeriodicMappedInterval(a,b)
+        return new(MappedInterval(a,b), Pgrid)
     end
 end
 

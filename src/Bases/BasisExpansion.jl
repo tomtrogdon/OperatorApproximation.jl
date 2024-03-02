@@ -14,10 +14,11 @@ end
 # This is, in effect, a projection.
 function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     # Would produce incorrect results for DiscreteBasis input
-    if f.basis <: DiscreteBasis
+    if typeof(f.basis) <: DiscreteBasis
         @error "Unable to project a DiscreteBasis"
         return
     end
+    display(sp)
     g = Conversion(sp)*f
     if g.c < N
         @error "Input dimension too small"
@@ -47,6 +48,17 @@ function pad(v,n)
     else
         return v[1:n]
     end
+end
+
+function Chop(c::Vector)
+    ind = length(c)
+    for i = length(c):-1:1
+        if norm(c[i:end]) > 1e-15
+            ind = i
+            break
+        end
+    end
+    c[1:ind]
 end
 
 function +(f::BasisExpansion,g::BasisExpansion)

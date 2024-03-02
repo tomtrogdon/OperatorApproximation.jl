@@ -1,14 +1,14 @@
 module OperatorApproximation
 
-using SparseArrays, LinearAlgebra, Plots
+using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs
 import Plots: plot
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex
 import LinearAlgebra: I, Matrix, norm
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
-     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval, MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval, UltraMappedInterval, JacobiMappedInterval
-     
+     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval, MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval, UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval, Fourier, Chop
+
 struct StandardBasisVector
     j::Integer
 end

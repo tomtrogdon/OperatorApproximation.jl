@@ -34,6 +34,7 @@ abstract type SingleBandedOperator <: BandedOperator end
 abstract type DenseOperator <: LazyOperator end
 abstract type BasisEvaluationOperator <: DenseOperator end  # Always true for spectral methods
 abstract type NaiveTransform <: DenseOperator end
+abstract type FastTransform <: DenseOperator end
 
 mutable struct SemiLazyBandedOperator <: SingleBandedOperator
     const nm::Integer
@@ -139,7 +140,6 @@ function Matrix(Op::MultipliedBandedOperator,n,m)
     A
 end
 
-
 ## TODO: Multiplication routines could be possibly simplified
 function *(Op::SingleBandedOperator,c::Vector)
     n = length(c)
@@ -238,16 +238,25 @@ function *(CC::Conversion,f::BasisExpansion)
     (CC*f.basis)*f
 end
 
-struct OPEvaluationOperator <: BasisEvaluationOperator  ## Add CollocatedOperator?
+struct OPEvaluationOperator <: BasisEvaluationOperator
     grid::Function
     a::Function # Jacobi coefficients
     b::Function
 end
 
-struct FixedGridOPEvaluationOperator <: BasisEvaluationOperator  ## Add CollocatedOperator?
+struct FourierEvaluationOperator <: BasisEvaluationOperator
+    grid::Function
+end
+
+
+struct FixedGridOPEvaluationOperator <: BasisEvaluationOperator
     grid::Vector
     a::Function # Jacobi coefficients
     b::Function
+end
+
+struct FixedGridFourierEvaluationOperator <: BasisEvaluationOperator
+    grid::Vector
 end
 
 mutable struct OPEigenTransform <: NaiveTransform
@@ -260,8 +269,30 @@ mutable struct OPEigenTransform <: NaiveTransform
     end
 end
 
+struct DiscreteFourierTransform <: FastTransform 
+    T::Function
+    function DiscreteFourierTransform()
+        return new(mdft)
+    end
+end
+
 function Matrix(Op::OPEvaluationOperator,n,m)
     poly(Op.a,Op.b,m,Op.grid(n)) 
+end
+
+function horner_mat(x,m)
+    A = zeros(ComplexF64,length(x),m)
+    mm = convert(Int64,floor( m/2 ))
+    A[:,1] = exp.(-1im*pi*mm*x)
+    ex1 = exp.(1im*pi*x)
+    for i = 2:m
+        A[:,i]  =  copy(A[:,i-1]).*ex1
+    end
+    return A
+end
+
+function Matrix(Op::FourierEvaluationOperator,n,m)
+    hornermat(Op.grid(n),m)
 end
 
 function Matrix(Op::FixedGridOPEvaluationOperator,n,m)
@@ -270,6 +301,15 @@ function Matrix(Op::FixedGridOPEvaluationOperator,n,m)
     else
         @warn "Asked for more rows than grid points.  Returning maximum number of rows."
         return poly(Op.a,Op.b,m,Op.grid)
+    end
+end
+
+function Matrix(Op::FixedGridFourierEvaluationOperator,n,m)
+    if n <= length(Op.grid)
+        return hornermat(Op.grid[1:n],m)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return hornermat(Op.grid,m)
     end
 end
 
@@ -303,10 +343,23 @@ function *(Op::DenseOperator,v::Vector)
     Matrix(Op,length(v))*v
 end
 
+function *(Op::FastTransform,v::Vector)
+    Op.T(v)
+end
+
+function Matrix(Op::DiscreteFourierTransform,n,m)
+    Op.T(Matrix(I,n,m)) # Not the right way to do this...
+end
+
 function rank(OP::ConcreteOperator)
     dim(OP.range)
+end
+
+function IdentityOperator()
+    BasicBandedOperator(0,0, (i,j) -> i == j ? 0.0 : 1)
 end
 
 include("GridValues/GridValues.jl")
 include("Jacobi/Jacobi.jl")
 include("Ultraspherical/Ultraspherical.jl")
+include("Fourier/Fourier.jl")

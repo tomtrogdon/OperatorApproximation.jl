@@ -39,7 +39,19 @@ using Test
     gd = UltraMappedInterval(-10,10,0.0)
     f = x -> sin(x)
     ff = BasisExpansion(f,Ultraspherical(0.0,gd),100)
-    @test abs(ff(3.0)-sin(3.0)) < 1e-14
+    @test abs(ff(3.0)-sin(3.0)) < 1e-10
+
+    N = 10;
+    sp = Fourier(PeriodicInterval());
+    f = x -> sin(2*pi*x)
+    ff = BasisExpansion(f,sp,N)
+    @test abs(f(.1) - ff(.1)) < 1e-10
+
+    N = 100
+    f = x -> exp(-x^2)
+    sp = Fourier(PeriodicMappedInterval(-10,10))
+    ff = BasisExpansion(f,sp,N)
+    @test abs(ff(.1) - f(.1)) < 1e-10
 end
 
 

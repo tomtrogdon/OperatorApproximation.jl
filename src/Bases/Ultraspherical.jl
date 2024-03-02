@@ -4,14 +4,7 @@ struct Ultraspherical <: Basis
 end
 
 function Chop(f::BasisExpansion{T}) where T <: Ultraspherical
-    ind = length(f.c)
-    for i = length(f.c):-1:1
-        if norm(f.c[i:end]) > 1e-15
-            ind = i
-            break
-        end
-    end
-    BasisExpansion(f.basis,f.c[1:ind])
+    BasisExpansion(f.basis,Chop(f.c))
 end
 
 function dim(sp::Ultraspherical)
