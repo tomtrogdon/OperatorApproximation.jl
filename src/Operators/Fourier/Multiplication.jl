@@ -19,23 +19,35 @@ function toeplitz(c::Vector,N::Integer)
     A
 end
 
-
+function toeplitz_function(c::Vector)
+    function F(k,j)
+        nm = N₋(length(c))
+        # F(0,0) = c[nm+1]
+        # F(j,j) = c[nm+1]
+        # F(j - i, j) = c[nm + 1 - i], k = j - i, i = j - k
+        # F(k,j) = c[nm + 1 + j -k]
+        if nm + 1 + j -k< 1 || nm + 1 + j -k > length(c)
+            return 0.0
+        else
+            return c[nm + 1 + j - k]
+        end
+    end
+end
 
 
 function *(M::Multiplication,sp::Fourier)
     if typeof(M.f) <: Function
         a = sp.GD.D.a
         b = sp.GD.D.b
-        GD = PeriodicMappedInterval(a,b,0.0)
+        GD = PeriodicMappedInterval(a,b)
         ff = BasisExpansion(M.f,Fourier(GD),200) |> Chop
     else 
         ff = M.f
     end
     
     if typeof(ff.basis) <: Fourier && isconvertible(ff.basis,sp)
-        
-
-        Op = LazyBandedOperator(m,m,f,f(5))
+        np = N₋(length(ff.c)); nm = length(ff.c) - np + 1
+        Op = BasicBandedOperator(BI,np,np,toeplitz_function(ff.c))
     else 
         1 + 1 #TODO: just evaluate and expand, need transform
     end
