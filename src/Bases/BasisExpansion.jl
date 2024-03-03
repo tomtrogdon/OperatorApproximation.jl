@@ -31,13 +31,17 @@ end
 function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
-    plot(x,f.(x))
+    y = f.(x)
+    plot(x, y |> real)
+    plot!(x, y |> imag)
 end
 
 function plot!(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
-    plot!(x,f.(x))
+    y = f.(x)
+    plot!(x, y |> real)
+    plot!(x, y |> imag)
 end
 
 function pad(v,n)
