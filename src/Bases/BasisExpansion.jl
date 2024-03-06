@@ -1,6 +1,6 @@
 struct BasisExpansion{T<:Basis}
     basis::T
-    c::Vector
+    c::Vector # if DirectSum then c is a vector of vectors
 end
 
 function BasisExpansion(f::Function,basis::Basis,N::Integer)

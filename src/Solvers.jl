@@ -1,4 +1,4 @@
-function \(L::Vector{ConcreteOperator},b::Vector,N::Integer)
+function \(L::Vector{T},b::Vector,N::Integer) where T <: ConcreteOperator
     k = 0
     Ops = []
     rhss = []
@@ -28,7 +28,7 @@ function testconv(f::BasisExpansion)
 end
 
 
-function \(L::Vector{ConcreteOperator},b::Vector)
+function \(L::Vector{T},b::Vector) where T <: ConcreteOperator
     if !(typeof(N) <: Integer)
         n = 32
         sol = \(L,b,n)

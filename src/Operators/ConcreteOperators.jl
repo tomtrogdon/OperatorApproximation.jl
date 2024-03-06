@@ -90,23 +90,23 @@ for op in (:+,:-)
         end
 
         function $op(L::LazyOperator)
-            SumOfLazyOperators([L],$op([1.0]))
-        end
-
-        function $op(L1::LazyOperator,L2::LazyOperator)
-            SumOfLazyOperators([L1,L2],[1.0,$op(1.0)])
-        end
-
-        function $op(L1::SumOfLazyOperators,L2::LazyOperator)
-            SumOfLazyOperators(vcat(L1.Ops,[L2]),vcat(L1.c,$op([1.0])))
-        end
-
-        function $op(L1::LazyOperator,L2::SumOfLazyOperators)
-            SumOfLazyOperators(vcat([L1],L2.Ops),vcat([1.0],$op(L2.c)))
+            $op(1.0)*L
         end
 
         function $op(L1::SumOfLazyOperators,L2::SumOfLazyOperators)
             SumOfLazyOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
+        end
+
+        function $op(L1::SumOfLazyOperators,L2::LazyOperator)
+            $op(L1,1.0*L2)
+        end
+
+        function $op(L1::LazyOperator,L2::SumOfLazyOperators)
+            $op(1.0*L1,L2)
+        end
+
+        function $op(L1::LazyOperator,L2::LazyOperator)
+            L1 + $op(1.0)*L2
         end
     end
 end
