@@ -88,7 +88,8 @@ end
 
 function *(Op::SumOfAbstractOperators,sp::Basis)
     ops = [op*sp for op in Op.Ops]
-    SumOfConcreteOperators(ops[1].domain,ops[1].range,ops ,Op.c)
+    L = SumOfLazyOperators([op.L for op in ops],Op.c)
+    ConcreteLazyOperator(ops[1].domain,ops[1].range,L)
 end
 
 function *(Op::AbstractOperator,f::BasisExpansion)

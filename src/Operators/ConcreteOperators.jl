@@ -7,26 +7,10 @@ struct ConcreteLazyOperator{D<:Basis,R<:Basis} <: ConcreteOperator
     L::LazyOperator
 end
 
-struct SumOfConcreteOperators{D<:Basis,R<:Basis,T} <: ConcreteOperator where T
-    domain::D
-    range::R
-    Ops::Vector{T}
-    c::Vector
-end
-
 function *(Op::AbstractOperator,C::ConcreteLazyOperator)  
     # Default.  Requires that the multiplication below
     # is defined...
-    # println("default")
     (Op*C.range)*C
-end
-
-function *(Op::SumOfAbstractOperators,C::ConcreteLazyOperator)
-    if Op.domain != C.range
-        @error "Domain-range mismatch."
-    end
-    ops = [op*C for op in Op.Ops]
-    SumOfConcreteOperators(ops[1].domain,ops[1].range,ops,Op.c)
 end
 
 function *(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator)
@@ -36,14 +20,22 @@ function *(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator)
     ConcreteLazyOperator(Op2.domain,Op1.range,Op1.L*Op2.L)
 end
 
-function +(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator) # need to check that the range and domain are compatible.
-    #TODO: Check domain and range here
-    if Op1.range != Op2.range
-        @error "Range mismatch."
-    elseif Op1.domain != Op2.domain
-        @error "Domain mismatch."
+for op in (:+,:-)
+    @eval begin 
+        function (Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator) # need to check that the range and domain are compatible.
+            #TODO: Check domain and range here
+            if Op1.range != Op2.range
+                @error "Range mismatch."
+            elseif Op1.domain != Op2.domain
+                @error "Domain mismatch."
+            end
+            ConcreteLazyOperator(Op1.domain,Op1.range, $op(Op1.L,Op2.L))
+        end
     end
-    SumOfConcreteOperators(Op1.domain,Op1.range,[Op1;Op2],[1;1])
+end
+
+function *(a::Number,Op::ConcreteLazyOperator) 
+    ConcreteLazyOperator(Op.domain,Op.range, a*Op.L)
 end
 
 function Matrix(Op::ConcreteLazyOperator,n,m)
@@ -52,15 +44,6 @@ end
 
 function Matrix(Op::ConcreteLazyOperator,m)
     Matrix(Op.L,m)
-end
-
-function Matrix(Op::SumOfConcreteOperators,n,m)
-    # TODO: check domain & range
-    A = Op.c[1]*Matrix(Op.Ops[1],n,m)
-    for i = 2:length(Op.c)
-        A += Op.c[i]*Matrix(Op.Ops[i],n,m)
-    end
-    A
 end
 
 function *(Op::ConcreteLazyOperator,f::BasisExpansion)
@@ -79,13 +62,65 @@ end
 abstract type DiscreteDomain end
 struct ZZ <: DiscreteDomain end
 struct NN <: DiscreteDomain end
-SI = NN()
-BI = ZZ()
+SI = NN()  ## Semi-Infinite
+BI = ZZ()  ## Bi-Infinite
 
 abstract type BandedOperator <: LazyOperator end
 abstract type SingleBandedOperator <: BandedOperator end
 
-mutable struct SemiLazyBandedOperator{T<:DiscreteDomain} <: SingleBandedOperator where T <: DiscreteDomain
+struct SumOfLazyOperators <: LazyOperator
+    Ops::Vector{S} where S <: LazyOperator
+    c::Vector{Number} # be more specific?
+end
+
+function *(a::Number,L::LazyOperator)
+    SumOfLazyOperators([L],[a])
+end
+
+function *(a::Number,L::SumOfLazyOperators)
+    SumOfLazyOperators(L.Ops,a*L.c)
+end
+
+# Repeat for +/- sign
+# could be simplified using *
+for op in (:+,:-)
+    @eval begin
+        function $op(L::SumOfLazyOperators)
+            SumOfLazyOperators(L.Ops,$op(L.c))
+        end
+
+        function $op(L::LazyOperator)
+            SumOfLazyOperators([L],$op([1.0]))
+        end
+
+        function $op(L1::LazyOperator,L2::LazyOperator)
+            SumOfLazyOperators([L1,L2],[1.0,$op(1.0)])
+        end
+
+        function $op(L1::SumOfLazyOperators,L2::LazyOperator)
+            SumOfLazyOperators(vcat(L1.Ops,[L2]),vcat(L1.c,$op([1.0])))
+        end
+
+        function $op(L1::LazyOperator,L2::SumOfLazyOperators)
+            SumOfLazyOperators(vcat([L1],L2.Ops),vcat([1.0],$op(L2.c)))
+        end
+
+        function $op(L1::SumOfLazyOperators,L2::SumOfLazyOperators)
+            SumOfLazyOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
+        end
+    end
+end
+
+function Matrix(Op::SumOfLazyOperators,n,m)
+    # TODO: check domain & range
+    A = Op.c[1]*Matrix(Op.Ops[1],n,m)
+    for i = 2:length(Op.c)
+        A += Op.c[i]*Matrix(Op.Ops[i],n,m)
+    end
+    A
+end
+
+mutable struct SemiLazyBandedOperator{T<:DiscreteDomain} <: SingleBandedOperator# where T <: DiscreteDomain
     const DD::T
     const nm::Integer
     const np::Integer
