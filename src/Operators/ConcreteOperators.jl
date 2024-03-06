@@ -68,6 +68,8 @@ BI = ZZ()  ## Bi-Infinite
 abstract type BandedOperator <: LazyOperator end
 abstract type SingleBandedOperator <: BandedOperator end
 
+
+## Note: Needs DiscreteDomain field if products of sums are to be used
 struct SumOfLazyOperators <: LazyOperator
     Ops::Vector{S} where S <: LazyOperator
     c::Vector{Number} # be more specific?
@@ -153,6 +155,15 @@ for op in (:ZZ,:NN)
     
             function *(B::MultipliedBandedOperator{T},A::$sop{S}) where {S <: $op, T<: $op}
                 MultipliedBandedOperator(A.DD,vcat(B.V,[A]))
+            end
+        end
+        for sop2 in (:BasicBandedOperator,:SemiLazyBandedOperator)
+            if sop2 != sop
+                @eval begin
+                    function *(A::$sop{T},B::$sop2{S}) where {S <: $op, T<: $op}
+                        MultipliedBandedOperator(A.DD,[A;B])
+                    end
+                end
             end
         end
     end

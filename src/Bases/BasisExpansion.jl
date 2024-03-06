@@ -20,11 +20,10 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     end
     display(sp)
     g = Conversion(sp)*f
-    if g.c < N
-        @error "Input dimension too small"
-        return
+    if length(g.c) < N
+        @warn "Input dimension smaller than linear system size. Padding with zeros."
     end
-    BasisExpansion(g.basis,g.c[1:N])
+    BasisExpansion(g.basis,pad(g.c,N))
 end
 
 ### needs to be extended
