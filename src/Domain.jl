@@ -20,6 +20,12 @@ struct UnitInterval <: Interval
     end
 end
 
+Base.show(io::IO, ::MIME"text/plain", z::UnitInterval)  =
+           print(io, Base.sprint(z))
+
+Base.show(io::IO, z::UnitInterval)  =
+           print(io, "UnitInterval(",z.a,",",z.b,")")
+
 struct MappedInterval <: Interval
     map::Function # maps from I to interval
     imap::Function # the inverse map
@@ -29,6 +35,14 @@ struct MappedInterval <: Interval
         return new(x -> M(a,b,x), x -> iM(a,b,x), a, b)
     end
 end
+
+
+Base.show(io::IO, z::MappedInterval)  =
+           print(io, "MappedInterval(",z.a,",",z.b,")")
+
+Base.show(io::IO, ::MIME"text/plain", z::MappedInterval)  =
+           print(io, "MappedInterval(",z.a,",",z.b,")")
+
 
 function ==(I1::Interval,I2::Interval)
     I1.a ≈ I2.a && I1.b ≈ I2.b
@@ -45,6 +59,9 @@ struct ChebyshevInterval <: GridDomain
         return new(UnitInterval(), Tgrid)
     end
 end
+
+Base.show(io::IO, ::MIME"text/plain", z::ChebyshevInterval)  =
+           print(io, "ChebyshevInterval(",sprint(z.D),")")
 
 struct PeriodicInterval <: GridDomain
     D::Domain
