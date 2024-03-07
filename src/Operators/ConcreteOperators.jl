@@ -142,6 +142,10 @@ struct MultipliedBandedOperator{T<:DiscreteDomain} <: BandedOperator
     V::Vector{S} where S <: SingleBandedOperator
 end
 
+struct BlockLazyOperator <: LazyOperator
+    Ops::Matrix{LazyOperator}
+end
+
 for op in (:ZZ,:NN)
     for sop in (:BasicBandedOperator,:SemiLazyBandedOperator)
         @eval begin

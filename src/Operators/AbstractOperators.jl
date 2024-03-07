@@ -135,3 +135,15 @@ function *(Op::AbstractOperator,f::BasisExpansion)
     Opc = Op*f.basis
     Opc*f
 end
+
+function *(Op::BlockAbstractOperator,sp::Basis)
+    if size(Op.Ops)[2] > 1
+        @error "Incorrect block size."
+        return
+    end
+    COps = [op*sp for op in Op.Ops]
+    sps = [op.range for op in COps][:,1]
+    Ls = [op.L for op in Cops]
+    # TODO: Define BlockLazyOperator
+    #ConcreteLazyOperator(sp,DirectSum(sps),BlockLazyOperator(Cops))
+end
