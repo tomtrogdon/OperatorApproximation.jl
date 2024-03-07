@@ -10,11 +10,50 @@ abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
 
-struct ProductOfAbstractOperators{T} <: AbstractOperator where T
+struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
+    Ops::Matrix{T}
+end
+
+####
+function ⊞(A1::AbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1 A2])
+end
+
+function ⊞(A1::BlockAbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1.Ops A2])
+end
+
+function ⊞(A1::AbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1 A2.Ops])
+end
+
+function ⊞(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1.Ops A2.Ops])
+end
+####
+####
+function ⊘(A1::AbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1 A2] |> transpose)
+end
+
+function ⊘(A1::BlockAbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1.Ops; A2])
+end
+
+function ⊘(A1::AbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1; A2.Ops])
+end
+
+function ⊘(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1.Ops; A2.Ops])
+end
+####
+####
+struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
 end
 
-struct SumOfAbstractOperators{T} <: AbstractOperator where T
+struct SumOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
     c::Vector
 end

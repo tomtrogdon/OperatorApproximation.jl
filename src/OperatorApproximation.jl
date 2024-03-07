@@ -7,7 +7,11 @@ import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
 import LinearAlgebra: I, Matrix, norm, eigen
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
-     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval, MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval, UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval, Fourier, Chop, eigen, plots
+     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication,
+    ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval,
+    MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
+    UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
+    Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘
 
 struct StandardBasisVector
     j::Integer
