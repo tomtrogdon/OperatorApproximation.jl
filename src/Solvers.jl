@@ -97,10 +97,16 @@ end
 ## non-generalized, single problem
 function eigen(L::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T}
     E =  eigen(Matrix(L,N,N) |> Matrix)
-    domains = bases(L.domain)
-    p = x -> part_vec(x,ns)
-    vs = [BasisExpansion.(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
-    ContinuousEigen(E.value,vs)
+    vs = [BasisExpansion(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
+    ContinuousEigen(E.values,vs)
+end
+
+function makeinf(x)
+    if abs(x) > 1e12
+        Inf
+    else
+        x
+    end
 end
 
 ## generalized, block problem
@@ -109,7 +115,7 @@ function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},ns:
     domains = bases(L.domain)
     vs = [part_vec(E.vectors[:,i],ns) for i in 1:size(E.vectors,2)]
     vs = [BasisExpansion.(domains, vsp) for vsp in vs]
-    ContinuousEigen(E.value,vs)
+    ContinuousEigen(makeinf.(E.values),vs)
 end
 #
 function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
@@ -123,6 +129,6 @@ function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::
     domains = bases(L.domain)
     p = x -> part_vec(x,ns)
     vs = [BasisExpansion.(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
-    ContinuousEigen(E.value,vs)
+    ContinuousEigen(makeinf.(E.values),vs)
 end
 

@@ -20,9 +20,9 @@ end
 
 function Matrix(GM::GridMultiplication,n,m)
     if n == m
-        return Diagonal(GM.f(GM.grid(n)))
+        return Diagonal(GM.f.(GM.grid(n)))
     else
-        return Diagonal(GM.f(GM.grid(max(n,m))))[1:n,1:m] |> sparse
+        return Diagonal(GM.f.(GM.grid(max(n,m))))[1:n,1:m] |> sparse
     end
 end
 

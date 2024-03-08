@@ -1,6 +1,8 @@
 abstract type LazyOperator <: Operator end
 abstract type ConcreteOperator <: Operator end
 
+## MethodError: no method matching *(::OperatorApproximation.SumOfLazyOperators, ::OperatorApproximation.MultipliedBandedOperator{OperatorApproximation.NN})
+
 struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:LazyOperator} <: ConcreteOperator
     domain::D
     range::R
