@@ -2,14 +2,27 @@ struct Ultraspherical <: Basis
     λ::Number
     GD::GridDomain
 end
-
-function Chop(f::BasisExpansion{T}) where T <: Ultraspherical
-    BasisExpansion(f.basis,Chop(f.c))
-end
-
+####################################
+#### REQUIRED TO BE IMPLEMENTED ####
+####################################
 function dim(sp::Ultraspherical)
     Inf
 end
+
+function pad(f::BasisExpansion{T},N) where T <: Ultraspherical
+    BasisExpansion(f.basis,pad(f.c,N))
+end
+
+function testconv(f::BasisExpansion{T}) where T <: Ultraspherical
+    testconv(f.c)
+end
+
+function chop(f::BasisExpansion{T}) where T <: Ultraspherical  # add tolerance?
+    BasisExpansion(f.basis,chop(f.c))
+end
+####################################
+####################################
+####################################
 
 function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
     n = P.c |> length

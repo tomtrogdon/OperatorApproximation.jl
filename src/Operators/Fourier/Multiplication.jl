@@ -40,7 +40,7 @@ function *(M::Multiplication,sp::Fourier)
         a = sp.GD.D.a
         b = sp.GD.D.b
         GD = PeriodicMappedInterval(a,b)
-        ff = BasisExpansion(M.f,Fourier(GD),200) |> Chop
+        ff = BasisExpansion(M.f,Fourier(GD),200) |> chop
     else 
         ff = M.f
     end

@@ -4,19 +4,6 @@ struct GridValues <: DiscreteBasis
     GD::GridDomain
 end
 
-function dim(GV::GridValues)
-    Inf
-end
-
-# struct FiniteGridValues <: DiscreteBasis  # is this needed?
-#     N::Integer
-#     GD::GridDomain
-# end
-
-# function dim(GV::FiniteGridValues)
-#     GV.N
-# end
-
 struct FixedGridValues <: DiscreteBasis
     pts::Vector
     GD::GridDomain # Don't need the grid here, but for consistency...
@@ -29,13 +16,41 @@ struct FixedGridValues <: DiscreteBasis
     end
 end
 
+####################################
+#### REQUIRED TO BE IMPLEMENTED ####
+####################################
+function dim(GV::FixedGridValues)
+    GV.pts |> length
+end
+
+function dim(GV::GridValues)
+    Inf
+end
+
+function pad(f::BasisExpansion{T},N) where T <: DiscreteBasis
+    @error "Cannot pad a discrete basis"
+    f
+end
+
+function testconv(f::BasisExpansion{T}) where T <: DiscreteBasis
+    @warn "Cannot do a convergence test for a discrete basis"
+    true
+end
+
+function chop(f::BasisExpansion{T}) where T <: DiscreteBasis
+    @warn "Cannot chop discrete basis"
+    f
+end
+####################################
+####################################
+####################################
+
+
+
+
 function (GV::GridValues)(N::Integer)
     GV.GD.D.map(GV.GD.grid(N))
     FixedGridValues(GV.GD.D.map(GV.GD.grid(N)),GV.GD)
-end
-
-function dim(GV::FixedGridValues)
-    GV.pts |> length
 end
 
 function iscompatible(GV1::GridValues,GV2::GridValues)

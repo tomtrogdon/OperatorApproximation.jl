@@ -1,3 +1,30 @@
+struct Jacobi <: Basis
+    α::Number
+    β::Number
+    GD::GridDomain
+end
+####################################
+#### REQUIRED TO BE IMPLEMENTED ####
+####################################
+function dim(sp::Jacobi)
+    Inf
+end
+
+function pad(f::BasisExpansion{T},N) where T <: Jacobi
+    BasisExpansion(f.basis,pad(f.c,N))
+end
+
+function testconv(f::BasisExpansion{T}) where T <: Jacobi
+    testconv(f.c)
+end
+
+function chop(f::BasisExpansion{T}) where T <: Jacobi
+    BasisExpansion(f.basis,chop(f.c))
+end
+####################################
+####################################
+####################################
+
 Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation

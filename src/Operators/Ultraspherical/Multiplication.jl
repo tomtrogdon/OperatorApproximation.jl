@@ -3,7 +3,7 @@ function *(M::Multiplication,sp::Ultraspherical)
         a = sp.GD.D.a
         b = sp.GD.D.b
         GD = UltraMappedInterval(a,b,0.0)
-        ff = BasisExpansion(M.f,Ultraspherical(0.0,GD),100) |> Chop
+        ff = BasisExpansion(M.f,Ultraspherical(0.0,GD),100) |> chop
     else 
         ff = M.f
     end

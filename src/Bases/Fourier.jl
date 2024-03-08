@@ -1,20 +1,38 @@
 struct Fourier <: Basis
     GD::GridDomain
 end
-
+####################################
+#### REQUIRED TO BE IMPLEMENTED ####
+####################################
 function dim(sp::Fourier)
     Inf
 end
 
-function Chop(f::BasisExpansion{T}) where T <: Fourier
+function pad(f::BasisExpansion{T},N) where T <: Fourier
     nm = N₋(length(f.c))
-    vm = Chop(copy(f.c[1:nm]) |> reverse) |> reverse;
-    vp = Chop(copy(f.c[nm+1:end]));
+    new_nm = N₋(N)
+    vm = pad(copy(f.c[1:nm]) |> reverse, new_nm) |> reverse;
+    vp = pad(copy(f.c[nm+1:end]), N - new_nm);
+    BasisExpansion(f.basis,vcat(vm,vp))
+end
+
+function testconv(f::BasisExpansion{T}) where T <: Fourier
+    nm = N₋(length(f.c))
+    testconv(f.c[1:nm] |> reverse) && testconv(f.c[nm+1:end])
+end
+
+function chop(f::BasisExpansion{T}) where T <: Fourier
+    nm = N₋(length(f.c))
+    vm = chop(copy(f.c[1:nm]) |> reverse) |> reverse;
+    vp = chop(copy(f.c[nm+1:end]));
     k = max(length(vm),length(vp))
     vm = pad(vm |> reverse,k) |> reverse
     vp = pad(vp,k)
     BasisExpansion(f.basis,vcat(vm,vp))
 end
+####################################
+####################################
+####################################
 
 
 mfftshift = x -> circshift(fftshift(x), isodd(length(x)) ? 1 : 0)

@@ -42,27 +42,20 @@ function \(L::ConcreteLazyOperator{D,R,T},b,N::Integer) where {D<:Basis,R<:Basis
     BasisExpansion(L.domain,Op\rhs.c)
 end
 
-function testconv(f::BasisExpansion)  ## TODO:  May be incorrect for Bi-infinite things
-    if dim(f.basis) < Inf
-        return true
-    else
-        return norm(f.c[end-4:end]) < tol  
-    end
-end
-
-function testconv(f::Vector{T}) where T <: BasisExpansion
-   testconv.(f) |> prod
+function testconv(f::Vector{T}) where T <: Number
+   k =  min(4,length(f) ÷ 2)
+   maximum(abs.(f[end-k:end])) < 1e-13
 end
 
 function \(L::ConcreteOperator,b)
     if !(typeof(N) <: Integer)
         n = 32
         sol = \(L,b,n)
-        bool = testconv(sol)
+        bool = testconv.(sol) |> prod
         while !bool
             n *= 2
             sol = \(L,b,n)
-            bool = testconv(sol)
+            bool = testconv.(sol) |> prod
         end
         return sol
     else

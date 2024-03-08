@@ -23,7 +23,7 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     if length(g.c) < N  # TODO:  Not correct for bi-infinite vectors
         @warn "Input dimension smaller than linear system size. Padding with zeros."
     end
-    BasisExpansion(g.basis,pad(g.c,N))
+    BasisExpansion(g.basis,pad(g,N))
 end
 
 ### needs to be extended
@@ -53,7 +53,7 @@ function pad(v,n)
     end
 end
 
-function Chop(c::Vector)
+function chop(c::Vector)
     ind = length(c)
     for i = length(c):-1:1
         if norm(c[i:end]) > 1e-15
