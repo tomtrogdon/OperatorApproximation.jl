@@ -164,5 +164,5 @@ function *(Op::BlockAbstractOperator,sp::DirectSum)
     end
     Ls = map(x -> x.L, COps)
     BlockLazyOperator(Ls)
-    return ConcreteLazyOperator(range,DirectSum(sps),BlockLazyOperator(Ls))
+    return ConcreteLazyOperator(sp,range,BlockLazyOperator(Ls))
 end

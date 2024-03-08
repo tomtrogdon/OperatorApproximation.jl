@@ -68,11 +68,6 @@ function setbasis(b)
     global basis = b
 end
 
-global gridvals = GridValues(ChebyshevInterval())
-function setgrid(b)
-    global gridvals = b
-end
-
 Nmax = 10000
 tol = 1e-14
 

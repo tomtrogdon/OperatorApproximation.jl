@@ -4,6 +4,14 @@ struct DirectSum <: Basis
     bases::Vector{T} where T <: Basis
 end
 
+function bases(b::Basis)
+    [b]
+end
+
+function bases(b::DirectSum)
+    b.bases
+end
+
 function ⊕(b1::Basis,b2::Basis)
     DirectSum([b1,b2])
 end

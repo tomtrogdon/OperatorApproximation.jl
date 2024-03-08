@@ -38,7 +38,7 @@ function *(a::Number,Op::ConcreteLazyOperator)
     ConcreteLazyOperator(Op.domain,Op.range, a*Op.L)
 end
 
-function Matrix(Op::ConcreteLazyOperator,n,m)
+function Matrix(Op::ConcreteLazyOperator{D,R,T},n,m) where {D,R,T}
     Matrix(Op.L,n,m)
 end
 
@@ -144,6 +144,61 @@ end
 
 struct BlockLazyOperator <: LazyOperator
     Ops::Matrix{LazyOperator}
+end
+
+# momtm = matrix of matrices to matrix
+# will go recursive
+function momtm(Ms::Union{Matrix{T},SparseMatrixCSC}) where T <: Union{Float64,ComplexF64}
+    Ms
+end
+
+function momtm(Ms::Matrix{T}) where T <: Union{Matrix,SparseMatrixCSC}
+    A = hcat(momtm.(Ms[1,:])...)
+    for i = 2:size(Ms,1)
+        A = vcat(A,hcat(momtm.(Ms[i,:])...))
+    end
+    A
+end
+
+function Matrix(Op::BlockLazyOperator,ns::Vector{Int64},ms::Vector{Int64})
+    # Make robust to length of vectors?
+    nmat = repeat(ns',length(ms))' |> Matrix
+    mmat = repeat(ms',length(ns))
+    momtm(Matrix.(Op.Ops,nmat,mmat))
+end
+
+function binit(n,k)
+    ((n+k-1:-1:n) .÷ k) |> Vector
+end
+
+function divide_DOF(b::Basis,n::Integer)
+    N = n
+    ranges = bases(b)
+    ns = zeros(Int64,length(ranges))
+    for i = 1:length(ranges)
+        if dim(ranges[i]) < Inf
+            ns[i] = dim(ranges[i])
+        end
+    end
+    N -= sum(ns)
+    if N < 1
+        @error "n, m not large enough to capture functionals"
+        return
+    end
+    ninds = ns .== 0
+    ns[ninds] = binit(N, sum(ninds))
+    ns
+end
+
+function divide_DOF(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis,T <: BlockLazyOperator}
+    ns = divide_DOF(Op.range,n)
+    ms = divide_DOF(Op.domain,m)
+    ns, ms
+end
+
+function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis,T <: BlockLazyOperator}
+    ns, ms = divide_DOF(Op,n,m)
+    Matrix(Op.L,ns,ms)
 end
 
 for op in (:ZZ,:NN)
