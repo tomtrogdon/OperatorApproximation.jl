@@ -1,5 +1,37 @@
 abstract type Basis end
 
+struct DirectSum <: Basis
+    bases::Vector{T} where T <: Basis
+end
+
+function bases(b::Basis)
+    [b]
+end
+
+function bases(b::DirectSum)
+    b.bases
+end
+
+function ⊕(b1::Basis,b2::Basis)
+    DirectSum([b1,b2])
+end
+
+function ⊕(b1::Basis,b2::DirectSum)
+    DirectSum(vcat([b1],b2.bases))
+end
+
+function ⊕(b1::DirectSum,b2::Basis)
+    DirectSum(vcat(b1.bases,[b2]))
+end
+
+function ⊕(b1::DirectSum,b2::DirectSum)
+    DirectSum(vcat(b1.bases,b2.bases))
+end
+
+function ==(b1::DirectSum,b2::DirectSum)
+    prod(b1.bases .== b2.bases)
+end
+
 function isconvertible(b1::Basis,b2::Basis) # false by default
     false
 end

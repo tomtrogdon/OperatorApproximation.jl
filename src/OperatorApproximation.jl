@@ -3,11 +3,15 @@ module OperatorApproximation
 using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
-    getindex, setindex!, firstindex, lastindex
+    getindex, setindex!, firstindex, lastindex, show
 import LinearAlgebra: I, Matrix, norm, eigen
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
-     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval, MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval, UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval, Fourier, Chop, eigen, plots
+     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication,
+    ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval,
+    MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
+    UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
+    Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘, ⊕
 
 struct StandardBasisVector
     j::Integer
@@ -62,11 +66,6 @@ end
 global basis = Ultraspherical(0.0,ChebyshevInterval())
 function setbasis(b)
     global basis = b
-end
-
-global gridvals = GridValues(ChebyshevInterval())
-function setgrid(b)
-    global gridvals = b
 end
 
 Nmax = 10000

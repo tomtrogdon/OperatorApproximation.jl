@@ -10,11 +10,50 @@ abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
 
-struct ProductOfAbstractOperators{T} <: AbstractOperator where T
+struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
+    Ops::Matrix{T}
+end
+
+####
+function ⊞(A1::AbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1 A2])
+end
+
+function ⊞(A1::BlockAbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1.Ops A2])
+end
+
+function ⊞(A1::AbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1 A2.Ops])
+end
+
+function ⊞(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1.Ops A2.Ops])
+end
+####
+####
+function ⊘(A1::AbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator(reshape([A1 A2],:,1))
+end
+
+function ⊘(A1::BlockAbstractOperator,A2::AbstractOperator)
+    BlockAbstractOperator([A1.Ops; A2])
+end
+
+function ⊘(A1::AbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1; A2.Ops])
+end
+
+function ⊘(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
+    BlockAbstractOperator([A1.Ops; A2.Ops])
+end
+####
+####
+struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
 end
 
-struct SumOfAbstractOperators{T} <: AbstractOperator where T
+struct SumOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
     c::Vector
 end
@@ -88,10 +127,42 @@ end
 
 function *(Op::SumOfAbstractOperators,sp::Basis)
     ops = [op*sp for op in Op.Ops]
-    SumOfConcreteOperators(ops[1].domain,ops[1].range,ops ,Op.c)
+    L = SumOfLazyOperators([op.L for op in ops],Op.c)
+    ConcreteLazyOperator(ops[1].domain,ops[1].range,L)
 end
 
 function *(Op::AbstractOperator,f::BasisExpansion)
     Opc = Op*f.basis
     Opc*f
+end
+
+function *(Op::BlockAbstractOperator,sp::Basis)
+    if size(Op.Ops)[2] > 1
+        @error "Incorrect block size."
+        return
+    end
+    COps = [op*sp for op in Op.Ops]
+    sps = [op.range for op in COps][:,1]
+    Ls = [op.L for op in COps]
+    BlockLazyOperator(Ls)
+    ConcreteLazyOperator(sp,DirectSum(sps),BlockLazyOperator(Ls))
+end
+
+function *(Op::BlockAbstractOperator,sp::DirectSum)
+    if size(Op.Ops)[2] != length(sp.bases)
+        @error "Incorrect block size."
+        return
+    end
+    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1] )
+    COps = Op.Ops.*sps
+    range = DirectSum([op.range for op in COps[:,1]]);
+    for i = 2:size(Op.Ops)[2]
+        if range != DirectSum([op.range for op in COps[:,i]])
+            @error "Range issue"
+            return
+        end
+    end
+    Ls = map(x -> x.L, COps)
+    BlockLazyOperator(Ls)
+    return ConcreteLazyOperator(sp,range,BlockLazyOperator(Ls))
 end

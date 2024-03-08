@@ -1,6 +1,6 @@
 struct BasisExpansion{T<:Basis}
     basis::T
-    c::Vector
+    c::Vector # if DirectSum then c is a vector of vectors
 end
 
 function BasisExpansion(f::Function,basis::Basis,N::Integer)
@@ -20,11 +20,10 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     end
     display(sp)
     g = Conversion(sp)*f
-    if g.c < N
-        @error "Input dimension too small"
-        return
+    if length(g.c) < N
+        @warn "Input dimension smaller than linear system size. Padding with zeros."
     end
-    BasisExpansion(g.basis,g.c[1:N])
+    BasisExpansion(g.basis,pad(g.c,N))
 end
 
 ### needs to be extended

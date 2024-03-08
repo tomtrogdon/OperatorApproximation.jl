@@ -20,6 +20,9 @@ struct UnitInterval <: Interval
     end
 end
 
+Base.show(io::IO, ::MIME"text/plain", z::UnitInterval)  =
+           print(io, "UnitInterval(",z.a,",",z.b,")")
+
 struct MappedInterval <: Interval
     map::Function # maps from I to interval
     imap::Function # the inverse map
@@ -29,6 +32,9 @@ struct MappedInterval <: Interval
         return new(x -> M(a,b,x), x -> iM(a,b,x), a, b)
     end
 end
+
+Base.show(io::IO, z::MappedInterval)  =
+           print(io, "MappedInterval(",z.a,",",z.b,")")
 
 function ==(I1::Interval,I2::Interval)
     I1.a ≈ I2.a && I1.b ≈ I2.b
@@ -46,6 +52,9 @@ struct ChebyshevInterval <: GridDomain
     end
 end
 
+Base.show(io::IO, ::MIME"text/plain", z::ChebyshevInterval)  =
+           print(io, "ChebyshevInterval(",sprint(print,z.D),")")
+
 struct PeriodicInterval <: GridDomain
     D::Domain
     grid::Function
@@ -53,6 +62,9 @@ struct PeriodicInterval <: GridDomain
         return new(UnitInterval(), Pgrid)
     end
 end
+
+Base.show(io::IO, ::MIME"text/plain", z::PeriodicInterval)  =
+           print(io, "PeriodicInterval(",sprint(print,z.D),")")
 
 struct JacobiInterval <: GridDomain
     D::Domain
@@ -65,6 +77,9 @@ struct JacobiInterval <: GridDomain
         return new(UnitInterval(),α,β, gridfun)
     end
 end
+
+Base.show(io::IO, ::MIME"text/plain", z::JacobiInterval)  =
+           print(io, "JacobiInterval(",sprint(print,z.D),",",z.α,",",z.β,")")
 
 function ==(J1::JacobiInterval,J2::JacobiInterval)
     J1.D == J2.D && J1.α == J2.α && J1.β == J2.β
@@ -80,6 +95,9 @@ struct UltraInterval <: GridDomain
         return new(UnitInterval(), λ, gridfun)
     end
 end
+
+Base.show(io::IO, ::MIME"text/plain", z::UltraInterval)  =
+           print(io, "UltraInterval(",sprint(print,z.D),",",z.λ,")")
 
 function ==(J1::UltraInterval,J2::UltraInterval)
     J1.D == J2.D && J1.λ == J2.λ
@@ -107,7 +125,7 @@ struct JacobiMappedInterval <: GridDomain
     β::Float64
     grid::Function
     function JacobiMappedInterval(a,b,α,β)
-        A, B = Jacobi_ab(λ - 1/2,λ - 1/2)
+        A, B = Jacobi_ab(α,β)
         gridfun = n -> Gauss_quad(A,B,n-1)[1]
         return new(MappedInterval(a,b), α, β, gridfun)
     end

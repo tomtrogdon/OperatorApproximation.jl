@@ -67,8 +67,8 @@ end
     lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     setbasis(sp)
-    setgrid(gv)
-    u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
+    u = (lbdry ⊘ rbdry ⊘ Op)\[[airyai(-R)];[airyai(R)]; x->0]
+    u = u[1]
     @test abs(u(0) - airyai(0)) < 1e-10
 
     # test sparse method
@@ -78,16 +78,14 @@ end
     # so it needs to be compatible for a projection of the
     # right-hand side function
     sp2 = Ultraspherical(2.0,UltraMappedInterval(-R,R,2.0));
-    gv = GridValues(ChebyshevMappedInterval(-R,R));
-    E = Conversion(gv);
     M = Multiplication(x -> x);
     D = Derivative();
     Op = D^2 - Conversion(sp2)*M
     lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     setbasis(sp)
-    setgrid(gv)
-    u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
+    u = (lbdry ⊘ rbdry ⊘ Op)\[[airyai(-R)];[airyai(R)]; x->0]
+    u = u[1]
     @test abs(u(0) - airyai(0)) < 1e-10
 end
 
