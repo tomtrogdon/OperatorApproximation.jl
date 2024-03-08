@@ -42,11 +42,11 @@ function \(L::ConcreteLazyOperator{D,R,T},b,N::Integer) where {D<:Basis,R<:Basis
     BasisExpansion(L.domain,Op\rhs.c)
 end
 
-function testconv(f::BasisExpansion)
+function testconv(f::BasisExpansion)  ## TODO:  May be incorrect for Bi-infinite things
     if dim(f.basis) < Inf
         return true
     else
-        return norm(f.c[end-4:end]) < tol
+        return norm(f.c[end-4:end]) < tol  
     end
 end
 

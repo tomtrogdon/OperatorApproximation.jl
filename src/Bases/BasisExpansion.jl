@@ -20,7 +20,7 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     end
     display(sp)
     g = Conversion(sp)*f
-    if length(g.c) < N
+    if length(g.c) < N  # TODO:  Not correct for bi-infinite vectors
         @warn "Input dimension smaller than linear system size. Padding with zeros."
     end
     BasisExpansion(g.basis,pad(g.c,N))
