@@ -77,38 +77,52 @@ end
 
 struct ContinuousEigen
     values::Vector{Union{Float64,ComplexF64}}
-    functions::Vector{BasisExpansion}
+    functions::Vector
 end
 
-function eigen(Op::AbstractOperator,sp::Basis,N::Integer)
-    eigen([Op],sp,N)
+## non-generalized, block problem
+function eigen(L::ConcreteLazyOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    E =  eigen(Matrix(L,ns,ms) |> Matrix)
+    domains = bases(L.domain)
+    vs = [part_vec(E.vectors[:,i],ns) for i in 1:size(E.vectors,2)]
+    vs = [BasisExpansion.(domains, vsp) for vsp in vs]
+    ContinuousEigen(E.values,vs)
+end
+#
+function eigen(L::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    ns, ms = divide_DOF(L,N,N)
+    eigen(L,ns,ms)
 end
 
-function eigen(L::Vector{T},sp::Basis,N::Integer) where T <: AbstractOperator
-    Ops = [J*sp for J in L]
-    eigen(Ops,N)
+## non-generalized, single problem
+function eigen(L::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T}
+    E =  eigen(Matrix(L,N,N) |> Matrix)
+    domains = bases(L.domain)
+    p = x -> part_vec(x,ns)
+    vs = [BasisExpansion.(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
+    ContinuousEigen(E.value,vs)
 end
 
-function eigen(L::Vector{T},N::Integer) where T <: ConcreteOperator
-    k = 0
-    Ops = []
-    for i = 1:length(L)
-        if isfinite(rank(L[i]))
-            k += rank(L[i])
-            push!(Ops,Matrix(L[i],N))
-        end
-    end
-    #Op = vcat(Ops...)
-    #display(Op)
-    ## Assume only one non Functional Operator, for now...
-    ## Adjust # of rows if not...
-    for i = 1:length(L)
-        if !isfinite(rank(L[i]))
-            push!(Ops,Matrix(L[i],N-k,N))
-        end
-    end
-    Op = vcat(Ops...)
-    E = eigen(Op |> Matrix)
-    funcs = [BasisExpansion(L[1].domain,E.vectors[:,i]) for i = 1:size(E.vectors)[2]]
-    ContinuousEigen(E.values,funcs)
+## generalized, block problem
+function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    E =  eigen(Matrix(L,ns,ms) |> Matrix, Matrix(M,ns,ms) |> Matrix)
+    domains = bases(L.domain)
+    vs = [part_vec(E.vectors[:,i],ns) for i in 1:size(E.vectors,2)]
+    vs = [BasisExpansion.(domains, vsp) for vsp in vs]
+    ContinuousEigen(E.value,vs)
 end
+#
+function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    ns, ms = divide_DOF(L,N,N)
+    eigen(L,M,ns,ms)
+end
+
+## generalized, single problem
+function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T}
+    E =  eigen(Matrix(L,N,N) |> Matrix, Matrix(M,N,N) |> Matrix)
+    domains = bases(L.domain)
+    p = x -> part_vec(x,ns)
+    vs = [BasisExpansion.(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
+    ContinuousEigen(E.value,vs)
+end
+
