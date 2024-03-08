@@ -9,20 +9,16 @@ An example:
 using OperatorApproximation, Plots, SpecialFunctions
 
 R = 30;
-sp = Ultraspherical(0.0,ChebyshevMappedInterval(-R,R));
-gv = GridValues(ChebyshevMappedInterval(-R,R));
-E = Conversion(gv);
+sp = Ultraspherical(0.0,UltraMappedInterval(-R,R,2.0)); 
+sp2 = Ultraspherical(2.0,UltraMappedInterval(-R,R,2.0));
 M = Multiplication(x -> x);
 D = Derivative();
-Op = E*D^2 - M*E
-
+Op = D^2 - Conversion(sp2)*M
 lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
 rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
-
 setbasis(sp)
-setgrid(gv)
-
-u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
+u = (lbdry ⊘ rbdry ⊘ Op)\[[airyai(-R)];[airyai(R)]; x->0]
+u = u[1]
 
 plot(u;dx=0.001)
 ```
