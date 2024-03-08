@@ -24,7 +24,7 @@ end
 
 for op in (:+,:-)
     @eval begin 
-        function (Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator) # need to check that the range and domain are compatible.
+        function $op(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator) # need to check that the range and domain are compatible.
             #TODO: Check domain and range here
             if Op1.range != Op2.range
                 @error "Range mismatch."
