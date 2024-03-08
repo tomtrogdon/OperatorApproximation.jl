@@ -67,8 +67,8 @@ end
     lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     setbasis(sp)
-    setgrid(gv)
-    u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
+    u = (lbdry ⊘ rbdry ⊘ Op)\[[airyai(-R)];[airyai(R)]; x->0]
+    u = u[1]
     @test abs(u(0) - airyai(0)) < 1e-10
 
     # test sparse method
@@ -84,8 +84,8 @@ end
     lbdry = FixedGridValues([-R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     rbdry = FixedGridValues([R],ChebyshevMappedInterval(-R,R)) |> Conversion;
     setbasis(sp)
-    setgrid(gv)
-    u = [lbdry;rbdry;Op]\[[airyai(-R)];[airyai(R)]; x->0]
+    u = (lbdry ⊘ rbdry ⊘ Op)\[[airyai(-R)];[airyai(R)]; x->0]
+    u = u[1]
     @test abs(u(0) - airyai(0)) < 1e-10
 end
 

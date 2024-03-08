@@ -152,7 +152,7 @@ function momtm(Ms::Union{Matrix{T},SparseMatrixCSC}) where T <: Union{Float64,Co
     Ms
 end
 
-function momtm(Ms::Matrix{T}) where T <: Union{Matrix,SparseMatrixCSC}
+function momtm(Ms::Matrix{T}) where T <: Union{Matrix,SparseMatrixCSC,AbstractMatrix}
     A = hcat(momtm.(Ms[1,:])...)
     for i = 2:size(Ms,1)
         A = vcat(A,hcat(momtm.(Ms[i,:])...))
