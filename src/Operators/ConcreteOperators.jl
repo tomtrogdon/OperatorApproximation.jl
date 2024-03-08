@@ -1,10 +1,10 @@
 abstract type LazyOperator <: Operator end
 abstract type ConcreteOperator <: Operator end
 
-struct ConcreteLazyOperator{D<:Basis,R<:Basis} <: ConcreteOperator
+struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:LazyOperator} <: ConcreteOperator
     domain::D
     range::R
-    L::LazyOperator
+    L::T
 end
 
 function *(Op::AbstractOperator,C::ConcreteLazyOperator)  

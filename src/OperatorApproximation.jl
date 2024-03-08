@@ -11,7 +11,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval,
     MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
-    Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘
+    Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘, ⊕
 
 struct StandardBasisVector
     j::Integer
