@@ -71,7 +71,9 @@ abstract type BandedOperator <: LazyOperator end
 abstract type SingleBandedOperator <: BandedOperator end
 
 
-## Note: Needs DiscreteDomain field if products of sums are to be used
+## Note: Needs DiscreteDomain field if products of sums are to be used?
+## Probably not because that is only needed to multiply BandedOperators
+## These could be dense operators
 struct SumOfLazyOperators <: LazyOperator
     Ops::Vector{S} where S <: LazyOperator
     c::Vector{Number} # be more specific?
@@ -233,6 +235,10 @@ for op in (:ZZ,:NN)
             MultipliedBandedOperator(A.DD,vcat(B.V,A.V))
         end
     end
+end
+
+function *(Ops::SumOfLazyOperators,Op::MultipliedBandedOperator{T}) where T <: DiscreteDomain
+    SumOfLazyOperators([op*Op for op in Ops.Ops],Ops.c)
 end
 
 include("SemiInfinite.jl")
