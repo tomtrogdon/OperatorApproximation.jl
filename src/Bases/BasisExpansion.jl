@@ -7,6 +7,19 @@ function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
 end
 
+function BasisExpansion(f::Function,basis::Basis)
+    n = 32
+    g = Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),n)
+    while !testconv(g) && n < Nmax
+        n *= 2
+        g = Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),n)
+    end
+    if n >= Nmax
+        @warn "Max DOF reached"
+    end
+    return g
+end
+
 function BasisExpansion(f::BasisExpansion,sp::Basis)
     Conversion(sp)*f
 end

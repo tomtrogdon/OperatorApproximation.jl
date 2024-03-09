@@ -90,6 +90,11 @@ struct Derivative <: AbstractOperator
     order::Integer
 end
 
+struct FloquetDerivative <: AbstractOperator
+    order::Integer
+    μ::Float64
+end
+
 struct Multiplication <: AbstractOperator
     f::Union{Function,BasisExpansion}
 end
@@ -100,6 +105,7 @@ struct Conversion <: AbstractOperator
 end
 
 Derivative() = Derivative(1)
+FloquetDerivative(μ) = FloquetDerivative(1,μ)
 
 function *(D1::Derivative,D2::Derivative)
     Derivative(D1.order + D2.order)
@@ -108,6 +114,20 @@ end
 function ^(D1::Derivative,k::Integer)
     Derivative(k*D1.order)
 end
+
+
+function *(D1::FloquetDerivative,D2::FloquetDerivative)
+    if D1.μ ≈ D2.μ
+        return FloquetDerivative(D1.order + D2.order,D1.μ)
+    else
+        @error "Floquet parameters do not match"
+    end
+end
+
+function ^(D1::FloquetDerivative,k::Integer)
+    FloquetDerivative(k*D1.order,D1.μ)
+end
+
 
 function *(M::AbstractOperator,Op2::AbstractOperator)
     ProductOfAbstractOperators([M;Op2])

@@ -89,13 +89,13 @@ function eigen(L::ConcreteLazyOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64
     ContinuousEigen(E.values,vs)
 end
 #
-function eigen(L::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function eigen(L::ConcreteLazyOperator{D,R,T},N::Int64) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
     ns, ms = divide_DOF(L,N,N)
     eigen(L,ns,ms)
 end
 
 ## non-generalized, single problem
-function eigen(L::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T}
+function eigen(L::ConcreteLazyOperator{D,R,T},N::Int64) where {D<:Basis,R<:Basis,T}
     E =  eigen(Matrix(L,N,N) |> Matrix)
     vs = [BasisExpansion(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
     ContinuousEigen(E.values,vs)
@@ -132,3 +132,10 @@ function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::
     ContinuousEigen(makeinf.(E.values),vs)
 end
 
+function ploteval(E::ContinuousEigen)
+    scatter(E.values |> real, E.values |> imag)
+end
+
+function ploteval!(E::ContinuousEigen)
+    scatter!(E.values |> real, E.values |> imag)
+end
