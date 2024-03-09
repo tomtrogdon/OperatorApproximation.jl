@@ -1,7 +1,7 @@
 abstract type LazyOperator <: Operator end
 abstract type ConcreteOperator <: Operator end
 
-## MethodError: no method matching *(::OperatorApproximation.SumOfLazyOperators, ::OperatorApproximation.MultipliedBandedOperator{OperatorApproximation.NN})
+## MethodError: no method matching *(::OperatorApproximation.SumOfLazyOperators, ::OperatorApproximation.ProductOfBandedOperator{OperatorApproximation.NN})
 
 struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:LazyOperator} <: ConcreteOperator
     domain::D
@@ -141,7 +141,7 @@ struct BasicBandedOperator{T<:DiscreteDomain} <: SingleBandedOperator
     A::Function
 end
 
-struct MultipliedBandedOperator{T<:DiscreteDomain} <: BandedOperator
+struct ProductOfBandedOperators{T<:DiscreteDomain} <: BandedOperator
     DD::T
     V::Vector{S} where S <: SingleBandedOperator
 end
@@ -209,35 +209,35 @@ for op in (:ZZ,:NN)
     for sop in (:BasicBandedOperator,:SemiLazyBandedOperator)
         @eval begin
             function *(A::$sop{T},B::$sop{S}) where {S <: $op, T<: $op}
-                MultipliedBandedOperator(A.DD,[A;B])
+                ProductOfBandedOperators(A.DD,[A;B])
             end
     
-            function *(A::$sop{T},B::MultipliedBandedOperator{S}) where {S <: $op, T<: $op}
-                MultipliedBandedOperator(A.DD,vcat([A],B.V))
+            function *(A::$sop{T},B::ProductOfBandedOperators{S}) where {S <: $op, T<: $op}
+                ProductOfBandedOperators(A.DD,vcat([A],B.V))
             end
     
-            function *(B::MultipliedBandedOperator{T},A::$sop{S}) where {S <: $op, T<: $op}
-                MultipliedBandedOperator(A.DD,vcat(B.V,[A]))
+            function *(B::ProductOfBandedOperators{T},A::$sop{S}) where {S <: $op, T<: $op}
+                ProductOfBandedOperators(A.DD,vcat(B.V,[A]))
             end
         end
         for sop2 in (:BasicBandedOperator,:SemiLazyBandedOperator)
             if sop2 != sop
                 @eval begin
                     function *(A::$sop{T},B::$sop2{S}) where {S <: $op, T<: $op}
-                        MultipliedBandedOperator(A.DD,[A;B])
+                        ProductOfBandedOperators(A.DD,[A;B])
                     end
                 end
             end
         end
     end
     @eval begin
-        function *(B::MultipliedBandedOperator{T},A::MultipliedBandedOperator{S}) where {S <: $op, T<: $op}
-            MultipliedBandedOperator(A.DD,vcat(B.V,A.V))
+        function *(B::ProductOfBandedOperators{T},A::ProductOfBandedOperators{S}) where {S <: $op, T<: $op}
+            ProductOfBandedOperators(A.DD,vcat(B.V,A.V))
         end
     end
 end
 
-function *(Ops::SumOfLazyOperators,Op::MultipliedBandedOperator{T}) where T <: DiscreteDomain
+function *(Ops::SumOfLazyOperators,Op::ProductOfBandedOperators{T}) where T <: DiscreteDomain
     SumOfLazyOperators([op*Op for op in Ops.Ops],Ops.c)
 end
 

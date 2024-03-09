@@ -66,7 +66,7 @@ function Matrix(Op::BasicBandedOperator{T},n,m) where T <: ZZ
     A
 end
 
-function Matrix(Op::MultipliedBandedOperator{T},n,m) where T <: ZZ  # TEST THIS
+function Matrix(Op::ProductOfBandedOperators{T},n,m) where T <: ZZ  # TEST THIS
     cols = m
     ex = max(Op.V[end].nm,Op.V[end].np)
     rows = max(cols+2ex,1)
@@ -99,7 +99,7 @@ for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
     end
 end
 
-function *(Op::MultipliedBandedOperator{T},c::Vector) where T <: ZZ
+function *(Op::ProductOfBandedOperators{T},c::Vector) where T <: ZZ
     cols = length(c)
     ex = max(Op.V[end].nm,Op.V[end].np)
     rows = max(cols+2ex,1)
@@ -113,7 +113,7 @@ function *(Op::MultipliedBandedOperator{T},c::Vector) where T <: ZZ
     v
 end
 
-function rowgrowth(Op::MultipliedBandedOperator{T}) where T <: ZZ
+function rowgrowth(Op::ProductOfBandedOperators{T}) where T <: ZZ
     cols = 0
     ex = max(Op.V[end].nm + Op.V[end].np)
     rows = cols+2ex
