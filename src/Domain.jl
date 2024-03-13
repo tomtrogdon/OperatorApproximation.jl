@@ -1,5 +1,6 @@
 abstract type Domain end
 abstract type Interval <: Domain end
+abstract type Circle <: Domain end
 abstract type GridDomain end
 
 M = (A,B,x) -> (B - A)/2*x .+ (B + A)/2  # from I to [A,B]
@@ -10,6 +11,11 @@ function isin(x::Number,I::Interval)
     -1 <= real(X) <= 1 && imag(X) ≈ 0
 end
 
+function isin(x::Number,I::Circle)
+    X = I.imap(x)
+    abs2(X) ≈ 1
+end
+
 struct UnitInterval <: Interval
     map::Function
     imap::Function
@@ -17,6 +23,16 @@ struct UnitInterval <: Interval
     b
     function UnitInterval()
         return new(x -> x, x -> x, -1.0, 1.0)
+    end
+end
+
+struct UnitCircle <: Circle  ## could be a map of UnitInterval()
+    map::Function
+    imap::Function
+    cen::ComplexF64
+    rad::Float64
+    function UnitCircle()
+        return new(x -> x, x -> x, 0.0im, 1.0)
     end
 end
 
@@ -33,6 +49,16 @@ struct MappedInterval <: Interval
     end
 end
 
+struct MappedCircle <: Circle
+    map::Function # maps unit circle to mapped circle
+    imap::Function
+    cen::ComplexF64
+    rad::Float64
+    function MappedCircle(cen,rad)
+        return new(x -> M(cen - rad, cen + rad,x), x -> iM(cen - rad, cen + rad,x), cen, rad)
+    end
+end
+
 Base.show(io::IO, z::MappedInterval)  =
            print(io, "MappedInterval(",z.a,",",z.b,")")
 
@@ -45,7 +71,7 @@ function iscompatible(GD1::GridDomain,GD2::GridDomain)
 end
 
 struct ChebyshevInterval <: GridDomain
-    D::Domain
+    D::Interval
     grid::Function
     function ChebyshevInterval()
         return new(UnitInterval(), Tgrid)
@@ -56,7 +82,7 @@ Base.show(io::IO, ::MIME"text/plain", z::ChebyshevInterval)  =
            print(io, "ChebyshevInterval(",sprint(print,z.D),")")
 
 struct PeriodicInterval <: GridDomain
-    D::Domain
+    D::Interval
     grid::Function
     function PeriodicInterval()
         return new(UnitInterval(), Pgrid)
@@ -66,8 +92,16 @@ end
 Base.show(io::IO, ::MIME"text/plain", z::PeriodicInterval)  =
            print(io, "PeriodicInterval(",sprint(print,z.D),")")
 
+struct PeriodicCircle <: GridDomain
+    D::Circle
+    grid::Function
+    function PeriodicCircle()
+        return new(UnitCircle(), Lgrid)
+    end
+end
+
 struct JacobiInterval <: GridDomain
-    D::Domain
+    D::Interval
     α::Number
     β::Number
     grid::Function
@@ -86,7 +120,7 @@ function ==(J1::JacobiInterval,J2::JacobiInterval)
 end
 
 struct UltraInterval <: GridDomain
-    D::Domain
+    D::Interval
     λ::Number
     grid::Function
     function UltraInterval(λ)
@@ -104,7 +138,7 @@ function ==(J1::UltraInterval,J2::UltraInterval)
 end
 
 struct ChebyshevMappedInterval <: GridDomain
-    D::Domain
+    D::Interval
     grid::Function
     function ChebyshevMappedInterval(a,b)
         return new(MappedInterval(a,b), Tgrid)
@@ -112,15 +146,23 @@ struct ChebyshevMappedInterval <: GridDomain
 end
 
 struct PeriodicMappedInterval <: GridDomain
-    D::Domain
+    D::Interval
     grid::Function
     function PeriodicMappedInterval(a,b)
         return new(MappedInterval(a,b), Pgrid)
     end
 end
 
+struct PeriodicMappedCircle <: GridDomain
+    D::Circle
+    grid::Function
+    function PeriodicMappedCircle(cen,rad)
+        return new(MappedCircle(cen, rad), Lgrid)
+    end
+end
+
 struct JacobiMappedInterval <: GridDomain
-    D::Domain
+    D::Interval
     α::Float64
     β::Float64
     grid::Function
@@ -132,7 +174,7 @@ struct JacobiMappedInterval <: GridDomain
 end
 
 struct UltraMappedInterval <: GridDomain
-    D::Domain
+    D::Interval
     λ::Float64
     grid::Function
     function UltraMappedInterval(a,b,λ)
