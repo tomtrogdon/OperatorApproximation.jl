@@ -203,6 +203,59 @@ function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D 
     Matrix(Op.L,ns,ms)
 end
 
+####
+function ⊞(A1::LazyOperator,A2::LazyOperator)
+    BlockLazyOperator(reshape(A1,A2,1,:))
+end
+
+function ⊞(A1::BlockLazyOperator,A2::LazyOperator)
+    BlockLazyOperator(hcat(A1.Ops,A2))
+end
+
+function ⊞(A1::LazyOperator,A2::BlockLazyOperator)
+    BlockLazyOperator(hcat(A1,A2.Ops))
+end
+
+function ⊞(A1::BlockLazyOperator,A2::BlockLazyOperator)
+    BlockLazyOperator(hcat(A1.Ops,A2.Ops))
+end
+####
+####
+function ⊘(A1::LazyOperator,A2::LazyOperator)
+    BlockLazyOperator(reshape([A1 A2],:,1))
+end
+
+function ⊘(A1::BlockLazyOperator,A2::LazyOperator)
+    BlockLazyOperator(vcat(A1.Ops,A2))
+end
+
+function ⊘(A1::LazyOperator,A2::BlockLazyOperator)
+    BlockLazyOperator(vcat(A1,A2.Ops))
+end
+
+function ⊘(A1::BlockLazyOperator,A2::BlockLazyOperator)
+    BlockLazyOperator(vcat(A1.Ops,A2.Ops))
+end
+####
+####
+
+function ⊞(A1::ConcreteLazyOperator,A2::ConcreteLazyOperator)
+    if A1.range == A2.range
+        return ConcreteLazyOperator(A1.domain ⊕ A2.domain, A1.range, A1.L ⊞ A2.L)
+    else
+        @error "Ranges are not compatible"
+    end
+end
+
+function ⊘(A1::ConcreteLazyOperator,A2::ConcreteLazyOperator)
+    if A1.domain == A2.domain
+        return ConcreteLazyOperator(A1.domain, A1.range ⊕ A2.range, A1.L ⊘ A2.L)
+    else
+        @error "Ranges are not compatible"
+    end
+end
+
+
 for op in (:ZZ,:NN)
     for sop in (:BasicBandedOperator,:SemiLazyBandedOperator)
         @eval begin
