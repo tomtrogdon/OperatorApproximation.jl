@@ -1,7 +1,7 @@
 struct Jacobi <: Basis
     α::Number
     β::Number
-    GD::GridDomain
+    GD::GridInterval
 end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####

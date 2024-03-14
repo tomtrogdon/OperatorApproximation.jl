@@ -1,7 +1,7 @@
 Lgrid = n -> exp.((2*(0:n-1)/n .- 1)*1im*pi )
 
 struct Laurent <: Basis
-    GD::GridDomain
+    GD::GridCircle
 end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####

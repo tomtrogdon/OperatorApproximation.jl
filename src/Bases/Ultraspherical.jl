@@ -1,6 +1,6 @@
 struct Ultraspherical <: Basis
     λ::Number
-    GD::GridDomain
+    GD::GridInterval
 end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####

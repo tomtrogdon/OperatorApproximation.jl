@@ -1,5 +1,5 @@
 struct Fourier <: Basis
-    GD::GridDomain
+    GD::GridInterval
 end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
