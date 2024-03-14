@@ -12,7 +12,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
     Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘, ⊕, FloquetDerivative, plot, plot!, eigen, \,
-    ploteval, ploteval!
+    ploteval, ploteval!, UnitCircle, MappedCircle, PeriodicCircle, PeriodicMappedCircle, Laurent
 
 struct StandardBasisVector
     j::Integer

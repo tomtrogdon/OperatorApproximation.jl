@@ -104,6 +104,10 @@ struct Conversion <: AbstractOperator
     range::Basis
 end
 
+struct Cauchy{T} <: AbstractOperator where T <: Union{Int64,Basis}
+    o::T
+end
+
 Derivative() = Derivative(1)
 FloquetDerivative(μ) = FloquetDerivative(1,μ)
 
