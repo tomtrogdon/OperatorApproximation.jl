@@ -4,6 +4,8 @@ end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Fourier) = ℤ
+
 function dim(sp::Fourier)
     Inf
 end

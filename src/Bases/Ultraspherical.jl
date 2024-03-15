@@ -5,6 +5,8 @@ end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Ultraspherical) = ℕ₊
+
 function dim(sp::Ultraspherical)
     Inf
 end

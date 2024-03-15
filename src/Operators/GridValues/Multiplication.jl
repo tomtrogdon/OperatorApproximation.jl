@@ -1,13 +1,3 @@
-struct GridMultiplication <: DenseOperator # even though it is sparse...
-    # it is simpler to treat grid multiplication as dense
-    f::Function
-    grid::Function
-end
-
-struct FixedGridMultiplication <: DenseOperator
-    fvals::Vector
-end
-
 function *(M::Multiplication,sp::GridValues)
     Op = GridMultiplication(M.f, n -> sp.GD.D.map(sp.GD.grid(n)))
     ConcreteLazyOperator(sp,sp,Op)

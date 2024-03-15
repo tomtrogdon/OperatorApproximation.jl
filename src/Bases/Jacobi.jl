@@ -6,6 +6,9 @@ end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Jacobi) = ℕ₊
+
+
 function dim(sp::Jacobi)
     Inf
 end

@@ -1,4 +1,4 @@
-function Matrix(Op::SemiLazyBandedOperator{T},n,m) where  T <: ZZ
+function Matrix(Op::SemiLazyBandedOperator{T,S},n,m) where  {T <: ℤ, S <: ℤ}
     if n > size(Op.A)[1] || m > size(Op.A)[2]
         Op.A = Op.mat(max(n,m))
     end
@@ -43,7 +43,7 @@ function getmat(F,n,m,nm,np)
     A
 end
 
-function Matrix(Op::BasicBandedOperator{T},n,m) where T <: ZZ
+function Matrix(Op::BasicBandedOperator{T,S},n,m) where {T <: ℤ, S <: ℤ}
     mM = N₋(m)
     nM = N₋(n)
     A = spzeros(n,m)
@@ -66,7 +66,7 @@ function Matrix(Op::BasicBandedOperator{T},n,m) where T <: ZZ
     A
 end
 
-function Matrix(Op::ProductOfBandedOperators{T},n,m) where T <: ZZ  # TEST THIS
+function Matrix(Op::ProductOfBandedOperators{T,S},n,m) where {T <: ℤ, S <: ℤ}  # TEST THIS
     cols = m
     ex = max(Op.V[end].nm,Op.V[end].np)
     rows = max(cols+2ex,1)
@@ -86,20 +86,20 @@ end
 ## TODO: Multiplication routines could be possibly simplified
 for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
     @eval begin 
-        function *(Op::$op{T},c::Vector) where T <: ZZ
+        function *(Op::$op{T,S},c::Vector) where {T <: ℤ, S <: ℤ}
             n = length(c)
             ex = max(Op.nm,Op.np)
             m = max(2ex + n,1)
             Matrix(Op,m,n)*c
         end
 
-        function rowgrowth(Op::$op{T}) where T <: ZZ
+        function rowgrowth(Op::$op{T,S}) where {T <: ℤ, S <: ℤ}
             2*max(Op.nm,Op.np)
         end
     end
 end
 
-function *(Op::ProductOfBandedOperators{T},c::Vector) where T <: ZZ
+function *(Op::ProductOfBandedOperators{T,S},c::Vector) where {T <: ℤ, S <: ℤ}
     cols = length(c)
     ex = max(Op.V[end].nm,Op.V[end].np)
     rows = max(cols+2ex,1)
@@ -113,7 +113,7 @@ function *(Op::ProductOfBandedOperators{T},c::Vector) where T <: ZZ
     v
 end
 
-function rowgrowth(Op::ProductOfBandedOperators{T}) where T <: ZZ
+function rowgrowth(Op::ProductOfBandedOperators{T,S}) where {T <: ℤ, S <: ℤ}
     cols = 0
     ex = max(Op.V[end].nm + Op.V[end].np)
     rows = cols+2ex
@@ -125,6 +125,6 @@ function rowgrowth(Op::ProductOfBandedOperators{T}) where T <: ZZ
     rows
 end
 
-function BIIdentityOperator()
-    BasicBandedOperator(BI,0,0, (i,j) -> i == j ? 0.0 : 1)
-end
+# function BIIdentityOperator()
+#     BasicBandedOperator(BI,0,0, (i,j) -> i == j ? 0.0 : 1)
+# end

@@ -1,5 +1,12 @@
 abstract type Basis end
 
+abstract type CoefficientDomain end
+struct ℤ <: CoefficientDomain end
+struct ℕ₊ <: CoefficientDomain end
+struct ℕ₋ <: CoefficientDomain end
+struct 𝔼 <: CoefficientDomain end
+struct 𝕏 <: CoefficientDomain end ## for when multiplication is not defined
+
 struct DirectSum <: Basis
     bases::Vector{T} where T <: Basis
 end

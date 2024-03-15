@@ -6,6 +6,8 @@ end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Laurent) = ℤ
+
 function dim(sp::Laurent)
     Inf
 end

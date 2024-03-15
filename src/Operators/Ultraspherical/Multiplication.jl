@@ -14,7 +14,7 @@ function *(M::Multiplication,sp::Ultraspherical)
         α, β = Jacobi_ab(sp.λ - 1/2,sp.λ - 1/2)
         f = n -> OPMultiplication(a,b,α,β,ff.c,sparse(I,n,n))[1:n,1:n] |> sparse
         m = length(ff.c)
-        Op = SemiLazyBandedOperator(SI,m,m,f,f(5))
+        Op = SemiLazyBandedOperator{ℕ₊,ℕ₊}(m,m,f,f(5))
     else 
         1 + 1 #TODO: just evaluate and expand, need transform
     end

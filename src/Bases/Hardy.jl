@@ -6,6 +6,9 @@ Hardy(GD) = Hardy{typeof(GD),typeof(GD.GD.D)}(GD)
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: Circle} = ℕ₋
+cfd(sp::Hardy{T,S})  where {T <: Interior, S <: Circle} = ℕ₊
+
 function dim(sp::Hardy)
     Inf
 end

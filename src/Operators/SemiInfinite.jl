@@ -1,11 +1,11 @@
-function Matrix(Op::SemiLazyBandedOperator{T},n,m) where  T <: NN
+function Matrix(Op::SemiLazyBandedOperator{T, S},n,m) where  {T <: ℕ₊, S <: ℕ₊}
     if n > size(Op.A)[1] || m > size(Op.A)[2]
         Op.A = Op.mat(max(n,m))
     end
     Op.A[1:n,1:m]
 end
 
-function Matrix(Op::BasicBandedOperator{T},n,m) where T <: NN
+function Matrix(Op::BasicBandedOperator{T, S},n,m) where  {T <: ℕ₊, S <: ℕ₊}
     A = spzeros(n,m)
     if Op.nm > n
         nm = n
@@ -37,7 +37,7 @@ function Matrix(Op::BasicBandedOperator{T},n,m) where T <: NN
     A
 end
 
-function Matrix(Op::ProductOfBandedOperators{T},n,m) where T <: NN
+function Matrix(Op::ProductOfBandedOperators{T,S},n,m) where  {T <: ℕ₊, S <: ℕ₊}
     cols = m
     rows = max(cols+Op.V[end].nm,1)
     A = Matrix(Op.V[end],rows,cols)
@@ -55,19 +55,19 @@ end
 ## TODO: Multiplication routines could be possibly simplified
 for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
     @eval begin 
-        function *(Op::$op{T},c::Vector) where T <: NN
+        function *(Op::$op{T,S},c::Vector) where {T <: ℕ₊, S <: ℕ₊}
             n = length(c)
             m = max(Op.nm + n,1)
             Matrix(Op,m,n)*c
         end
 
-        function rowgrowth(Op::$op{T}) where T <: NN
+        function rowgrowth(Op::$op{T,S}) where {T <: ℕ₊, S <: ℕ₊}
             Op.nm
         end
     end
 end
 
-function *(Op::ProductOfBandedOperators{T},c::Vector) where T <: NN
+function *(Op::ProductOfBandedOperators{T,S},c::Vector) where {T <: ℕ₊, S <: ℕ₊}
     cols = length(c)
     rows = max(cols+Op.V[end].nm,1)
     v = Matrix(Op.V[end],rows,cols)*c
@@ -79,7 +79,7 @@ function *(Op::ProductOfBandedOperators{T},c::Vector) where T <: NN
     v
 end
 
-function rowgrowth(Op::ProductOfBandedOperators{T}) where T <: NN
+function rowgrowth(Op::ProductOfBandedOperators{T,S}) where {T <: ℕ₊, S <: ℕ₊}
     cols = 0
     rows = cols+Op.V[end].nm
     for j = length(Op.V)-1:-1:1
@@ -89,6 +89,6 @@ function rowgrowth(Op::ProductOfBandedOperators{T}) where T <: NN
     rows
 end
 
-function SIIdentityOperator()
-    BasicBandedOperator(SI,0,0, (i,j) -> i == j ? 0.0 : 1)
-end
+# function SIIdentityOperator()
+#     BasicBandedOperator(SI,0,0, (i,j) -> i == j ? 0.0 : 1)
+# end
