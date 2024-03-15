@@ -35,15 +35,15 @@ function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: C
         return 0.0im
     end
     p = x
-    sum = P.c[1]*p
-    for i = 2:n
+    sum = P.c[end]*p
+    for i = n-1:1:1
         p *= x
         sum += P.c[i]*p        
     end
     sum
 end
 
-function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: GridCircle}
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: Circle}
     n = P.c |> length
     x = P.basis.GD.D.imap(X)
     if abs(x) > 1

@@ -279,8 +279,9 @@ function *(Ops::SumOfLazyOperators,Op::ProductOfBandedOperators)
     SumOfLazyOperators([op*Op for op in Ops.Ops],Ops.c)
 end
 
-include("SemiInfinite.jl")
-include("BiInfinite.jl")
+# include("SemiInfinite.jl")
+# include("BiInfinite.jl")
+include("LazyMatrix.jl")
 include("Dense.jl")
 
 include("GridValues/GridValues.jl")
