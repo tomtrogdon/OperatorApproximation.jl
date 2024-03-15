@@ -52,6 +52,11 @@ using Test
     sp = Fourier(PeriodicMappedInterval(-10,10))
     ff = BasisExpansion(f,sp,N)
     @test abs(ff(.1) - f(.1)) < 1e-10
+
+    f = x -> sin(x)
+    ff = BasisExpansion(f,Laurent(PeriodicMappedCircle(1im,.5)))
+    cff = Cauchy(1)*ff
+    @test abs(cff(1.1im) - f(1.1im)) < 1e-10
 end
 
 
