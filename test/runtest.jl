@@ -55,7 +55,7 @@ using Test
 
     f = x -> sin(x)
     ff = BasisExpansion(f,Laurent(PeriodicMappedCircle(1im,.5)))
-    cff = Cauchy(1)*ff
+    cff = CauchyTransform()*ff
     @test abs(cff(1.1im) - f(1.1im)) < 1e-10
 end
 
@@ -92,5 +92,18 @@ end
     u = (lbdry ⊘ rbdry ⊘ Op)\[[airyai(-R)];[airyai(R)]; x->0]
     u = u[1]
     @test abs(u(0) - airyai(0)) < 1e-10
+end
+
+@testset "OperatorApproximation.jl: Riemann-Hilbert tests" begin
+    gd = PeriodicCircle()
+    sp = Laurent(gd)
+    g = z -> 3 + z
+    M = Multiplication(g)
+    Cp = CauchyOperator(1)
+    Cm = CauchyOperator(-1)
+    setbasis(sp)
+    u = \(Cp - M*Cm, z -> g(z) -1)
+    m = CauchyTransform()*u
+    @test abs(m(2im)) < 1e-10 && abs(m(.3) + 1 - g(.3)) < 1e-10
 end
 
