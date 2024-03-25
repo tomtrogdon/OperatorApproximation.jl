@@ -51,7 +51,11 @@ function \(L::ConcreteOperator,b)
     if !(typeof(N) <: Integer)
         n = 32
         sol = \(L,b,n)
-        bool = testconv.(sol) |> prod
+        if typeof(sol) <: Vector
+            bool = testconv.(sol) |> prod
+        else
+            bool = testconv(sol)
+        end
         while !bool
             n *= 2
             sol = \(L,b,n)

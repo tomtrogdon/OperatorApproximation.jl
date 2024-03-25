@@ -32,6 +32,9 @@ function bases(b::DirectSum)
     b.bases
 end
 
+function bases(b::Basis)
+    [b]
+end
 function ⊕(b1::Basis,b2::Basis)
     DirectSum([b1,b2])
 end

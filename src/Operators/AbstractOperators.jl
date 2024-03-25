@@ -106,6 +106,10 @@ end
 
 struct CauchyTransform <: AbstractOperator end
 
+struct CauchyOperator <: AbstractOperator
+    o::Int64
+end
+
 Derivative() = Derivative(1)
 FloquetDerivative(μ) = FloquetDerivative(1,μ)
 

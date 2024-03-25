@@ -81,6 +81,10 @@ struct MappedCircle <: Circle
     end
 end
 
+function ==(C1::Circle,C2::Circle)
+    C1.cen ≈ C2.cen && C1.rad ≈ C2.rad
+end
+
 Base.show(io::IO, z::MappedInterval)  =
            print(io, "MappedInterval(",z.a,",",z.b,")")
 
