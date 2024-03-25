@@ -13,10 +13,6 @@ function dim(sp::Hardy)
     Inf
 end
 
-function pad(f::BasisExpansion{T},N) where T <: Hardy
-    BasisExpansion(f.basis,pad(f.c,N))
-end
-
 function testconv(f::BasisExpansion{T}) where T <: Hardy
     testconv(f.c)
 end

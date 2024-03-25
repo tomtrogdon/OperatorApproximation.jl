@@ -11,10 +11,6 @@ function dim(sp::Ultraspherical)
     Inf
 end
 
-function pad(f::BasisExpansion{T},N) where T <: Ultraspherical
-    BasisExpansion(f.basis,pad(f.c,N))
-end
-
 function testconv(f::BasisExpansion{T}) where T <: Ultraspherical
     testconv(f.c)
 end

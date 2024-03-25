@@ -3,7 +3,7 @@ module OperatorApproximation
 using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
-    getindex, setindex!, firstindex, lastindex, show
+    getindex, setindex!, firstindex, lastindex, show, getindex, size, axes
 import LinearAlgebra: I, Matrix, norm, eigen
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
@@ -13,7 +13,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
     Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘, ⊕, FloquetDerivative, plot, plot!, eigen, \,
     ploteval, ploteval!, UnitCircle, MappedCircle, PeriodicCircle, PeriodicMappedCircle, Laurent, Hardy,
-    Cauchy, Exterior, Interior
+    CauchyTransform, Exterior, Interior
 
 struct StandardBasisVector
     j::Integer

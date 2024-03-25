@@ -12,14 +12,6 @@ function dim(sp::Laurent)
     Inf
 end
 
-function pad(f::BasisExpansion{T},N) where T <: Laurent
-    nm = N₋(length(f.c))
-    new_nm = N₋(N)
-    vm = pad(copy(f.c[1:nm]) |> reverse, new_nm) |> reverse;
-    vp = pad(copy(f.c[nm+1:end]), N - new_nm);
-    BasisExpansion(f.basis,vcat(vm,vp))
-end
-
 function testconv(f::BasisExpansion{T}) where T <: Laurent
     nm = N₋(length(f.c))
     testconv(f.c[1:nm] |> reverse) && testconv(f.c[nm+1:end])

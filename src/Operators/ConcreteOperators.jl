@@ -49,7 +49,7 @@ function Matrix(Op::ConcreteLazyOperator,m)
     Matrix(Op.L,m)
 end
 
-function *(Op::ConcreteLazyOperator,f::BasisExpansion)
+function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T,S}
     BasisExpansion(Op.range,Op.L*f.c)
 end
 
@@ -135,7 +135,57 @@ ProductOfBandedOperators(V) = ProductOfBandedOperators{dom(V[end]),ran(V[1])}(V)
 struct BlockLazyOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: LazyOperator
     Ops::Matrix{LazyOperator}
 end
-BlockLazyOperator(Ops) = BlockLazyOperator{𝕏,𝕏}(Ops)
+function BlockLazyOperator(Ops)
+    if typeof(Ops) <: Vector
+        BlockLazyOperator{𝕏,𝕏}(reshape(Ops,:,1))
+    else
+        BlockLazyOperator{𝕏,𝕏}(Ops)
+    end
+end
+
+# Here S is not a DirectSum
+function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S}
+    BasisExpansion(Op.range,[Op.L.Ops[i,1]*f.c for i in 1:size(Op.L.Ops,1)])
+end
+
+# Here S is a DirectSum
+function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S <: DirectSum}
+    #return Op[1:end,1]
+    out = Op[1:end,1]*f[1]
+    for i = 2:size(Op,2)
+        out += Op[1:end,i]*f[i]
+    end
+    out
+end
+
+size(L::BlockLazyOperator) = size(L.Ops)
+size(Op::ConcreteLazyOperator{D,R,T}) where {D, R, T <: BlockLazyOperator} = size(Op.L)
+
+size(L::BlockLazyOperator,j) = size(L.Ops,j)
+size(Op::ConcreteLazyOperator{D,R,T},j) where {D, R, T <: BlockLazyOperator} = size(Op.L,j)
+
+axes(L::BlockLazyOperator) = axes(L.Ops)
+axes(Op::ConcreteLazyOperator{D,R,T}) where {D, R, T <: BlockLazyOperator} = axes(Op.L)
+
+axes(L::BlockLazyOperator,j) = axes(L.Ops,j)
+axes(Op::ConcreteLazyOperator{D,R,T},j) where {D, R, T <: BlockLazyOperator} = axes(Op.L,j)
+
+function getindex(L::BlockLazyOperator,i::Int64,j::Int64)
+    L.Ops[i,j]
+end
+function getindex(L::BlockLazyOperator,i::Int64,j::UnitRange{Int64})
+    BlockLazyOperator(L.Ops[i,j])
+end
+function getindex(L::BlockLazyOperator,i::UnitRange{Int64},j::Int64)
+    BlockLazyOperator(L.Ops[i,j])
+end
+function getindex(L::BlockLazyOperator,i::UnitRange{Int64},j::UnitRange{Int64})
+    BlockLazyOperator(L.Ops[i,j])
+end
+
+function getindex(Op::ConcreteLazyOperator{D,R,T},i,j) where {D, R, T <: BlockLazyOperator}
+    ConcreteLazyOperator(Op.domain[j],Op.range[i],Op.L[i,j])
+end
 
 # momtm = matrix of matrices to matrix
 # will go recursive
@@ -158,6 +208,7 @@ function Matrix(Op::BlockLazyOperator,ns::Vector{Int64},ms::Vector{Int64})
     momtm(Matrix.(Op.Ops,nmat,mmat))
 end
 
+# divides n in to k "equal-sized" bins
 function binit(n,k)
     ((n+k-1:-1:n) .÷ k) |> Vector
 end

@@ -8,13 +8,8 @@ end
 ####################################
 cfd(sp::Jacobi) = ℕ₊
 
-
 function dim(sp::Jacobi)
     Inf
-end
-
-function pad(f::BasisExpansion{T},N) where T <: Jacobi
-    BasisExpansion(f.basis,pad(f.c,N))
 end
 
 function testconv(f::BasisExpansion{T}) where T <: Jacobi

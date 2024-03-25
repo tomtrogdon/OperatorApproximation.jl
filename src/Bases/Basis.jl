@@ -9,11 +9,24 @@ struct 𝕏 <: CoefficientDomain end ## for when multiplication is not defined
 
 struct DirectSum <: Basis
     bases::Vector{T} where T <: Basis
+    function DirectSum(b::Union{Vector{S},S}) where S <: Basis
+        if !(typeof(b) <: Vector)
+            return b
+        elseif length(b) == 1
+            return b[1]
+        else
+            new(b)
+        end
+    end
 end
 
-function bases(b::Basis)
-    [b]
-end
+getindex(b::DirectSum,i::Int64) = b.bases[i] |> DirectSum
+getindex(b::DirectSum,i::UnitRange{Int64}) = b.bases[i] |> DirectSum
+getindex(b::Basis,i) = getindex([b],i) |> DirectSum
+axes(b::DirectSum) = axes(b.bases)
+axes(b::DirectSum,i) = axes(b.bases,i)
+axes(b::Basis) = axes([b])
+axes(b::Basis,i) = axes([b],i)
 
 function bases(b::DirectSum)
     b.bases
@@ -49,8 +62,6 @@ end
 # (2) Each basis should have dim() implemented
 # (3) If it makes sense, a routine to evaluate the
 #     basis expansion should be implemented
-# (4) A transform should be implemented in the Operators 
-#     directory corresponding to the basis.
 
 include("BasisExpansion.jl")
 include("GridValues.jl")
