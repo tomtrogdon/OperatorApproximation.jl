@@ -3,7 +3,7 @@ function isconvertible(b1::Hardy,b2::Basis)
 end
 
 function conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: Interval}
-    if b2.GD <: DirectedLobattoMappedInterval
+    if typeof(b2.GD) <: DirectedLobattoMappedInterval
         basegrid =  n -> b2.GD.dgrid(n)
     else
         basegrid =  n -> b2.GD.grid(n)
