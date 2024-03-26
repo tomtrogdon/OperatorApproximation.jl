@@ -1,13 +1,34 @@
-struct ArgNum
+struct ArgNum <: Number
     z::ComplexF64
     θ::Float64
+end
+
+function real(z::ArgNum)
+    real(z.z)
+end
+
+function complex(z::ArgNum)
+    z.z
+end
+
+function imag(z::ArgNum)
+    imag(z.z)
+end
+
+function abs(z::ArgNum)
+    abs(z.z)
 end
 
 function *(a::Number,z::ArgNum)
     ArgNum(a*z.z,z.θ + angle(a))
 end
+
 function *(z::ArgNum,a::Number)
     ArgNum(a*z.z,z.θ + angle(a))
+end
+
+function -(z::ArgNum)
+    (-1)*z
 end
 
 function /(a::Number,z::ArgNum)
@@ -48,7 +69,7 @@ end
 
 function log(z::ArgNum)
     if abs(z.z) ≈ 0.0
-        return 1im*mmod(z.θ)
+        return 1im*mmod(z.θ) # return "finite part"
     elseif imag(z.z) ≈ 0.0 && real(z.z) < 0
         return log(abs.(z.z)) + 1im*π*sign(mmod(z.θ))
     else

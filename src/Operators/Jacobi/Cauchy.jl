@@ -13,7 +13,7 @@ function dist(z,n) # check if inside Bernstein ellipse that tends to
     ρ = 1 + 1/n
     a = (ρ+1/ρ)/2.0
     b = (ρ-1/ρ)/2.0
-    if real(z)^2/a^2 + imag(z)^2/b^2 <= 0.1
+    if real(z)^2/a^2 + imag(z)^2/b^2 <= 1
         return 1
     else
         return 0
@@ -28,7 +28,7 @@ function cauchy(a,b,seed,n,z::Number)
         while err > 1e-16
             v = fill(0.0im,m)
             v[1] = 1.0/(2im*pi)
-            c = ((jacobi(a,b,m-1) - z*I)\v)
+            c = ((jacobi(a,b,m-1) - complex(z)*I)\v)
             err = maximum(abs.(c[end-3:end]))
             m *= 2
         end
@@ -38,10 +38,11 @@ function cauchy(a,b,seed,n,z::Number)
     else
         c = fill(0.0im,n+3)
         c[1] = seed(z);
-        c[2] = z*c[1] - a(0)*c[1] + 1/(2im*pi)
+        Z = complex(z)
+        c[2] = Z*c[1] - a(0)*c[1] + 1/(2im*pi)
         c[2] = c[2]/b(0)
         for j = 1:n-1 # compute c_n
-            c[j+2] = z*c[j+1] - a(j)*c[j+1] - b(j-1)*c[j]
+            c[j+2] = Z*c[j+1] - a(j)*c[j+1] - b(j-1)*c[j]
             c[j+2] /= b(j)
         end
     end

@@ -106,6 +106,14 @@ struct ChebyshevInterval <: GridInterval
     end
 end
 
+struct LobattoInterval <: GridInterval
+    D::Interval
+    grid::Function
+    function ChebyshevInterval()
+        return new(UnitInterval(), Egrid)
+    end
+end
+
 Base.show(io::IO, ::MIME"text/plain", z::ChebyshevInterval)  =
            print(io, "ChebyshevInterval(",sprint(print,z.D),")")
 
@@ -172,6 +180,23 @@ struct ChebyshevMappedInterval <: GridInterval
     grid::Function
     function ChebyshevMappedInterval(a,b)
         return new(MappedInterval(a,b), Tgrid)
+    end
+end
+
+struct LobattoMappedInterval <: GridInterval
+    D::Interval
+    grid::Function
+    function LobattoMappedInterval(a,b)
+        return new(MappedInterval(a,b), Egrid)
+    end
+end
+
+struct DirectedLobattoMappedInterval <: GridInterval
+    D::Interval
+    grid::Function
+    dgrid::Function
+    function DirectedLobattoMappedInterval(a,b)
+        return new(MappedInterval(a,b), Egrid, DirectedEgrid)
     end
 end
 

@@ -33,6 +33,15 @@ function (P::BasisExpansion{Jacobi})(X::Number) # Clenshaw's algorithm
 end
 
 Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
+Egrid = n -> cos.( (0:n-1)/(n-1) * pi ) |> reverse
+
+function DirectedEgrid(n)
+    v = Egrid(n)
+    v1 = ArgNum(v[1],0.0)
+    vn = ArgNum(v[end],-pi)
+    vcat([v1],v[2:end-1],[vn])
+end
+
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation
     bfun = n -> (a+b==-1 && n==0) ? √(2*a*b) :
@@ -125,4 +134,11 @@ normalization(n::Int,α::Real,β::Real) = 2^(α+β)*gamma(n+α+1)*gamma(n+β+1)/
 stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
     (x = 2/(1-z);HypergeometricFunctions.mxa_₂F₁(n+1,n+α+1,2n+α+β+2,x))/2
 stieltjesjacobimoment(α::Real,β::Real,z) = stieltjesjacobimoment(α,β,0,z)
-JacobiSeed(α,β,z) = 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
+
+function JacobiSeed(α,β)
+    if α == 0.0 && β == 0.0
+        return z -> 1im/(4*pi)*(log(-1-z)-log(1-z))
+    else
+        return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
+    end
+end
