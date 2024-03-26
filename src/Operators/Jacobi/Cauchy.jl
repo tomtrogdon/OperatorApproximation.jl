@@ -46,7 +46,7 @@ function cauchy(a,b,seed,n,z::Number)
             c[j+2] /= b(j)
         end
     end
-    c[1:n+1]
+    c[1:n+1] 
 end
 
 function cauchy(a,b,seed,n,z::Vector)  # vectorize!
