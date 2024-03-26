@@ -59,5 +59,6 @@ end
 
 function BasisExpansion(f::Function,basis::GridValues,N::Integer)
     grid = basis.GD.D.map(basis.GD.grid(N))
+    display(grid)
     BasisExpansion(basis,f.(grid))
 end

@@ -23,6 +23,15 @@ end
 ####################################
 ####################################
 
+function (P::BasisExpansion{Jacobi})(X::Number) # Clenshaw's algorithm
+    n = P.c |> length
+    α = P.basis.α
+    β = P.basis.β
+    x = P.basis.GD.D.imap(X)
+    a,b = Jacobi_ab(α,β)
+    (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
+end
+
 Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation

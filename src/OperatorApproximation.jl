@@ -12,7 +12,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
     Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘, ⊕, FloquetDerivative, plot, plot!, eigen, \,
-    ploteval, ploteval!, UnitCircle, MappedCircle, PeriodicCircle, PeriodicMappedCircle, Laurent, Hardy,
+    ploteval, ploteval!, UnitCircle, MappedCircle, PeriodicCircle, PeriodicMappedCircle, Laurent, Hardy, Jacobi,
     CauchyTransform, Exterior, Interior, CauchyOperator
 
 struct StandardBasisVector
@@ -56,8 +56,6 @@ include("Domain.jl")
 include("Bases/Basis.jl")
 include("Operators/AbstractOperators.jl")
 include("Operators/ConcreteOperators.jl")
-include("ArgNum.jl")
-include("Cauchy.jl")
 include("Solvers.jl")
 
 global N = "adaptive"

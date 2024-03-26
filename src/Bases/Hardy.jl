@@ -53,3 +53,12 @@ function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: C
     end
     sum
 end
+
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Interval}
+    α = P.basis.GD.GD.α
+    β = P.basis.GD.GD.β
+    s = abs(P.basis.GD.GD.b - P.basis.GD.GD.a)/2
+    a, b = Jacobi_ab(α,β)
+    seed = z -> JacobiSeed(α,β,z)
+    dot(cauchy(a,b,seed,length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*s^(1 + α + β)
+end

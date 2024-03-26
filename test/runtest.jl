@@ -94,7 +94,7 @@ end
     @test abs(u(0) - airyai(0)) < 1e-10
 end
 
-@testset "OperatorApproximation.jl: Riemann-Hilbert tests" begin
+@testset "OperatorApproximation.jl: Riemann-Hilbert/Cauchy tests" begin
     gd = PeriodicCircle()
     sp = Laurent(gd)
     g = z -> 3 + z
@@ -105,5 +105,32 @@ end
     u = \(Cp - M*Cm, z -> g(z) -1)
     m = CauchyTransform()*u
     @test abs(m(2im)) < 1e-10 && abs(m(.3) + 1 - g(.3)) < 1e-10
+
+    # Note: This computes integrals
+    #
+    # \frac{1}{2 \pi i} \int_a^b \frac{f(s)}{s -z} w(s) d s
+    #
+    # where w(s) \geq 0 and
+    #
+    # \left| \int_a^b w(s) ds \right| = 1
+    #
+    truth = 0.053855186206159714*im  # true integral wrt normalized weight function
+    f = x -> sin.(x)
+    gd = JacobiMappedInterval(-2.0,2.0,0.5,0.5)
+    sp = Jacobi(0.5,0.5,gd)
+    ff = BasisExpansion(f,sp,100)
+    @test abs(ff(.3) - f(.3)) < 1e-10
+    cff = CauchyTransform()*ff
+    z = 2.1
+    @test abs(cff(z)-truth) < 1e-10
+
+    truth = 0.0808961206892101 -  0.1554484139468048*im
+    f = x -> sin.(x)
+    gd = JacobiMappedInterval(0.0,1im + 1.0,0.5,0.5)
+    sp = Jacobi(0.5,0.5,gd)
+    ff = BasisExpansion(f,sp,100)
+    @test abs(ff(.3im + .3) - f(.3im + .3)) < 1e-10
+    cff = CauchyTransform()*ff
+    @test abs(cff(.1) - truth) < 1e-10
 end
 

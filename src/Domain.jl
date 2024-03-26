@@ -137,7 +137,7 @@ struct JacobiInterval <: GridInterval
     grid::Function
     function JacobiInterval(α,β)
         a, b = Jacobi_ab(α,β)
-        gridfun = n -> Gauss_quad(a,b,n)
+        gridfun = n -> Gauss_quad(a,b,n)[1]
         return new(UnitInterval(),α,β, gridfun)
     end
 end
