@@ -59,7 +59,6 @@ struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain}
 end
 FourierEvaluationOperator(grid) = FourierEvaluationOperator{ℤ,𝔼}(grid)
 
-
 struct FixedGridOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Vector
     a::Function # Jacobi coefficients
@@ -72,6 +71,14 @@ struct FixedGridFourierEvaluationOperator{T <: CoefficientDomain, S <: Coefficie
     grid::Vector
 end
 FixedGridFourierEvaluationOperator(grid) = FixedGridFourierEvaluationOperator{ℤ,𝔼}(grid)
+
+struct OPCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Function
+    a::Function # Jacobi coefficients
+    b::Function
+    seed::Function
+end
+OPCauchyEvaluationOperator(grid,a,b,seed) = OPCauchyEvaluationOperator{ℕ₊,𝔼}(grid,a,b,seed)
 
 mutable struct OPEigenTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: NaiveTransform
     const a::Function # Jacobi coefficients
@@ -142,6 +149,10 @@ end
 
 function Matrix(Op::FixedGridOPEvaluationOperator,m)  # only one dim for Functional
     return poly(Op.a,Op.b,m,Op.grid)
+end
+
+function Matrix(Op::OPCauchyEvaluationOperator,n,m)
+    cauchy(Op.a,Op.b,seed,m,Op.grid(n)) 
 end
 
 function Matrix(Op::OPEigenTransform,n)
