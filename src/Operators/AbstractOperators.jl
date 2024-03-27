@@ -99,10 +99,16 @@ struct Multiplication <: AbstractOperator
     f::Union{Function,BasisExpansion}
 end
 
-### SEMI ABSTRACT OPERATOR ###
+### SEMI ABSTRACT OPERATORS ###
 struct Conversion <: AbstractOperator
     range::Basis
 end
+
+struct BoundaryValue <: AbstractOperator
+    o::Int64
+    range::Basis
+end
+### ###
 
 struct CauchyTransform <: AbstractOperator end
 

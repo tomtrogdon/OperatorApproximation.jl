@@ -42,7 +42,6 @@ function DirectedEgrid(n)
     vcat([v1],v[2:end-1],[vn])
 end
 
-
 function Jacobi_ab(a,b) #TODO: simplify evaluation
     bfun = n -> (a+b==-1 && n==0) ? √(2*a*b) :
         2*sqrt(n+1)*sqrt(n+a+1)*sqrt(n+b+1)*sqrt(n+a+b+1)/
@@ -140,5 +139,21 @@ function JacobiSeed(α,β)
         return z -> 1im/(4*pi)*(log(-1-z)-log(1-z))
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
+    end
+end
+
+function JacobiSeedPos(α,β)
+    if α == 0.0 && β == 0.0
+        return z -> 1im/(4*pi)*(log(1+z)-1im*pi-log(1-z))
+    else
+        return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z + 1im*eps())
+    end
+end
+
+function JacobiSeedNeg(α,β)
+    if α == 0.0 && β == 0.0
+        return z -> 1im/(4*pi)*(log(1+z)+1im*pi-log(1-z))
+    else
+        return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z - 1im*eps())
     end
 end

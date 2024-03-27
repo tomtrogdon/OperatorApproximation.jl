@@ -1,4 +1,4 @@
-using OperatorApproximation, SpecialFunctions
+using OperatorApproximation, SpecialFunctions, LinearAlgebra
 using Test
 
 @testset "OperatorApproximation.jl: Basic tests" begin
@@ -114,6 +114,16 @@ end
     #
     # \left| \int_a^b w(s) ds \right| = 1
     #
+    truth = 0.009366780921585525*im  # true integral wrt normalized weight function
+    f = x -> sin.(x)
+    gd = JacobiMappedInterval(-1.0,1.0,0.5,0.5)
+    sp = Jacobi(0.5,0.5,gd)
+    ff = BasisExpansion(f,sp,100)
+    @test abs(ff(.3) - f(.3)) < 1e-10
+    cff = CauchyTransform()*ff
+    z = 2.1
+    @test abs(cff(z) - truth) < 1e-10
+
     truth = 0.053855186206159714*im  # true integral wrt normalized weight function
     f = x -> sin.(x)
     gd = JacobiMappedInterval(-2.0,2.0,0.5,0.5)
@@ -132,5 +142,25 @@ end
     @test abs(ff(.3im + .3) - f(.3im + .3)) < 1e-10
     cff = CauchyTransform()*ff
     @test abs(cff(.1) - truth) < 1e-10
+
+    f = x -> sin.(x)
+    gd0 = JacobiMappedInterval(-1.0,1.0,0.0,0.0)
+    sp = Jacobi(0.0,0.0,gd0)
+    ff = BasisExpansion(f,sp,100)
+
+    gd = DirectedLobattoMappedInterval(-1,1) 
+
+    Bp = BoundaryValue(1,GridValues(gd))
+    Cp = Bp*CauchyTransform()
+    CCp = Cp*ff.basis
+
+    Bm = BoundaryValue(-1,GridValues(gd))
+    Cm = Bm*CauchyTransform()
+    CCm = Cm*ff.basis
+
+    E = Conversion(GridValues(gd))
+    CE = E*ff.basis
+
+    @test norm(Matrix(CCp,10,10) - Matrix(CCm,10,10) - Matrix(CE,10,10)/2) < 1e-10
 end
 
