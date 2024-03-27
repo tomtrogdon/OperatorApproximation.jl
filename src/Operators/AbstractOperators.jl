@@ -66,12 +66,24 @@ function -(L::Operator)
     (-1)*L
 end
 
+function -(L::BlockAbstractOperator)
+    BlockAbstractOperator(-L.Ops)
+end
+
 function +(Op1::AbstractOperator,Op2::AbstractOperator)
     SumOfAbstractOperators([Op1;Op2],[1;1])
 end
 
 function -(Op1::AbstractOperator,Op2::AbstractOperator)
     SumOfAbstractOperators([Op1;Op2],[1;-1])
+end
+
+function +(Op1::BlockAbstractOperator,Op2::BlockAbstractOperator)
+    BlockAbstractOperator(Op1.Ops .+ Op2.Ops)
+end
+
+function -(Op1::BlockAbstractOperator,Op2::BlockAbstractOperator)
+    BlockAbstractOperator(Op1.Ops .- Op2.Ops)
 end
 
 function +(S1::SumOfAbstractOperators{T1},S2::SumOfAbstractOperators{T2}) where {T1 <: AbstractOperator, T2 <:AbstractOperator}

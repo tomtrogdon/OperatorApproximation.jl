@@ -75,34 +75,16 @@ function *(a::Number,L::SumOfLazyOperators)
     SumOfLazyOperators(L.Ops,a*L.c)
 end
 
-# Repeat for +/- sign
-# could be simplified using *
-for op in (:+,:-)
-    @eval begin
-        function $op(L::SumOfLazyOperators)
-            SumOfLazyOperators(L.Ops,$op(L.c))
-        end
+function getindex(Op::ConcreteLazyOperator{D,R,T},n) where {D,R,T <: SumOfLazyOperators}
+    ConcreteLazyOperator(Op.domain,Op.range,Op.L.Ops[n])
+end
 
-        function $op(L::LazyOperator)
-            $op(1.0)*L
-        end
-
-        function $op(L1::SumOfLazyOperators,L2::SumOfLazyOperators)
-            SumOfLazyOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
-        end
-
-        function $op(L1::SumOfLazyOperators,L2::LazyOperator)
-            $op(L1,1.0*L2)
-        end
-
-        function $op(L1::LazyOperator,L2::SumOfLazyOperators)
-            $op(1.0*L1,L2)
-        end
-
-        function $op(L1::LazyOperator,L2::LazyOperator)
-            L1 + $op(1.0)*L2
-        end
+function Matrix(Op::ConcreteLazyOperator{D,R,T},n,m) where {D,R,T <: SumOfLazyOperators}
+    A = Op.L.c[1]*Matrix(Op[1],n,m)
+    for i = 2:length(Op.L.c)
+        A += Op.L.c[i]*Matrix(Op[i],n,m)
     end
+    A
 end
 
 function Matrix(Op::SumOfLazyOperators,n,m)
@@ -142,6 +124,42 @@ function BlockLazyOperator(Ops)
         BlockLazyOperator{𝕏,𝕏}(Ops)
     end
 end
+
+# Repeat for +/- sign
+# could be simplified using *
+for op in (:+,:-)
+    @eval begin
+        function $op(L::SumOfLazyOperators)
+            SumOfLazyOperators(L.Ops,$op(L.c))
+        end
+
+        function $op(L::LazyOperator)
+            $op(1.0)*L
+        end
+
+        function $op(L1::SumOfLazyOperators,L2::SumOfLazyOperators)
+            SumOfLazyOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
+        end
+
+        function $op(L1::SumOfLazyOperators,L2::LazyOperator)
+            $op(L1,1.0*L2)
+        end
+
+        function $op(L1::LazyOperator,L2::SumOfLazyOperators)
+            $op(1.0*L1,L2)
+        end
+
+        function $op(L1::LazyOperator,L2::LazyOperator)
+            L1 + $op(1.0)*L2
+        end
+
+        function $op(L1::BlockLazyOperator,L2::BlockLazyOperator)
+            $op.(L1,L2)
+        end
+    end
+end
+
+
 
 # Here S is not a DirectSum
 function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S}
@@ -238,7 +256,7 @@ function divide_DOF(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where
     ns, ms
 end
 
-function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis,T <: BlockLazyOperator}
+function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis, T <: BlockLazyOperator}
     ns, ms = divide_DOF(Op,n,m)
     Matrix(Op.L,ns,ms)
 end

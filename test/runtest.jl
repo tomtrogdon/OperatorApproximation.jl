@@ -162,5 +162,23 @@ end
     CE = E*ff.basis
 
     @test norm(Matrix(CCp,10,10) - Matrix(CCm,10,10) - Matrix(CE,10,10)/2) < 1e-10
+
+    g = x -> 1 + 0.5exp(-30x^2)
+    f = x -> g(x) - 1
+    gd1 = JacobiMappedInterval(-1,1.0,0.0,0.0)
+    s1 = Jacobi(0.0,0.0,gd1)
+
+    dgd1 = DirectedLobattoMappedInterval(-1,1)
+    gv1 = GridValues(dgd1)
+
+    Cp = BoundaryValue(1,gv1)*CauchyTransform() 
+    Cm = BoundaryValue(-1,gv1)*CauchyTransform() 
+    M = Multiplication(g)
+    MCm = M*Cm
+    S = Cp - MCm
+    cS = S*s1
+    u = \(cS,f,100)
+    truth = 1.0220013279200346
+    @test abs(truth - (CauchyTransform()*u)(1im) -1) < 1e-10
 end
 

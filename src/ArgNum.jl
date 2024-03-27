@@ -1,6 +1,9 @@
 struct ArgNum <: Number
     z::ComplexF64
     θ::Float64
+    function ArgNum(z::Number,θ::Float64)
+        new(z |> complex,θ |> mmod)
+    end
 end
 
 function real(z::ArgNum)
@@ -46,10 +49,11 @@ function +(z::ArgNum,a::Number)
 end
 
 function -(a::Number,z::ArgNum)
-    ArgNum(z.z - a,z.θ)
+    a + (-z)
 end
+
 function -(z::ArgNum,a::Number)
-    ArgNum(z.z - a,z.θ)
+    z + (-a)
 end
 
 function length(a::ArgNum)
