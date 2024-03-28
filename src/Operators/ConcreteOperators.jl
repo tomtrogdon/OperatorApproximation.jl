@@ -154,7 +154,7 @@ for op in (:+,:-)
         end
 
         function $op(L1::BlockLazyOperator,L2::BlockLazyOperator)
-            $op.(L1,L2)
+            BlockLazyOperator($op.(L1.Ops,L2.Ops))
         end
     end
 end
@@ -352,7 +352,6 @@ end
 # include("BiInfinite.jl")
 include("LazyMatrix.jl")
 include("Dense.jl")
-
 include("GridValues/GridValues.jl")
 include("Jacobi/Jacobi.jl")
 include("Ultraspherical/Ultraspherical.jl")

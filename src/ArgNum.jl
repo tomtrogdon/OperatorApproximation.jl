@@ -44,6 +44,7 @@ end
 function +(a::Number,z::ArgNum)
     ArgNum(z.z + a,z.θ)
 end
+
 function +(z::ArgNum,a::Number)
     ArgNum(z.z + a,z.θ)
 end

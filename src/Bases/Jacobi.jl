@@ -3,6 +3,7 @@ struct Jacobi <: Basis
     β::Number
     GD::GridInterval
 end
+
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
@@ -30,16 +31,6 @@ function (P::BasisExpansion{Jacobi})(X::Number) # Clenshaw's algorithm
     x = P.basis.GD.D.imap(X)
     a,b = Jacobi_ab(α,β)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
-end
-
-Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
-Egrid = n -> cos.( (0:n-1)/(n-1) * pi ) |> reverse
-
-function DirectedEgrid(n)
-    v = Egrid(n)
-    v1 = ArgNum(v[1],0.0)
-    vn = ArgNum(v[end],-pi)
-    vcat([v1],v[2:end-1],[vn])
 end
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation
@@ -139,11 +130,11 @@ function matanh(z)
 end
 
 function matanh_p(z) # limit from above for z > 1
-    1/2*(log(1+z |> complex) - log(1-z |> complex)) + 1im*pi
+    1/2*(log(1+0im+z) - log(1+0im-z)) + 1im*pi
 end
 
 function matanh_m(z) # limit from below for z > 1
-    1/2*(log(1+z |> complex) - log(1-z |> complex))
+    1/2*(log(1+0im+z) - log(1+0im-z))
 end
 
 function JacobiSeed(α,β)
@@ -154,9 +145,10 @@ function JacobiSeed(α,β)
     elseif α == 0.0 && β == 0.5
         return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh(sqrt(2)/sqrt(1-z)))
     elseif α == -0.5 && β == 0.0
-        return z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((3 + z - 2*sqrt(2)*sqrt(1+z))/(z-1))
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
     elseif α == 0.0 && β == -0.5
-        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1-z)*log((3 - z - 2*sqrt(2)*sqrt(1-z))/(-z-1))
+        out = JacobiSeed(β,α)
+        return z -> -out(-z)
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
     end
@@ -166,13 +158,14 @@ function JacobiSeedPos(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(1+z)-1im*pi-log(1-z))
     elseif α == 0.5 && β == 0.0
-        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh(sqrt(2)/sqrt(1+z)))
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh_m(sqrt(2)/sqrt(1+z)))
     elseif α == 0.0 && β == 0.5
-        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh(sqrt(2)/sqrt(1-z)))
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh_m(sqrt(2)/sqrt(1-z)))
     elseif α == -0.5 && β == 0.0
-        return z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((3 + z - 2*sqrt(2)*sqrt(1+z))/(z-1))
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
     elseif α == 0.0 && β == -0.5
-        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1-z)*log((3 - z - 2*sqrt(2)*sqrt(1-z))/(-z-1))
+        out = JacobiSeed(β,α)
+        return z -> -out(-z)
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z + 1im*eps())
     end
@@ -181,6 +174,15 @@ end
 function JacobiSeedNeg(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(1+z)+1im*pi-log(1-z))
+    elseif α == 0.5 && β == 0.0
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*(matanh_m(sqrt(2)/sqrt(1+z))+ 1im*pi))
+    elseif α == 0.0 && β == 0.5
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*(matanh_m(sqrt(2)/sqrt(1-z)) - 1im*pi))
+    elseif α == -0.5 && β == 0.0
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*(log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex))) + 2im*pi)
+    elseif α == 0.0 && β == -0.5
+        out = JacobiSeed(β,α)
+        return z -> -out(-z)
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z - 1im*eps())
     end

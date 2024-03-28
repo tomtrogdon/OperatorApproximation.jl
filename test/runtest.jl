@@ -209,5 +209,35 @@ end
     truth = 1.0220013279200346
     approx = (CauchyTransform()*u[1])(1im) + (CauchyTransform()*u[2])(1im) + 1
     @test abs(truth - approx) < 1e-10
+
+    g = x -> 1 + 0.5exp(-30x^4)
+    f = x -> g(x) - 1
+    gd1 = JacobiMappedInterval(-1,0,0.0,0.0)
+    gd2 = JacobiMappedInterval(0,1im,0.0,0.0)
+    s1 = Jacobi(0.0,0.0,gd1)
+    s2 = Jacobi(0.0,0.0,gd2)
+
+    dgd1 = DirectedLobattoMappedInterval(-1,0)
+    dgd2 = DirectedLobattoMappedInterval(0,1im)
+    gv1 = GridValues(dgd1)
+    gv2 = GridValues(dgd2)
+
+    r1 = BoundaryValue(1,gv1)*CauchyTransform() ⊞ Conversion(gv1)*CauchyTransform()
+    r2 = Conversion(gv2)*CauchyTransform() ⊞ BoundaryValue(1,gv2)*CauchyTransform()
+    Cp = r1 ⊘ r2
+
+    M = Multiplication(g)
+
+    r1 = M*BoundaryValue(-1,gv1)*CauchyTransform() ⊞ M*Conversion(gv1)*CauchyTransform()
+    r2 = M*Conversion(gv2)*CauchyTransform() ⊞ M*BoundaryValue(-1,gv2)*CauchyTransform()
+    MCm = r1 ⊘ r2
+    S = Cp - MCm
+
+    cS = S*(s1 ⊕ s2)
+    u = \(cS,[f,f],100)
+
+    truth = 0.9758397860028803 + 0.016084935690312958*im
+    approx = (CauchyTransform()*u)(1.0) + 1
+    @test abs(truth - approx) < 1e-10
 end
 

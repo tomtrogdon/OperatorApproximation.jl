@@ -4,6 +4,30 @@ abstract type Circle <: Domain end
 abstract type GridDomain end
 abstract type GridRegion <: GridDomain end  # the grid is on the boundary
 
+Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
+Egrid = n -> cos.( (0:n-1)/(n-1) * pi ) |> reverse
+LEgrid = n -> cos.( (1:n)/(n) * pi ) |> reverse
+REgrid = n -> cos.( (0:n-1)/(n) * pi ) |> reverse
+
+function DirectedEgrid(n)
+    v = Egrid(n)
+    v1 = ArgNum(v[1],0.0)
+    vn = ArgNum(v[end],-pi)
+    vcat([v1],v[2:end-1],[vn])
+end
+
+function DirectedLEgrid(n)
+    v = LEgrid(n)
+    v1 = ArgNum(v[1],0.0)
+    vcat([v1],v[2:end])
+end
+
+function DirectedREgrid(n)
+    v = REgrid(n)
+    vn = ArgNum(v[end],-pi)
+    vcat(v[1:end-1],[vn])
+end
+
 struct Exterior{T <: GridDomain} <: GridRegion
     D::Domain
     grid::Function
@@ -109,8 +133,24 @@ end
 struct LobattoInterval <: GridInterval
     D::Interval
     grid::Function
-    function ChebyshevInterval()
+    function LobattoInterval()
         return new(UnitInterval(), Egrid)
+    end
+end
+
+struct LLobattoInterval <: GridInterval # probably a bad name for this
+    D::Interval
+    grid::Function
+    function LLobattoInterval()
+        return new(UnitInterval(), Lgrid)
+    end
+end
+
+struct RLobattoInterval <: GridInterval # probably a bad name for this
+    D::Interval
+    grid::Function
+    function LLobattoInterval()
+        return new(UnitInterval(), Rgrid)
     end
 end
 
@@ -191,7 +231,25 @@ struct LobattoMappedInterval <: GridInterval
     end
 end
 
-struct DirectedLobattoMappedInterval <: GridInterval
+struct LLobattoMappedInterval <: GridInterval
+    D::Interval
+    grid::Function
+    function LLobattoMappedInterval(a,b)
+        return new(MappedInterval(a,b), Lgrid)
+    end
+end
+
+struct RLobattoMappedInterval <: GridInterval
+    D::Interval
+    grid::Function
+    function RLobattoMappedInterval(a,b)
+        return new(MappedInterval(a,b), Rgrid)
+    end
+end
+
+abstract type DirectedGridInterval <: GridInterval end
+
+struct DirectedLobattoMappedInterval <: DirectedGridInterval
     D::Interval
     grid::Function
     dgrid::Function
@@ -199,6 +257,25 @@ struct DirectedLobattoMappedInterval <: GridInterval
         return new(MappedInterval(a,b), Egrid, DirectedEgrid)
     end
 end
+
+struct DirectedLLobattoMappedInterval <: DirectedGridInterval
+    D::Interval
+    grid::Function
+    dgrid::Function
+    function DirectedLLobattoMappedInterval(a,b)
+        return new(MappedInterval(a,b), LEgrid, DirectedLEgrid)
+    end
+end
+
+struct DirectedRLobattoMappedInterval <: DirectedGridInterval
+    D::Interval
+    grid::Function
+    dgrid::Function
+    function DirectedRLobattoMappedInterval(a,b)
+        return new(MappedInterval(a,b), REgrid, DirectedREgrid)
+    end
+end
+
 
 struct PeriodicMappedInterval <: GridInterval
     D::Interval

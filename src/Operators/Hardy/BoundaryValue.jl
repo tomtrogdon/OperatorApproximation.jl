@@ -4,7 +4,7 @@ function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: Interval}
         return
     end
 
-    if typeof(B.range.GD) <: DirectedLobattoMappedInterval
+    if typeof(B.range.GD) <: DirectedGridInterval
         basegrid =  n -> B.range.GD.dgrid(n)
     else
         basegrid =  n -> B.range.GD.grid(n)
