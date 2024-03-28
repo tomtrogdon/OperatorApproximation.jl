@@ -19,6 +19,10 @@ function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
 end
 
+function ⊕(f::BasisExpansion{T}) where T
+   f
+end
+
 function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T, S}
     BasisExpansion(f.basis ⊕ g.basis, [f.c,g.c])
 end
