@@ -28,7 +28,7 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector
     end
     sol = Op\vcat(rhss...)
     parted_sol = part_vec(sol,ms)
-    BasisExpansion.(domains,parted_sol)
+    ⊕(BasisExpansion.(domains,parted_sol)...)
 end
 
 function \(L::ConcreteLazyOperator{D,R,T},b::Vector,N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}

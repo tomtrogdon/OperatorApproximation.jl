@@ -13,7 +13,7 @@ axes(b::BasisExpansion{T}) where T = axes([b])
 axes(b::BasisExpansion{T},i) where T = axes([b],i)
 size(b::BasisExpansion{T}) where T <: DirectSum = size(b.basis.bases)
 size(b::BasisExpansion{T},i) where T <: DirectSum = size(b.basis.bases,i)
-
+lastindex(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
 
 function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
@@ -76,16 +76,16 @@ function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot(x, y |> real)
-    plot!(x, y |> imag)
+    plot(real(x) + imag(x), y |> real)
+    plot!(real(x) + imag(x), y |> imag)
 end
 
 function plot!(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot!(x, y |> real)
-    plot!(x, y |> imag)
+    plot!(real(x) + imag(x), y |> real)
+    plot!(real(x) + imag(x), y |> imag)
 end
 
 function pad(v::Vector,n::Int64)

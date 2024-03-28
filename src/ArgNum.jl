@@ -82,9 +82,11 @@ function log(z::ArgNum)
 end
 
 function sqrt(z::ArgNum)
-    if imag(z.z) ≈ 0.0 && real(z.z) < 0
-        return sign(mmod(z.θ))*sqrt(abs(z.z))
+    if imag(z.z) ≈ 0.0 && real(z.z) <= 0
+        Z = sign(z.θ)*sqrt(abs(z.z))
+        return ArgNum(Z, z.θ - angle(Z))
     else
-        return sqrt(z.z)
+        Z = sqrt(z.z)
+        return ArgNum(Z,z.θ - angle(Z))
     end
 end

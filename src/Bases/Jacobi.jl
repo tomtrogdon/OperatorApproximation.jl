@@ -134,9 +134,29 @@ stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
     (x = 2/(1-z);HypergeometricFunctions.mxa_₂F₁(n+1,n+α+1,2n+α+β+2,x))/2
 stieltjesjacobimoment(α::Real,β::Real,z) = stieltjesjacobimoment(α,β,0,z)
 
+function matanh(z)
+    1/2*(log(1+z) - log(1-z))
+end
+
+function matanh_p(z) # limit from above for z > 1
+    1/2*(log(1+z |> complex) - log(1-z |> complex)) + 1im*pi
+end
+
+function matanh_m(z) # limit from below for z > 1
+    1/2*(log(1+z |> complex) - log(1-z |> complex))
+end
+
 function JacobiSeed(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(-1-z)-log(1-z))
+    elseif α == 0.5 && β == 0.0
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh(sqrt(2)/sqrt(1+z)))
+    elseif α == 0.0 && β == 0.5
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh(sqrt(2)/sqrt(1-z)))
+    elseif α == -0.5 && β == 0.0
+        return z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((3 + z - 2*sqrt(2)*sqrt(1+z))/(z-1))
+    elseif α == 0.0 && β == -0.5
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1-z)*log((3 - z - 2*sqrt(2)*sqrt(1-z))/(-z-1))
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
     end
@@ -145,6 +165,14 @@ end
 function JacobiSeedPos(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(1+z)-1im*pi-log(1-z))
+    elseif α == 0.5 && β == 0.0
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh(sqrt(2)/sqrt(1+z)))
+    elseif α == 0.0 && β == 0.5
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh(sqrt(2)/sqrt(1-z)))
+    elseif α == -0.5 && β == 0.0
+        return z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((3 + z - 2*sqrt(2)*sqrt(1+z))/(z-1))
+    elseif α == 0.0 && β == -0.5
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1-z)*log((3 - z - 2*sqrt(2)*sqrt(1-z))/(-z-1))
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z + 1im*eps())
     end
