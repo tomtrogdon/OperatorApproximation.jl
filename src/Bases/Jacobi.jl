@@ -126,29 +126,28 @@ stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
 stieltjesjacobimoment(α::Real,β::Real,z) = stieltjesjacobimoment(α,β,0,z)
 
 function matanh(z)
-    1/2*(log(1+z) - log(1-z))
+    1/2*(log(1+z) - log(-1+z))
 end
 
 function matanh_p(z) # limit from above for z > 1
-    1/2*(log(1+0im+z) - log(1+0im-z)) + 1im*pi
+    1/2*(log(1+0im+z) - log(-1+0im+z)) + 1im*pi
 end
 
 function matanh_m(z) # limit from below for z > 1
-    1/2*(log(1+0im+z) - log(1+0im-z))
+    1/2*(log(1+0im+z) - log(-1+0im+z))
 end
 
 function JacobiSeed(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(-1-z)-log(1-z))
-    elseif α == 0.5 && β == 0.0
-        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh(sqrt(2)/sqrt(1+z)))
-    elseif α == 0.0 && β == 0.5
-        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh(sqrt(2)/sqrt(1-z)))
+    elseif α == 0.5 && β == 0.0 # log singularity at z = -1
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1 -z + 0im)*matanh(sqrt(1-z+ 0im)/sqrt(2)))
+    elseif α == 0.0 && β == 0.5 # log singularity at z = 1
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z + 0im)*matanh(sqrt(1+z+ 0im)/sqrt(2)))
     elseif α == -0.5 && β == 0.0
-        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
+        z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1-z +0im)*log((-z-1)/(3 - complex(z) - 2*sqrt(2)*sqrt(1 - z |> complex)))
     elseif α == 0.0 && β == -0.5
-        out = JacobiSeed(β,α)
-        return z -> -out(-z)
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z +0im)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
     end
@@ -157,15 +156,14 @@ end
 function JacobiSeedPos(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(1+z)-1im*pi-log(1-z))
-    elseif α == 0.5 && β == 0.0
-        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh_m(sqrt(2)/sqrt(1+z)))
-    elseif α == 0.0 && β == 0.5
-        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh_m(sqrt(2)/sqrt(1-z)))
+    elseif α == 0.5 && β == 0.0 # log singularity at z = -1
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*matanh_m(sqrt(1-z)/sqrt(2)))
+    elseif α == 0.0 && β == 0.5 # log singularity at z = 1
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*matanh_m(sqrt(1+z)/sqrt(2)))
     elseif α == -0.5 && β == 0.0
-        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
+        return z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1-z)*(log((-z-1)/(3 - complex(z) - 2*sqrt(2)*sqrt(1 - z |> complex))))
     elseif α == 0.0 && β == -0.5
-        out = JacobiSeed(β,α)
-        return z -> -out(-z)
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z + 1im*eps())
     end
@@ -174,15 +172,14 @@ end
 function JacobiSeedNeg(α,β)
     if α == 0.0 && β == 0.0
         return z -> 1im/(4*pi)*(log(1+z)+1im*pi-log(1-z))
-    elseif α == 0.5 && β == 0.0
-        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*(matanh_m(sqrt(2)/sqrt(1+z))+ 1im*pi))
-    elseif α == 0.0 && β == 0.5
-        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*(matanh_m(sqrt(2)/sqrt(1-z)) - 1im*pi))
+    elseif α == 0.5 && β == 0.0 # log singularity at z = -1
+        return z -> -1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1-z)*(matanh_m(sqrt(1-z)/sqrt(2)) - 1im*pi))
+    elseif α == 0.0 && β == 0.5 # log singularity at z = 1
+        return z -> 1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*(matanh_m(sqrt(1+z)/sqrt(2)) + 1im*pi))
     elseif α == -0.5 && β == 0.0
-        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*(log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex))) + 2im*pi)
+        return z -> 1/(4im*sqrt(2)*pi)*1/sqrt(1-z)*(log((-z-1)/(3 - complex(z) - 2*sqrt(2)*sqrt(1 - z |> complex))) - 2im*pi)
     elseif α == 0.0 && β == -0.5
-        out = JacobiSeed(β,α)
-        return z -> -out(-z)
+        return z -> -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*(log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex))) + 2im*pi)
     else
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z - 1im*eps())
     end
