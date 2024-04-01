@@ -14,6 +14,46 @@ struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Matrix{T}
 end
 
+struct DiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
+    Ops::Vector{T}
+end
+
+size(B::BlockAbstractOperator) = size(B.Ops)
+size(B::BlockAbstractOperator,i) = size(B.Ops,i)
+size(B::DiagonalAbstractOperator) = size(B.Ops)
+axes(B::BlockAbstractOperator,j) = axes(B.Ops,j)
+
+function getindex(L::BlockAbstractOperator,i::Int64,j::Int64)
+    L.Ops[i,j]
+end
+function getindex(L::BlockAbstractOperator,i::Int64,j::UnitRange{Int64})
+    BlockAbstractOperator(reshape(L.Ops[i,j],1,:))
+end
+function getindex(L::BlockAbstractOperator,i::UnitRange{Int64},j::Int64)
+    BlockAbstractOperator(reshape(L.Ops[i,j],:,1))
+end
+function getindex(L::BlockAbstractOperator,i::UnitRange{Int64},j::UnitRange{Int64})
+    BlockAbstractOperator(L.Ops[i,j])
+end
+
+####
+function ⊕(A1::AbstractOperator,A2::AbstractOperator)
+    DiagonalAbstractOperator([A1, A2])
+end
+
+function ⊕(A1::DiagonalAbstractOperator,A2::AbstractOperator)
+    DiagonalAbstractOperator(vcat(A1.Ops, [A2]))
+end
+
+function ⊕(A1::AbstractOperator,A2::DiagonalAbstractOperator)
+    DiagonalAbstractOperator(vcat([A1], A2.Ops))
+end
+
+function ⊕(A1::DiagonalAbstractOperator,A2::DiagonalAbstractOperator)
+    DiagonalAbstractOperator(vcat(A1.Ops, A2.Ops))
+end
+####
+
 ####
 function ⊞(A1::AbstractOperator,A2::AbstractOperator)
     BlockAbstractOperator([A1 A2])
@@ -48,6 +88,16 @@ function ⊘(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
     BlockAbstractOperator([A1.Ops; A2.Ops])
 end
 ####
+function *(D::DiagonalAbstractOperator,B::BlockAbstractOperator)
+    if length(D.Ops) != size(B,1)
+        @error "Dimensions are incorrect in DiagonalAbstractOperator * BlockAbstractOperator"
+    end
+    Ops = reshape([D.Ops[1]*b for b in B.Ops[1,1:end]],1,:)
+    for i in 2:length(D.Ops)
+        Ops = vcat(Ops,reshape([D.Ops[i]*b for b in B.Ops[i,1:end]],1,:))
+    end
+    BlockAbstractOperator(Ops)
+end
 ####
 struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
