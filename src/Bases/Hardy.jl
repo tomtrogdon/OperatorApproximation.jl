@@ -57,7 +57,6 @@ end
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Interval}
     α = P.basis.GD.GD.α
     β = P.basis.GD.GD.β
-    s = abs(P.basis.GD.D.b - P.basis.GD.D.a)/2
     a, b = Jacobi_ab(α,β)
-    dot(cauchy(a,b,JacobiSeed(α,β),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*s^(-α - β)
+    dot(cauchy(a,b,JacobiSeed(α,β),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2
 end

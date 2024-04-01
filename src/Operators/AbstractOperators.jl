@@ -197,7 +197,7 @@ function *(Op::BlockAbstractOperator,sp::DirectSum)
         @error "Incorrect block size."
         return
     end
-    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1] )
+    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1])
     COps = Op.Ops.*sps
     range = DirectSum([op.range for op in COps[:,1]]);
     for i = 2:size(Op.Ops)[2]

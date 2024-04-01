@@ -12,7 +12,7 @@ REgrid = n -> cos.( (0:n-1)/(n) * pi ) |> reverse
 function DirectedEgrid(n)
     v = Egrid(n)
     v1 = ArgNum(v[1],0.0)
-    vn = ArgNum(v[end],-pi)
+    vn = ArgNum(v[end],1.0*pi)
     vcat([v1],v[2:end-1],[vn])
 end
 
@@ -24,7 +24,7 @@ end
 
 function DirectedREgrid(n)
     v = REgrid(n)
-    vn = ArgNum(v[end],-pi)
+    vn = ArgNum(v[end],1.0*pi)
     vcat(v[1:end-1],[vn])
 end
 

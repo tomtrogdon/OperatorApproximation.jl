@@ -94,28 +94,17 @@ end
     @test abs(u(0) - airyai(0)) < 1e-10
 end
 
-@testset "OperatorApproximation.jl: Riemann-Hilbert/Cauchy tests" begin
-    gd = PeriodicCircle()
-    sp = Laurent(gd)
-    g = z -> 3 + z
-    M = Multiplication(g)
-    Cp = CauchyOperator(1)
-    Cm = CauchyOperator(-1)
-    setbasis(sp)
-    u = \(Cp - M*Cm, z -> g(z) -1)
-    m = CauchyTransform()*u
-    @test abs(m(2im)) < 1e-10 && abs(m(.3) + 1 - g(.3)) < 1e-10
-
+@testset "OperatorApproximation.jl: Cauchy tests" begin
     # Note: This computes integrals
     #
     # \frac{1}{2 \pi i} \int_a^b \frac{f(s)}{s -z} w(s) d s
     #
     # where w(s) \geq 0 and
     #
-    # \left| \int_a^b w(s) ds \right| = 1
+    # \left| \int_a^b w(s) ds \right| = |b - a|
     #
     truth = 0.009366780921585525*im  # true integral wrt normalized weight function
-    f = x -> sin.(x)
+    f = x -> 0.5*sin.(x)
     gd = JacobiMappedInterval(-1.0,1.0,0.5,0.5)
     sp = Jacobi(0.5,0.5,gd)
     ff = BasisExpansion(f,sp,100)
@@ -125,7 +114,7 @@ end
     @test abs(cff(z) - truth) < 1e-10
 
     truth = 0.053855186206159714*im  # true integral wrt normalized weight function
-    f = x -> sin.(x)
+    f = x -> 0.5*sin.(x)
     gd = JacobiMappedInterval(-2.0,2.0,0.5,0.5)
     sp = Jacobi(0.5,0.5,gd)
     ff = BasisExpansion(f,sp,100)
@@ -135,7 +124,7 @@ end
     @test abs(cff(z)-truth) < 1e-10
 
     truth = 0.0808961206892101 -  0.1554484139468048*im
-    f = x -> sin.(x)
+    f = x -> 0.5*sin.(x)
     gd = JacobiMappedInterval(0.0,1im + 1.0,0.5,0.5)
     sp = Jacobi(0.5,0.5,gd)
     ff = BasisExpansion(f,sp,100)
@@ -143,7 +132,7 @@ end
     cff = CauchyTransform()*ff
     @test abs(cff(.1) - truth) < 1e-10
 
-    f = x -> sin.(x)
+    f = x -> 0.5*sin.(x)
     gd0 = JacobiMappedInterval(-1.0,1.0,0.0,0.0)
     sp = Jacobi(0.0,0.0,gd0)
     ff = BasisExpansion(f,sp,100)
@@ -161,7 +150,22 @@ end
     E = Conversion(GridValues(gd))
     CE = E*ff.basis
 
-    @test norm(Matrix(CCp,10,10) - Matrix(CCm,10,10) - Matrix(CE,10,10)/2) < 1e-10
+    @test norm(Matrix(CCp,10,10) - Matrix(CCm,10,10) - Matrix(CE,10,10)) < 1e-10
+
+end
+
+
+@testset "OperatorApproximation.jl: Riemann-Hilbert test" begin
+    gd = PeriodicCircle()
+    sp = Laurent(gd)
+    g = z -> 3 + z
+    M = Multiplication(g)
+    Cp = CauchyOperator(1)
+    Cm = CauchyOperator(-1)
+    setbasis(sp)
+    u = \(Cp - M*Cm, z -> g(z) -1)
+    m = CauchyTransform()*u
+    @test abs(m(2im)) < 1e-10 && abs(m(.3) + 1 - g(.3)) < 1e-10
 
     g = x -> 1 + 0.5exp(-30x^2)
     f = x -> g(x) - 1
@@ -225,7 +229,6 @@ end
     r1 = BoundaryValue(1,gv1)*CauchyTransform() ⊞ Conversion(gv1)*CauchyTransform()
     r2 = Conversion(gv2)*CauchyTransform() ⊞ BoundaryValue(1,gv2)*CauchyTransform()
     Cp = r1 ⊘ r2
-
     M = Multiplication(g)
 
     r1 = M*BoundaryValue(-1,gv1)*CauchyTransform() ⊞ M*Conversion(gv1)*CauchyTransform()

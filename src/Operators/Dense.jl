@@ -152,7 +152,7 @@ function Matrix(Op::FixedGridOPEvaluationOperator,m)  # only one dim for Functio
 end
 
 function Matrix(Op::OPCauchyEvaluationOperator,n,m)
-    cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid(n)) 
+    cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid(n))*2
 end
 
 function Matrix(Op::OPEigenTransform,n)
