@@ -3,7 +3,6 @@ abstract type ConcreteOperator <: Operator end
 abstract type BandedOperator <: LazyOperator end
 abstract type SingleBandedOperator <: BandedOperator end
 
-
 struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:LazyOperator} <: ConcreteOperator
     domain::D
     range::R
@@ -109,6 +108,21 @@ struct BasicBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: Singl
     A::Function
 end
 
+struct ZeroOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator
+    nm::Integer
+    np::Integer
+    A::Function
+end
+ZeroOperator() = ZeroOperator{𝕏,𝕏}(0,0,x -> 0)
+
+function *(Op::ZeroOperator,Op2::LazyOperator)
+    Op
+end
+
+function *(Op::LazyOperator,Op2::ZeroOperator)
+    Op2
+end
+
 struct ProductOfBandedOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: BandedOperator
     V::Vector{S} where S <: SingleBandedOperator
 end
@@ -158,8 +172,6 @@ for op in (:+,:-)
         end
     end
 end
-
-
 
 # Here S is not a DirectSum
 function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S}
@@ -347,6 +359,9 @@ end
 function *(Ops::SumOfLazyOperators,Op::ProductOfBandedOperators)
     SumOfLazyOperators([op*Op for op in Ops.Ops],Ops.c)
 end
+
+
+
 
 # include("SemiInfinite.jl")
 # include("BiInfinite.jl")

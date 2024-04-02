@@ -29,7 +29,7 @@ end
 
 function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T <: DirectSum, S}
     v = copy(f.c)
-    pushfirst!(v,g.c)
+    push!(v,g.c)
     BasisExpansion(f.basis ⊕ g.basis, v)
 end
 
@@ -67,7 +67,6 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
         @error "Unable to project a DiscreteBasis"
         return
     end
-    display(sp)
     g = Conversion(sp)*f
     if length(g.c) < N  # TODO:  Not correct for bi-infinite vectors
         @warn "Input dimension smaller than linear system size. Padding with zeros."

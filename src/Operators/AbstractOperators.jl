@@ -13,14 +13,18 @@ abstract type AbstractOperator <: Operator end
 struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Matrix{T}
 end
+function BlockAbstractOperator(Op::AbstractOperator,n,m)
+    Ops = fill(Op,n,m)
+    BlockAbstractOperator(Ops)
+end
 
-struct DiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
+struct BlockDiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
 end
 
 size(B::BlockAbstractOperator) = size(B.Ops)
 size(B::BlockAbstractOperator,i) = size(B.Ops,i)
-size(B::DiagonalAbstractOperator) = size(B.Ops)
+size(B::BlockDiagonalAbstractOperator) = size(B.Ops)
 axes(B::BlockAbstractOperator,j) = axes(B.Ops,j)
 
 function getindex(L::BlockAbstractOperator,i::Int64,j::Int64)
@@ -38,19 +42,19 @@ end
 
 ####
 function ⊕(A1::AbstractOperator,A2::AbstractOperator)
-    DiagonalAbstractOperator([A1, A2])
+    BlockDiagonalAbstractOperator([A1, A2])
 end
 
-function ⊕(A1::DiagonalAbstractOperator,A2::AbstractOperator)
-    DiagonalAbstractOperator(vcat(A1.Ops, [A2]))
+function ⊕(A1::BlockDiagonalAbstractOperator,A2::AbstractOperator)
+    BlockDiagonalAbstractOperator(vcat(A1.Ops, [A2]))
 end
 
-function ⊕(A1::AbstractOperator,A2::DiagonalAbstractOperator)
-    DiagonalAbstractOperator(vcat([A1], A2.Ops))
+function ⊕(A1::AbstractOperator,A2::BlockDiagonalAbstractOperator)
+    BlockDiagonalAbstractOperator(vcat([A1], A2.Ops))
 end
 
-function ⊕(A1::DiagonalAbstractOperator,A2::DiagonalAbstractOperator)
-    DiagonalAbstractOperator(vcat(A1.Ops, A2.Ops))
+function ⊕(A1::BlockDiagonalAbstractOperator,A2::BlockDiagonalAbstractOperator)
+    BlockDiagonalAbstractOperator(vcat(A1.Ops, A2.Ops))
 end
 ####
 
@@ -88,9 +92,9 @@ function ⊘(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
     BlockAbstractOperator([A1.Ops; A2.Ops])
 end
 ####
-function *(D::DiagonalAbstractOperator,B::BlockAbstractOperator)
+function *(D::BlockDiagonalAbstractOperator,B::BlockAbstractOperator)
     if length(D.Ops) != size(B,1)
-        @error "Dimensions are incorrect in DiagonalAbstractOperator * BlockAbstractOperator"
+        @error "Dimensions are incorrect in BlockDiagonalAbstractOperator * BlockAbstractOperator"
     end
     Ops = reshape([D.Ops[1]*b for b in B.Ops[1,1:end]],1,:)
     for i in 2:length(D.Ops)
@@ -148,6 +152,17 @@ function +(S2::SumOfAbstractOperators{T2},S1::AbstractOperator) where {T2 <:Abst
     S2 + (1*S1)
 end
 
+struct AbstractZeroOperator <: AbstractOperator end
+AbstractZeroOperator(n::Int64,m::Int64) = BlockAbstractOperator(fill(AbstractZeroOperator(),n,m))
+
+function *(Op::AbstractZeroOperator,Op2::AbstractOperator)
+    Op
+end
+
+function *(Op::AbstractOperator,Op2::AbstractZeroOperator)
+    Op2
+end
+
 struct Derivative <: AbstractOperator
     order::Integer
 end
@@ -170,6 +185,10 @@ struct BoundaryValue <: AbstractOperator
     o::Int64
     range::Basis
 end
+function BoundaryValue(o::Int64,ran::DirectSum)
+    BlockDiagonalAbstractOperator(map(z -> BoundaryValue(o,z), ran.bases))
+end
+
 ### ###
 
 struct CauchyTransform <: AbstractOperator end
@@ -228,6 +247,16 @@ end
 function *(Op::AbstractOperator,f::BasisExpansion)
     Opc = Op*f.basis
     Opc*f
+end
+
+function *(Op::AbstractZeroOperator,b::Basis)
+    ConcreteLazyOperator(AnyBasis(),AnyBasis(),ZeroOperator())
+end
+
+function *(Op::AbstractZeroOperator,b::DirectSum)
+    m = b.bases |> length
+    B = BlockAbstractOperator(fill(AbstractZeroOperator(),m,m))
+    B*b
 end
 
 function *(Op::BlockAbstractOperator,sp::Basis)

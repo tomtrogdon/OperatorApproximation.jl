@@ -1,3 +1,7 @@
+function Matrix(Op::ZeroOperator,n,m)
+    spzeros(n,m)
+end
+
 for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
     @eval begin 
         rowgrowth(Op::$op{T, S}) where  {T <: ℕ₊, S <: ℕ₊} = Op.nm

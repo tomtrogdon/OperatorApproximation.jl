@@ -1,11 +1,26 @@
 abstract type Basis end
-
 abstract type CoefficientDomain end
 struct ℤ <: CoefficientDomain end
 struct ℕ₊ <: CoefficientDomain end
 struct ℕ₋ <: CoefficientDomain end
 struct 𝔼 <: CoefficientDomain end
 struct 𝕏 <: CoefficientDomain end ## for when multiplication is not defined
+
+struct AnyBasis <: Basis end
+
+function ==(b1::AnyBasis,b2::Basis)
+    true
+end
+
+function ==(b1::Basis,b2::AnyBasis)
+    true
+end
+
+function ==(b1::AnyBasis,b2::AnyBasis)
+    true
+end
+
+dim(b1::AnyBasis) = Inf
 
 struct DirectSum <: Basis
     bases::Vector{T} where T <: Basis
@@ -49,6 +64,18 @@ end
 
 function ⊕(b1::DirectSum,b2::DirectSum)
     DirectSum(vcat(b1.bases,b2.bases))
+end
+
+function ⊕(bases...)
+    if length(bases) == 1
+        return bases[1]
+    else
+        out = bases[1] ⊕ bases[2]
+        for i = 3:length(bases)
+            out = out ⊕ bases[i]
+        end
+        return out
+    end
 end
 
 function ==(b1::DirectSum,b2::DirectSum)

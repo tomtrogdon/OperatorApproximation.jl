@@ -4,6 +4,11 @@ struct Jacobi <: Basis
     GD::GridInterval
 end
 
+function Legendre(a,b)
+    GD = JacobiMappedInterval(a,b,0.0,0.0)
+    Jacobi(0.0,0.0,GD)
+end
+
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
@@ -58,7 +63,6 @@ function OPMultiplication(a::Function,b::Function,α::Function,β::Function,c::V
     # for the basis used for the function doing the multiplication.       
     n = size(u)[1] + length(c) + 3
     J = jacobi(α,β,n-1)
-    #display(J)
     shape = size(u)
     shape = tuple(length(c)+ 3,shape[2:end]...)
     U = vcat(u,zeros(shape)) |> sparse # TODO: Better way to do this?

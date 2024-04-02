@@ -1,7 +1,6 @@
 function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: Interval}
     if !(b1.GD.D == B.range.GD.D)
-        @error "incompatible domain"
-        return
+        return Conversion(B.range)*b1
     end
 
     if typeof(B.range.GD) <: DirectedGridInterval

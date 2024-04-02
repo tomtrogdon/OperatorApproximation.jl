@@ -14,8 +14,9 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
     Fourier, Chop, eigen, plots, ⊞, DirectSum, ⊘, ⊕, FloquetDerivative, plot, plot!, eigen, \,
     ploteval, ploteval!, UnitCircle, MappedCircle, PeriodicCircle, PeriodicMappedCircle, Laurent, Hardy, Jacobi,
-    CauchyTransform, Exterior, Interior, CauchyOperator, ArgNum, LobattoMappedInterval, LobattoInterval, BoundaryValue, DiagonalAbstractOperator,
-    DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval
+    CauchyTransform, Exterior, Interior, CauchyOperator, ArgNum, LobattoMappedInterval, LobattoInterval, BoundaryValue, BlockDiagonalAbstractOperator, AbstractZeroOperator, ZeroOperator,
+    DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval, Legendre, RHrange, RHdomain,
+    BlockAbstractOperator, RHmult, RHrhs
 
 struct StandardBasisVector
     j::Integer
@@ -60,6 +61,7 @@ include("ArgNum.jl")
 include("Operators/AbstractOperators.jl")
 include("Operators/ConcreteOperators.jl")
 include("Solvers.jl")
+include("RHUtils.jl")
 
 global N = "adaptive"
 function setN(n)

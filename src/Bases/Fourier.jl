@@ -46,7 +46,6 @@ function mdft(v)
         mm = m ÷ 2
         σ = 1im*pi/m
         rot = exp(mm*σ)
-        display(angle(rot))
         σ = exp(σ)
         w = mfft(v)
         @inbounds for i = 1:m
@@ -66,7 +65,6 @@ function midft(v)
         mm = m ÷ 2
         σ = 1im*pi/m
         rot = exp(mm*σ)
-        display(angle(rot))
         σ = exp(σ)
         @inbounds for i = 1:m
             w[i] /= rot
