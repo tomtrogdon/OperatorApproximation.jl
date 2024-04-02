@@ -1,8 +1,9 @@
 struct ArgNum <: Number
     z::ComplexF64
+    ρ::Float64
     θ::Float64
-    function ArgNum(z::Number,θ::Float64)
-        new(z |> complex,θ |> mmod)
+    function ArgNum(z::Number,ρ::Float64,θ::Float64)
+        new(z |> complex,ρ,θ |> mmod)
     end
 end
 
@@ -23,11 +24,11 @@ function abs(z::ArgNum)
 end
 
 function *(a::Number,z::ArgNum)
-    ArgNum(a*z.z,z.θ + angle(a))
+    ArgNum(a*z.z,z.ρ*abs(a),z.θ + angle(a))
 end
 
 function *(z::ArgNum,a::Number)
-    ArgNum(a*z.z,z.θ + angle(a))
+    a*z
 end
 
 function -(z::ArgNum)
@@ -35,18 +36,18 @@ function -(z::ArgNum)
 end
 
 function /(a::Number,z::ArgNum)
-    ArgNum(a/z.z,-z.θ + angle(a))
+    ArgNum(a/z.z,abs(a)/z.ρ,-z.θ + angle(a))
 end
 function /(z::ArgNum,a::Number)
-    ArgNum(z.z/a,z.θ - angle(a))
+    ArgNum(z.z/a,z.ρ/abs(a),z.θ - angle(a))
 end
 
 function +(a::Number,z::ArgNum)
-    ArgNum(z.z + a,z.θ)
+    ArgNum(z.z + a,z.ρ,z.θ)
 end
 
 function +(z::ArgNum,a::Number)
-    ArgNum(z.z + a,z.θ)
+    ArgNum(z.z + a,z.ρ,z.θ)
 end
 
 function -(a::Number,z::ArgNum)
@@ -57,37 +58,16 @@ function -(z::ArgNum,a::Number)
     z + (-a)
 end
 
-function length(a::ArgNum)
-    1
-end
-
-function iterate(a::ArgNum)
-    (a,nothing)
-end
-
-function iterate(a::ArgNum,nothing)
-end
-
 function mmod(θ::Float64)
     angle(exp(1im*θ))
 end
 
 function log(z::ArgNum)
     if abs(z.z) < 1e-14
-        return 1im*mmod(z.θ) # return "finite part"
+        return log(z.ρ) + 1im*mmod(z.θ) # return "finite part"
     elseif imag(z.z) ≈ 0.0 && real(z.z) < 0
         return log(abs.(z.z)) + 1im*π*sign(mmod(z.θ))
     else
         return log(z.z)
-    end
-end
-
-function sqrt(z::ArgNum)
-    if imag(z.z) < 1e-14 && real(z.z) <= 0
-        Z = sign(z.θ)*sqrt(abs(z.z))
-        return ArgNum(Z, z.θ - angle(Z))
-    else
-        Z = sqrt(z.z)
-        return ArgNum(Z,z.θ - angle(Z))
     end
 end
