@@ -73,7 +73,7 @@ function mmod(θ::Float64)
 end
 
 function log(z::ArgNum)
-    if abs(z.z) ≈ 0.0
+    if abs(z.z) < 1e-14
         return 1im*mmod(z.θ) # return "finite part"
     elseif imag(z.z) ≈ 0.0 && real(z.z) < 0
         return log(abs.(z.z)) + 1im*π*sign(mmod(z.θ))
@@ -83,7 +83,7 @@ function log(z::ArgNum)
 end
 
 function sqrt(z::ArgNum)
-    if imag(z.z) ≈ 0.0 && real(z.z) <= 0
+    if imag(z.z) < 1e-14 && real(z.z) <= 0
         Z = sign(z.θ)*sqrt(abs(z.z))
         return ArgNum(Z, z.θ - angle(Z))
     else

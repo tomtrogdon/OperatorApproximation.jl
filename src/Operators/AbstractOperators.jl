@@ -10,12 +10,50 @@ abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
 
+# Note that we don't allow blocks of blocks (but maybe should...)
 struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Matrix{T}
 end
 function BlockAbstractOperator(Op::AbstractOperator,n,m)
     Ops = fill(Op,n,m)
     BlockAbstractOperator(Ops)
+end
+function matrix2BlockOperator(M::Matrix{T}) where T <: Operator
+    n,m = size(M)
+    row = M[1,1]
+    for j = 2:m
+        row = row ⊞ M[1,j]
+    end
+    op = row
+    for i = 2:n
+        row = M[i,1]
+        for j = 2:m
+            row = row ⊞ M[i,j]
+        end
+        op = op ⊘ row
+    end
+    op
+end
+
+function diagm(V::Vector{T}) where T <: AbstractOperator
+    c = convert(Vector{Int64},[])
+    r = convert(Vector{Int64},[])
+    for v in V
+        n,m = size(v)
+        push!(c,m)
+        push!(r,n)
+    end
+    row = [AbstractZeroOperator(r[1],c[j]) for j in 1:length(V)]
+    row = convert(Vector{AbstractOperator},row)
+    row[1] = V[1]
+    out = ⊞(row...)
+    for i = 2:length(V)
+        row = [AbstractZeroOperator(r[i],c[j]) for j in 1:length(V)]
+        row = convert(Vector{AbstractOperator},row)
+        row[i] = V[i]
+        out = out ⊘ (⊞(row...))
+    end
+    out
 end
 
 struct BlockDiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
@@ -74,6 +112,18 @@ end
 function ⊞(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
     BlockAbstractOperator([A1.Ops A2.Ops])
 end
+
+function ⊞(Ops...)
+    if length(Ops) == 1
+        return Ops
+    end
+    op = Ops[1]
+    for i = 2:length(Ops)
+        op = op ⊞ Ops[i]
+    end
+    op
+end
+
 ####
 ####
 function ⊘(A1::AbstractOperator,A2::AbstractOperator)
@@ -153,7 +203,7 @@ function +(S2::SumOfAbstractOperators{T2},S1::AbstractOperator) where {T2 <:Abst
 end
 
 struct AbstractZeroOperator <: AbstractOperator end
-AbstractZeroOperator(n::Int64,m::Int64) = BlockAbstractOperator(fill(AbstractZeroOperator(),n,m))
+AbstractZeroOperator(n::Int64,m::Int64) = n == m && n == 1 ? AbstractZeroOperator() : BlockAbstractOperator(fill(AbstractZeroOperator(),n,m))
 
 function *(Op::AbstractZeroOperator,Op2::AbstractOperator)
     Op

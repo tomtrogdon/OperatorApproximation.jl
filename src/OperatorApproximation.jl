@@ -5,7 +5,7 @@ import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex, show, getindex, size, axes,
     real, imag, abs
-import LinearAlgebra: I, Matrix, norm, eigen
+import LinearAlgebra: I, Matrix, norm, eigen, diagm
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
      GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication,
@@ -16,7 +16,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     ploteval, ploteval!, UnitCircle, MappedCircle, PeriodicCircle, PeriodicMappedCircle, Laurent, Hardy, Jacobi,
     CauchyTransform, Exterior, Interior, CauchyOperator, ArgNum, LobattoMappedInterval, LobattoInterval, BoundaryValue, BlockDiagonalAbstractOperator, AbstractZeroOperator, ZeroOperator,
     DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval, Legendre, RHrange, RHdomain,
-    BlockAbstractOperator, RHmult, RHrhs
+    BlockAbstractOperator, RHmult, RHrhs, matrix2BlockOperator
 
 struct StandardBasisVector
     j::Integer
