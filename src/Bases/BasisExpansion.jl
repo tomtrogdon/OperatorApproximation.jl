@@ -3,6 +3,10 @@ struct BasisExpansion{T<:Basis}
     c::Vector # if DirectSum then c is a vector of vectors
 end
 
+function sum(f::BasisExpansion{T}) where T<:DirectSum
+    sum([sum(f[i]) for i = 1:length(f)])
+end
+
 getindex(b::BasisExpansion{T},i::Int64) where T <: DirectSum = BasisExpansion(b.basis[i],b.c[i])
 getindex(b::BasisExpansion{T},i::UnitRange{Int64}) where T <: DirectSum = BasisExpansion(b.basis[i],b.c[i])
 getindex(b::BasisExpansion{T},i) where T = getindex([b],i)
@@ -14,6 +18,7 @@ axes(b::BasisExpansion{T},i) where T = axes([b],i)
 size(b::BasisExpansion{T}) where T <: DirectSum = size(b.basis.bases)
 size(b::BasisExpansion{T},i) where T <: DirectSum = size(b.basis.bases,i)
 lastindex(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
+length(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
 
 function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
