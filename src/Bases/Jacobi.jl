@@ -1,17 +1,21 @@
 struct Jacobi <: Basis
     α::Number
     β::Number
-    GD::GridDomain
+    GD::GridInterval
 end
+
+function Legendre(a,b)
+    GD = JacobiMappedInterval(a,b,0.0,0.0)
+    Jacobi(0.0,0.0,GD)
+end
+
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Jacobi) = ℕ₊
+
 function dim(sp::Jacobi)
     Inf
-end
-
-function pad(f::BasisExpansion{T},N) where T <: Jacobi
-    BasisExpansion(f.basis,pad(f.c,N))
 end
 
 function testconv(f::BasisExpansion{T}) where T <: Jacobi
@@ -25,7 +29,14 @@ end
 ####################################
 ####################################
 
-Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
+function (P::BasisExpansion{Jacobi})(X::Number) # Clenshaw's algorithm
+    n = P.c |> length
+    α = P.basis.α
+    β = P.basis.β
+    x = P.basis.GD.D.imap(X)
+    a,b = Jacobi_ab(α,β)
+    (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
+end
 
 function Jacobi_ab(a,b) #TODO: simplify evaluation
     bfun = n -> (a+b==-1 && n==0) ? √(2*a*b) :
@@ -52,7 +63,6 @@ function OPMultiplication(a::Function,b::Function,α::Function,β::Function,c::V
     # for the basis used for the function doing the multiplication.       
     n = size(u)[1] + length(c) + 3
     J = jacobi(α,β,n-1)
-    #display(J)
     shape = size(u)
     shape = tuple(length(c)+ 3,shape[2:end]...)
     U = vcat(u,zeros(shape)) |> sparse # TODO: Better way to do this?
@@ -118,4 +128,87 @@ normalization(n::Int,α::Real,β::Real) = 2^(α+β)*gamma(n+α+1)*gamma(n+β+1)/
 stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
     (x = 2/(1-z);HypergeometricFunctions.mxa_₂F₁(n+1,n+α+1,2n+α+β+2,x))/2
 stieltjesjacobimoment(α::Real,β::Real,z) = stieltjesjacobimoment(α,β,0,z)
-JacobiSeed(α,β,z) = 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
+
+function matanh(z)
+    1/2*(log(1+z) - log(-1+z))
+end
+
+function matanh_p(z) # limit from above for z > 1
+    1/2*(log(1+0im+z) - log(-1+0im+z)) + 1im*pi
+end
+
+function matanh_m(z) # limit from below for z > 1
+    1/2*(log(1+0im+z) - log(-1+0im+z))
+end
+
+function legendrestieltjes(z)
+    return 1im/(4*pi)*(log(-complex(1)-z)-log(complex(1)-z))
+end
+
+function legendrestieltjes_pos(z)
+    return 1im/(4*pi)*(log(1+z) - 1im*pi -log(1-z))
+end
+
+function legendrestieltjes_neg(z)
+    return 1im/(4*pi)*(log(1+z) + 1im*pi -log(1-z))
+end
+
+function JacobiSeed(α,β)
+    if α == 0.0 && β == 0.0
+        return z -> legendrestieltjes(z)
+    elseif α == 0.5 && β == 0.0 # log singularity at z = -1
+        out = JacobiSeed(β,α)
+        return z -> -out(-z)
+    elseif α == 0.0 && β == 0.5 # log singularity at z = 1
+        return z -> abs(z - 1) < 1e-14 ?  3im/(8π)*(-2 + log(4)) + 3/(4*sqrt(2))*2*sqrt(2)*legendrestieltjes(z) :
+         1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z + 0im)*matanh(sqrt(1+z+ 0im)/sqrt(2)))
+    elseif α == -0.5 && β == 0.0
+        out = JacobiSeed(β,α)
+        z -> -out(-z)
+    elseif α == 0.0 && β == -0.5 # log singularity at z = 1
+        return z -> abs(z - 1) < 1e-14 ? 1im*log(2.0)/(4π) + 0.5*legendrestieltjes(z)  :
+        -1/(4im*sqrt(2)*pi)*1/sqrt(1+z +0im)*log((z-1)/(3 + complex(z) - 2*sqrt(2)*sqrt(1 + z |> complex)))
+    else
+        return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z)
+    end
+end
+
+function JacobiSeedPos(α,β)
+    if α == 0.0 && β == 0.0
+        return z -> legendrestieltjes_pos(z)
+    elseif α == 0.5 && β == 0.0 # log singularity at z = -1
+        out = JacobiSeedNeg(β,α)
+        return z -> -out(-z)
+    elseif α == 0.0 && β == 0.5 # log singularity at z = 1
+        return z -> abs(z - 1) < 1e-14 ?  3im/(8π)*(-2 + log(4)) + 3/(4*sqrt(2))*2*sqrt(2)*legendrestieltjes_pos(z) :
+         1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z + 0im)*matanh_m(sqrt(1+z+ 0im)/sqrt(2)))
+    elseif α == -0.5 && β == 0.0
+        out = JacobiSeedNeg(β,α)
+        return z -> -out(-z)
+    elseif α == 0.0 && β == -0.5
+        return z -> abs(z - 1) < 1e-14 ? 1im*log(2.0)/(4π) + 0.5*legendrestieltjes_pos(z)  :
+        -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*(log(-(z-1)/(3 + z - 2*sqrt(2)*sqrt(1 + z))) - 1im*pi )
+    else
+        return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z + 1im*eps())
+    end
+end
+
+function JacobiSeedNeg(α,β)
+    if α == 0.0 && β == 0.0
+        return z -> legendrestieltjes_neg(z)
+    elseif α == 0.5 && β == 0.0 # log singularity at z = -1
+        out = JacobiSeedPos(β,α)
+        z -> -out(-z)
+    elseif α == 0.0 && β == 0.5 # log singularity at z = 1
+        return z -> abs(z - 1) < 1e-14 ?  3im/(8π)*(-2 + log(4)) + 3/(4*sqrt(2))*2*sqrt(2)*legendrestieltjes_neg(z) :
+        1/(8im*pi)*(6 - 3*sqrt(2)*sqrt(1+z)*(matanh_m(sqrt(1+z)/sqrt(2)) + 1im*pi))
+    elseif α == -0.5 && β == 0.0
+        out = JacobiSeedPos(β,α)
+        z -> -out(-z)
+    elseif α == 0.0 && β == -0.5
+        return z -> abs(z - 1) < 1e-14 ? 1im*log(2.0)/(4π) + 0.5*legendrestieltjes_neg(z)  :
+        -1/(4im*sqrt(2)*pi)*1/sqrt(1+z)*(log(-(z-1)/(3 + z - 2*sqrt(2)*sqrt(1 + z))) + 1im*pi )
+    else
+        return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z - 1im*eps())
+    end
+end

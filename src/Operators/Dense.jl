@@ -5,20 +5,23 @@ abstract type BasisEvaluationOperator <: DenseOperator end  # Always true for sp
 abstract type NaiveTransform <: DenseOperator end
 abstract type FastTransform <: DenseOperator end
 
-struct DenseTimesBanded <: DenseOperator
-    banded::BandedOperator
-    dense::DenseOperator
+struct DenseTimesBanded{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
+    dense::TT where TT <: DenseOperator
+    banded::SS where SS <: BandedOperator
 end
+DenseTimesBanded(dense,banded) = DenseTimesBanded{𝔼,dom(banded)}(dense,banded)
 
 ## This should resolve the ambiguity of the inner dimensions in the
 ## dense x dense multiplications.  But not now...
-struct DenseTimesDense <: DenseOperator
+struct DenseTimesDense{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
     denseL::DenseOperator
     denseR::DenseOperator
 end
+DenseTimesDense(denseL,denseR) = DenseTimesDense{𝔼,𝔼}(denseL,denseR)
+
 
 function *(dense::DenseOperator,banded::BandedOperator)
-    DenseTimesBanded(banded,dense)
+    DenseTimesBanded(dense,banded)
 end
 
 function *(denseL::DenseOperator,denseR::DenseOperator)
@@ -44,43 +47,68 @@ function *(CC::Conversion,dom::Basis)
     end
 end
 
-struct OPEvaluationOperator <: BasisEvaluationOperator
+struct OPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Function
     a::Function # Jacobi coefficients
     b::Function
 end
+OPEvaluationOperator(grid,a,b) = OPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
-struct FourierEvaluationOperator <: BasisEvaluationOperator
+struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Function
 end
+FourierEvaluationOperator(grid) = FourierEvaluationOperator{ℤ,𝔼}(grid)
 
-
-struct FixedGridOPEvaluationOperator <: BasisEvaluationOperator
+struct FixedGridOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Vector
     a::Function # Jacobi coefficients
     b::Function
 end
+FixedGridOPEvaluationOperator(grid,a,b) = FixedGridOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
-struct FixedGridFourierEvaluationOperator <: BasisEvaluationOperator
+
+struct FixedGridFourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Vector
 end
+FixedGridFourierEvaluationOperator(grid) = FixedGridFourierEvaluationOperator{ℤ,𝔼}(grid)
 
-mutable struct OPEigenTransform <: NaiveTransform
-    # TODO: Set up to remember matrix
+struct OPCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Function
+    a::Function # Jacobi coefficients
+    b::Function
+    seed::Function
+end
+OPCauchyEvaluationOperator(grid,a,b,seed) = OPCauchyEvaluationOperator{ℕ₊,𝔼}(grid,a,b,seed)
+
+mutable struct OPEigenTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: NaiveTransform
     const a::Function # Jacobi coefficients
     const b::Function
-    A::Matrix
-    function OPEigenTransform(a,b)
+    A::Matrix # saves transform matrix
+    function OPEigenTransform{𝔼,ℕ₊}(a,b)
         return new(a,b,hcat(1.0))
     end
 end
+OPEigenTransform(a,b) = OPEigenTransform{𝔼,ℕ₊}(a,b)
 
-struct DiscreteFourierTransform <: FastTransform 
+struct DiscreteFourierTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
     T::Function
-    function DiscreteFourierTransform()
+    function DiscreteFourierTransform{𝔼,ℤ}()
         return new(mdft)
     end
 end
+DiscreteFourierTransform() = DiscreteFourierTransform{𝔼,ℤ}()
+
+struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator # even though it is sparse...
+    # it is simpler to treat grid multiplication as dense
+    f::Function
+    grid::Function
+end
+GridMultiplication(f,grid) = GridMultiplication{𝔼,𝔼}(f,grid)
+
+struct FixedGridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
+    fvals::Vector
+end
+FixedGridMultiplication(f,grid) = FixedGridMultiplication{𝔼,𝔼}(f,grid)
 
 function Matrix(Op::OPEvaluationOperator,n,m)
     poly(Op.a,Op.b,m,Op.grid(n)) 
@@ -121,6 +149,10 @@ end
 
 function Matrix(Op::FixedGridOPEvaluationOperator,m)  # only one dim for Functional
     return poly(Op.a,Op.b,m,Op.grid)
+end
+
+function Matrix(Op::OPCauchyEvaluationOperator,n,m)
+    cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid(n))*2
 end
 
 function Matrix(Op::OPEigenTransform,n)

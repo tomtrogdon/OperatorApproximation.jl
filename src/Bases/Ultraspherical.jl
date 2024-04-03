@@ -1,16 +1,14 @@
 struct Ultraspherical <: Basis
     λ::Number
-    GD::GridDomain
+    GD::GridInterval
 end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Ultraspherical) = ℕ₊
+
 function dim(sp::Ultraspherical)
     Inf
-end
-
-function pad(f::BasisExpansion{T},N) where T <: Ultraspherical
-    BasisExpansion(f.basis,pad(f.c,N))
 end
 
 function testconv(f::BasisExpansion{T}) where T <: Ultraspherical
@@ -31,7 +29,3 @@ function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
     a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
 end
-
-# function BasisExpansion(f::Function,basis::Ultraspherical,N::Integer)
-#     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
-# end

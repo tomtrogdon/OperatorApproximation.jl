@@ -28,7 +28,7 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector
     end
     sol = Op\vcat(rhss...)
     parted_sol = part_vec(sol,ms)
-    BasisExpansion.(domains,parted_sol)
+    ⊕(BasisExpansion.(domains,parted_sol)...)
 end
 
 function \(L::ConcreteLazyOperator{D,R,T},b::Vector,N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
@@ -51,11 +51,19 @@ function \(L::ConcreteOperator,b)
     if !(typeof(N) <: Integer)
         n = 32
         sol = \(L,b,n)
-        bool = testconv.(sol) |> prod
+        if typeof(sol) <: Vector
+            bool = testconv.(sol) |> prod
+        else
+            bool = testconv(sol)
+        end
         while !bool
             n *= 2
             sol = \(L,b,n)
-            bool = testconv.(sol) |> prod
+            if typeof(sol) <: Vector
+                bool = testconv.(sol) |> prod
+            else
+                bool = testconv(sol)
+            end
         end
         return sol
     else

@@ -1,5 +1,7 @@
 abstract type LazyOperator <: Operator end
 abstract type ConcreteOperator <: Operator end
+abstract type BandedOperator <: LazyOperator end
+abstract type SingleBandedOperator <: BandedOperator end
 
 struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:LazyOperator} <: ConcreteOperator
     domain::D
@@ -46,7 +48,7 @@ function Matrix(Op::ConcreteLazyOperator,m)
     Matrix(Op.L,m)
 end
 
-function *(Op::ConcreteLazyOperator,f::BasisExpansion)
+function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T,S}
     BasisExpansion(Op.range,Op.L*f.c)
 end
 
@@ -58,24 +60,11 @@ function rank(OP::ConcreteOperator)
     dim(OP.range)
 end
 
-
-abstract type DiscreteDomain end
-struct ZZ <: DiscreteDomain end
-struct NN <: DiscreteDomain end
-SI = NN()  ## Semi-Infinite
-BI = ZZ()  ## Bi-Infinite
-
-abstract type BandedOperator <: LazyOperator end
-abstract type SingleBandedOperator <: BandedOperator end
-
-
-## Note: Needs DiscreteDomain field if products of sums are to be used?
-## Probably not because that is only needed to multiply BandedOperators
-## These could be dense operators
-struct SumOfLazyOperators <: LazyOperator
+struct SumOfLazyOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: LazyOperator
     Ops::Vector{S} where S <: LazyOperator
     c::Vector{Number} # be more specific?
 end
+SumOfLazyOperators(Ops,c) = SumOfLazyOperators{dom(Ops[1]),ran(Ops[1])}(Ops,c)
 
 function *(a::Number,L::LazyOperator)
     SumOfLazyOperators([L],[a])
@@ -83,6 +72,71 @@ end
 
 function *(a::Number,L::SumOfLazyOperators)
     SumOfLazyOperators(L.Ops,a*L.c)
+end
+
+function getindex(Op::ConcreteLazyOperator{D,R,T},n) where {D,R,T <: SumOfLazyOperators}
+    ConcreteLazyOperator(Op.domain,Op.range,Op.L.Ops[n])
+end
+
+function Matrix(Op::ConcreteLazyOperator{D,R,T},n,m) where {D,R,T <: SumOfLazyOperators}
+    A = Op.L.c[1]*Matrix(Op[1],n,m)
+    for i = 2:length(Op.L.c)
+        A += Op.L.c[i]*Matrix(Op[i],n,m)
+    end
+    A
+end
+
+function Matrix(Op::SumOfLazyOperators,n,m)
+    # TODO: check domain & range
+    A = Op.c[1]*Matrix(Op.Ops[1],n,m)
+    for i = 2:length(Op.c)
+        A += Op.c[i]*Matrix(Op.Ops[i],n,m)
+    end
+    A
+end
+
+mutable struct SemiLazyBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator# where T <: DiscreteDomain
+    const nm::Integer
+    const np::Integer
+    const mat::Function
+    A::SparseMatrixCSC
+end
+
+struct BasicBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator
+    nm::Integer
+    np::Integer
+    A::Function
+end
+
+struct ZeroOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator
+    nm::Integer
+    np::Integer
+    A::Function
+end
+ZeroOperator() = ZeroOperator{𝕏,𝕏}(0,0,x -> 0)
+
+function *(Op::ZeroOperator,Op2::LazyOperator)
+    Op
+end
+
+function *(Op::LazyOperator,Op2::ZeroOperator)
+    Op2
+end
+
+struct ProductOfBandedOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: BandedOperator
+    V::Vector{S} where S <: SingleBandedOperator
+end
+ProductOfBandedOperators(V) = ProductOfBandedOperators{dom(V[end]),ran(V[1])}(V)
+
+struct BlockLazyOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: LazyOperator
+    Ops::Matrix{LazyOperator}
+end
+function BlockLazyOperator(Ops)
+    if typeof(Ops) <: Vector
+        BlockLazyOperator{𝕏,𝕏}(reshape(Ops,:,1))
+    else
+        BlockLazyOperator{𝕏,𝕏}(Ops)
+    end
 end
 
 # Repeat for +/- sign
@@ -112,40 +166,55 @@ for op in (:+,:-)
         function $op(L1::LazyOperator,L2::LazyOperator)
             L1 + $op(1.0)*L2
         end
+
+        function $op(L1::BlockLazyOperator,L2::BlockLazyOperator)
+            BlockLazyOperator($op.(L1.Ops,L2.Ops))
+        end
     end
 end
 
-function Matrix(Op::SumOfLazyOperators,n,m)
-    # TODO: check domain & range
-    A = Op.c[1]*Matrix(Op.Ops[1],n,m)
-    for i = 2:length(Op.c)
-        A += Op.c[i]*Matrix(Op.Ops[i],n,m)
+# Here S is not a DirectSum
+function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S}
+    BasisExpansion(Op.range,[Op.L.Ops[i,1]*f.c for i in 1:size(Op.L.Ops,1)])
+end
+
+# Here S is a DirectSum
+function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S <: DirectSum}
+    #return Op[1:end,1]
+    out = Op[1:end,1]*f[1]
+    for i = 2:size(Op,2)
+        out += Op[1:end,i]*f[i]
     end
-    A
+    out
 end
 
-mutable struct SemiLazyBandedOperator{T<:DiscreteDomain} <: SingleBandedOperator# where T <: DiscreteDomain
-    const DD::T
-    const nm::Integer
-    const np::Integer
-    const mat::Function
-    A::SparseMatrixCSC
+size(L::BlockLazyOperator) = size(L.Ops)
+size(Op::ConcreteLazyOperator{D,R,T}) where {D, R, T <: BlockLazyOperator} = size(Op.L)
+
+size(L::BlockLazyOperator,j) = size(L.Ops,j)
+size(Op::ConcreteLazyOperator{D,R,T},j) where {D, R, T <: BlockLazyOperator} = size(Op.L,j)
+
+axes(L::BlockLazyOperator) = axes(L.Ops)
+axes(Op::ConcreteLazyOperator{D,R,T}) where {D, R, T <: BlockLazyOperator} = axes(Op.L)
+
+axes(L::BlockLazyOperator,j) = axes(L.Ops,j)
+axes(Op::ConcreteLazyOperator{D,R,T},j) where {D, R, T <: BlockLazyOperator} = axes(Op.L,j)
+
+function getindex(L::BlockLazyOperator,i::Int64,j::Int64)
+    L.Ops[i,j]
+end
+function getindex(L::BlockLazyOperator,i::Int64,j::UnitRange{Int64})
+    BlockLazyOperator(L.Ops[i,j])
+end
+function getindex(L::BlockLazyOperator,i::UnitRange{Int64},j::Int64)
+    BlockLazyOperator(L.Ops[i,j])
+end
+function getindex(L::BlockLazyOperator,i::UnitRange{Int64},j::UnitRange{Int64})
+    BlockLazyOperator(L.Ops[i,j])
 end
 
-struct BasicBandedOperator{T<:DiscreteDomain} <: SingleBandedOperator
-    DD::T
-    nm::Integer
-    np::Integer
-    A::Function
-end
-
-struct ProductOfBandedOperators{T<:DiscreteDomain} <: BandedOperator
-    DD::T
-    V::Vector{S} where S <: SingleBandedOperator
-end
-
-struct BlockLazyOperator <: LazyOperator
-    Ops::Matrix{LazyOperator}
+function getindex(Op::ConcreteLazyOperator{D,R,T},i,j) where {D, R, T <: BlockLazyOperator}
+    ConcreteLazyOperator(Op.domain[j],Op.range[i],Op.L[i,j])
 end
 
 # momtm = matrix of matrices to matrix
@@ -169,6 +238,7 @@ function Matrix(Op::BlockLazyOperator,ns::Vector{Int64},ms::Vector{Int64})
     momtm(Matrix.(Op.Ops,nmat,mmat))
 end
 
+# divides n in to k "equal-sized" bins
 function binit(n,k)
     ((n+k-1:-1:n) .÷ k) |> Vector
 end
@@ -198,7 +268,7 @@ function divide_DOF(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where
     ns, ms
 end
 
-function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis,T <: BlockLazyOperator}
+function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis, T <: BlockLazyOperator}
     ns, ms = divide_DOF(Op,n,m)
     Matrix(Op.L,ns,ms)
 end
@@ -255,48 +325,52 @@ function ⊘(A1::ConcreteLazyOperator,A2::ConcreteLazyOperator)
     end
 end
 
+dom(op::LazyOperator) = collect(typeof(op).parameters)[1]
+ran(op::LazyOperator) = collect(typeof(op).parameters)[2]
 
-for op in (:ZZ,:NN)
-    for sop in (:BasicBandedOperator,:SemiLazyBandedOperator)
-        @eval begin
-            function *(A::$sop{T},B::$sop{S}) where {S <: $op, T<: $op}
-                ProductOfBandedOperators(A.DD,[A;B])
-            end
-    
-            function *(A::$sop{T},B::ProductOfBandedOperators{S}) where {S <: $op, T<: $op}
-                ProductOfBandedOperators(A.DD,vcat([A],B.V))
-            end
-    
-            function *(B::ProductOfBandedOperators{T},A::$sop{S}) where {S <: $op, T<: $op}
-                ProductOfBandedOperators(A.DD,vcat(B.V,[A]))
-            end
+for sop in (:BasicBandedOperator,:SemiLazyBandedOperator)
+    @eval begin
+        function *(A::$sop,B::$sop)
+            ProductOfBandedOperators([A;B])
         end
-        for sop2 in (:BasicBandedOperator,:SemiLazyBandedOperator)
-            if sop2 != sop
-                @eval begin
-                    function *(A::$sop{T},B::$sop2{S}) where {S <: $op, T<: $op}
-                        ProductOfBandedOperators(A.DD,[A;B])
-                    end
+    
+        function *(A::$sop,B::ProductOfBandedOperators)
+            ProductOfBandedOperators(vcat([A],B.V))
+        end
+    
+        function *(B::ProductOfBandedOperators,A::$sop)
+            ProductOfBandedOperators(vcat(B.V,[A]))
+        end
+    end
+    for sop2 in (:BasicBandedOperator,:SemiLazyBandedOperator)
+        if sop2 != sop
+            @eval begin
+                function *(A::$sop,B::$sop2)
+                    ProductOfBandedOperators([A;B])
                 end
             end
         end
     end
-    @eval begin
-        function *(B::ProductOfBandedOperators{T},A::ProductOfBandedOperators{S}) where {S <: $op, T<: $op}
-            ProductOfBandedOperators(A.DD,vcat(B.V,A.V))
-        end
-    end
+end
+function *(B::ProductOfBandedOperators,A::ProductOfBandedOperators)
+    ProductOfBandedOperators(vcat(B.V,A.V))
 end
 
-function *(Ops::SumOfLazyOperators,Op::ProductOfBandedOperators{T}) where T <: DiscreteDomain
+function *(Ops::SumOfLazyOperators,Op::ProductOfBandedOperators)
     SumOfLazyOperators([op*Op for op in Ops.Ops],Ops.c)
 end
 
-include("SemiInfinite.jl")
-include("BiInfinite.jl")
-include("Dense.jl")
 
+
+
+# include("SemiInfinite.jl")
+# include("BiInfinite.jl")
+include("LazyMatrix.jl")
+include("Dense.jl")
 include("GridValues/GridValues.jl")
 include("Jacobi/Jacobi.jl")
 include("Ultraspherical/Ultraspherical.jl")
 include("Fourier/Fourier.jl")
+include("Laurent/Laurent.jl")
+include("Hardy/Hardy.jl")
+include("DirectSum/DirectSum.jl")

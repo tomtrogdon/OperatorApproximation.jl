@@ -59,14 +59,14 @@ function conversion(b1::Ultraspherical,b2::Ultraspherical)
     # end
     # L0
     if b1.λ ≈ b2.λ
-         return ConcreteLazyOperator(b1,b2,BasicBandedOperator(SI,0,0,(i,j) -> Float64(i == j)))
+         return ConcreteLazyOperator(b1,b2,BasicBandedOperator{ℕ₊,ℕ₊}(0,0,(i,j) -> Float64(i == j)))
     end
 
     λ0 = b1.λ
-    L0 = BasicBandedOperator(SI,0,2,_conv_ultra(λ0))
+    L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0))
     λ0 += 1
     while !(λ0 - b2.λ ≈ 0)
-        L0 = BasicBandedOperator(SI,0,2,_conv_ultra(λ0))*L0
+        L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0))*L0
         λ0 += 1
     end
     ConcreteLazyOperator(b1,b2,L0)

@@ -3,8 +3,44 @@ struct BasisExpansion{T<:Basis}
     c::Vector # if DirectSum then c is a vector of vectors
 end
 
+getindex(b::BasisExpansion{T},i::Int64) where T <: DirectSum = BasisExpansion(b.basis[i],b.c[i])
+getindex(b::BasisExpansion{T},i::UnitRange{Int64}) where T <: DirectSum = BasisExpansion(b.basis[i],b.c[i])
+getindex(b::BasisExpansion{T},i) where T = getindex([b],i)
+getindex(b::BasisExpansion{T},i::UnitRange{Int64}) where T = i == 1:1 ? b : @error "out of range"
+axes(b::BasisExpansion{T}) where T <: DirectSum = axes(b.basis.bases)
+axes(b::BasisExpansion{T},i) where T <: DirectSum = axes(b.basis.bases,i)
+axes(b::BasisExpansion{T}) where T = axes([b])
+axes(b::BasisExpansion{T},i) where T = axes([b],i)
+size(b::BasisExpansion{T}) where T <: DirectSum = size(b.basis.bases)
+size(b::BasisExpansion{T},i) where T <: DirectSum = size(b.basis.bases,i)
+lastindex(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
+
 function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
+end
+
+function ⊕(f::BasisExpansion{T}) where T
+   f
+end
+
+function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T, S}
+    BasisExpansion(f.basis ⊕ g.basis, [f.c,g.c])
+end
+
+function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T <: DirectSum, S}
+    v = copy(f.c)
+    push!(v,g.c)
+    BasisExpansion(f.basis ⊕ g.basis, v)
+end
+
+function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T, S <: DirectSum}
+    v = copy(g.c)
+    pushfirst!(v,f.c)
+    BasisExpansion(f.basis ⊕ g.basis, v)
+end
+
+function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T <: DirectSum, S <: DirectSum}
+    BasisExpansion(f.basis ⊕ g.basis, vcat(f.c,g.c))
 end
 
 function BasisExpansion(f::Function,basis::Basis)
@@ -31,7 +67,6 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
         @error "Unable to project a DiscreteBasis"
         return
     end
-    display(sp)
     g = Conversion(sp)*f
     if length(g.c) < N  # TODO:  Not correct for bi-infinite vectors
         @warn "Input dimension smaller than linear system size. Padding with zeros."
@@ -44,19 +79,19 @@ function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot(x, y |> real)
-    plot!(x, y |> imag)
+    plot(real(x) + imag(x), y |> real)
+    plot!(real(x) + imag(x), y |> imag)
 end
 
 function plot!(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot!(x, y |> real)
-    plot!(x, y |> imag)
+    plot!(real(x) + imag(x), y |> real)
+    plot!(real(x) + imag(x), y |> imag)
 end
 
-function pad(v,n)
+function pad(v::Vector,n::Int64)
     if length(v) == n
         return v
     elseif length(v) < n
@@ -64,6 +99,31 @@ function pad(v,n)
     else
         return v[1:n]
     end
+end
+
+function pad(::Type{ℕ₊},v::Vector,n::Int64) 
+    pad(v,n)
+end
+
+function pad(::Type{ℕ₋},v::Vector,n::Int64)
+    pad(v |> reverse ,n) |> reverse
+end
+
+function pad(::Type{𝕏},v::Vector,n::Int64)
+    v
+end
+
+function pad(::Type{ℤ},v::Vector,n::Int64)
+    nm = N₋(length(v))
+    new_nm = N₋(n)
+    vm = pad(ℕ₋,copy(v[1:nm]),new_nm)
+    vp = pad(ℕ₊,copy(v[nm+1:end]),n - new_nm)
+    vcat(vm,vp)
+end
+
+## TODO: Need implmentation for DirectSum
+function pad(f::BasisExpansion,N::Int64)
+    BasisExpansion(f.basis,pad(cfd(f.basis),f.c,f,N))
 end
 
 function chop(c::Vector)
@@ -77,19 +137,43 @@ function chop(c::Vector)
     c[1:ind]
 end
 
-function +(f::BasisExpansion,g::BasisExpansion)
-    n = max(length(f.c), length(g.c))
-    BasisExpansion(f.basis, pad(f.c,n) + pad(g.c,n))
+function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S, T}
+    if f.basis == g.basis
+        tp = cfd(f.basis)
+        n = max(length(f.c), length(g.c))
+        BasisExpansion(f.basis, pad(tp,f.c,n) + pad(tp,g.c,n))
+    else
+        @error "Basis not compatible"
+    end
 end
 
-function norm(f::BasisExpansion)
+function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S <: DirectSum, T <: DirectSum}
+    if f.basis == g.basis
+        out = []
+        for i = 1:length(f.c)
+            n = max(length(f.c[i]), length(g.c[i]))
+            tp = cfd(f.basis.bases[i])
+            push!(out, pad(tp,f.c[i],n) + pad(tp,g.c[i],n))
+        end
+        BasisExpansion(f.basis,out)
+    else
+        @error "Basis not compatible"
+    end
+end
+
+function norm(f::BasisExpansion{S}) where S
     norm(f.c)
 end
 
-function *(c::Number,f::BasisExpansion)
+function *(c::Number,f::BasisExpansion{S}) where S
     BasisExpansion(f.basis, c*f.c)
 end
 
 function -(f::BasisExpansion,g::BasisExpansion)
     f + (-1)*g
+end
+
+# Probably inefficient...
+function (f::BasisExpansion{T})(x) where T <: DirectSum
+    [f[i](x) for i in 1:size(f,1)] |> sum
 end

@@ -10,9 +10,91 @@ abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
 
+# Note that we don't allow blocks of blocks (but maybe should...)
 struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Matrix{T}
 end
+function BlockAbstractOperator(Op::AbstractOperator,n,m)
+    Ops = fill(Op,n,m)
+    BlockAbstractOperator(Ops)
+end
+function matrix2BlockOperator(M::Matrix{T}) where T <: Operator
+    n,m = size(M)
+    row = M[1,1]
+    for j = 2:m
+        row = row ⊞ M[1,j]
+    end
+    op = row
+    for i = 2:n
+        row = M[i,1]
+        for j = 2:m
+            row = row ⊞ M[i,j]
+        end
+        op = op ⊘ row
+    end
+    op
+end
+
+function diagm(V::Vector{T}) where T <: AbstractOperator
+    c = convert(Vector{Int64},[])
+    r = convert(Vector{Int64},[])
+    for v in V
+        n,m = size(v)
+        push!(c,m)
+        push!(r,n)
+    end
+    row = [AbstractZeroOperator(r[1],c[j]) for j in 1:length(V)]
+    row = convert(Vector{AbstractOperator},row)
+    row[1] = V[1]
+    out = ⊞(row...)
+    for i = 2:length(V)
+        row = [AbstractZeroOperator(r[i],c[j]) for j in 1:length(V)]
+        row = convert(Vector{AbstractOperator},row)
+        row[i] = V[i]
+        out = out ⊘ (⊞(row...))
+    end
+    out
+end
+
+struct BlockDiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
+    Ops::Vector{T}
+end
+
+size(B::BlockAbstractOperator) = size(B.Ops)
+size(B::BlockAbstractOperator,i) = size(B.Ops,i)
+size(B::BlockDiagonalAbstractOperator) = size(B.Ops)
+axes(B::BlockAbstractOperator,j) = axes(B.Ops,j)
+
+function getindex(L::BlockAbstractOperator,i::Int64,j::Int64)
+    L.Ops[i,j]
+end
+function getindex(L::BlockAbstractOperator,i::Int64,j::UnitRange{Int64})
+    BlockAbstractOperator(reshape(L.Ops[i,j],1,:))
+end
+function getindex(L::BlockAbstractOperator,i::UnitRange{Int64},j::Int64)
+    BlockAbstractOperator(reshape(L.Ops[i,j],:,1))
+end
+function getindex(L::BlockAbstractOperator,i::UnitRange{Int64},j::UnitRange{Int64})
+    BlockAbstractOperator(L.Ops[i,j])
+end
+
+####
+function ⊕(A1::AbstractOperator,A2::AbstractOperator)
+    BlockDiagonalAbstractOperator([A1, A2])
+end
+
+function ⊕(A1::BlockDiagonalAbstractOperator,A2::AbstractOperator)
+    BlockDiagonalAbstractOperator(vcat(A1.Ops, [A2]))
+end
+
+function ⊕(A1::AbstractOperator,A2::BlockDiagonalAbstractOperator)
+    BlockDiagonalAbstractOperator(vcat([A1], A2.Ops))
+end
+
+function ⊕(A1::BlockDiagonalAbstractOperator,A2::BlockDiagonalAbstractOperator)
+    BlockDiagonalAbstractOperator(vcat(A1.Ops, A2.Ops))
+end
+####
 
 ####
 function ⊞(A1::AbstractOperator,A2::AbstractOperator)
@@ -30,6 +112,18 @@ end
 function ⊞(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
     BlockAbstractOperator([A1.Ops A2.Ops])
 end
+
+function ⊞(Ops...)
+    if length(Ops) == 1
+        return Ops
+    end
+    op = Ops[1]
+    for i = 2:length(Ops)
+        op = op ⊞ Ops[i]
+    end
+    op
+end
+
 ####
 ####
 function ⊘(A1::AbstractOperator,A2::AbstractOperator)
@@ -48,6 +142,16 @@ function ⊘(A1::BlockAbstractOperator,A2::BlockAbstractOperator)
     BlockAbstractOperator([A1.Ops; A2.Ops])
 end
 ####
+function *(D::BlockDiagonalAbstractOperator,B::BlockAbstractOperator)
+    if length(D.Ops) != size(B,1)
+        @error "Dimensions are incorrect in BlockDiagonalAbstractOperator * BlockAbstractOperator"
+    end
+    Ops = reshape([D.Ops[1]*b for b in B.Ops[1,1:end]],1,:)
+    for i in 2:length(D.Ops)
+        Ops = vcat(Ops,reshape([D.Ops[i]*b for b in B.Ops[i,1:end]],1,:))
+    end
+    BlockAbstractOperator(Ops)
+end
 ####
 struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
@@ -66,12 +170,24 @@ function -(L::Operator)
     (-1)*L
 end
 
+function -(L::BlockAbstractOperator)
+    BlockAbstractOperator(-L.Ops)
+end
+
 function +(Op1::AbstractOperator,Op2::AbstractOperator)
     SumOfAbstractOperators([Op1;Op2],[1;1])
 end
 
 function -(Op1::AbstractOperator,Op2::AbstractOperator)
     SumOfAbstractOperators([Op1;Op2],[1;-1])
+end
+
+function +(Op1::BlockAbstractOperator,Op2::BlockAbstractOperator)
+    BlockAbstractOperator(Op1.Ops .+ Op2.Ops)
+end
+
+function -(Op1::BlockAbstractOperator,Op2::BlockAbstractOperator)
+    BlockAbstractOperator(Op1.Ops .- Op2.Ops)
 end
 
 function +(S1::SumOfAbstractOperators{T1},S2::SumOfAbstractOperators{T2}) where {T1 <: AbstractOperator, T2 <:AbstractOperator}
@@ -84,6 +200,17 @@ end
 
 function +(S2::SumOfAbstractOperators{T2},S1::AbstractOperator) where {T2 <:AbstractOperator}
     S2 + (1*S1)
+end
+
+struct AbstractZeroOperator <: AbstractOperator end
+AbstractZeroOperator(n::Int64,m::Int64) = n == m && n == 1 ? AbstractZeroOperator() : BlockAbstractOperator(fill(AbstractZeroOperator(),n,m))
+
+function *(Op::AbstractZeroOperator,Op2::AbstractOperator)
+    Op
+end
+
+function *(Op::AbstractOperator,Op2::AbstractZeroOperator)
+    Op2
 end
 
 struct Derivative <: AbstractOperator
@@ -99,9 +226,25 @@ struct Multiplication <: AbstractOperator
     f::Union{Function,BasisExpansion}
 end
 
-### SEMI ABSTRACT OPERATOR ###
+### SEMI ABSTRACT OPERATORS ###
 struct Conversion <: AbstractOperator
     range::Basis
+end
+
+struct BoundaryValue <: AbstractOperator
+    o::Int64
+    range::Basis
+end
+function BoundaryValue(o::Int64,ran::DirectSum)
+    BlockDiagonalAbstractOperator(map(z -> BoundaryValue(o,z), ran.bases))
+end
+
+### ###
+
+struct CauchyTransform <: AbstractOperator end
+
+struct CauchyOperator <: AbstractOperator
+    o::Int64
 end
 
 Derivative() = Derivative(1)
@@ -156,6 +299,16 @@ function *(Op::AbstractOperator,f::BasisExpansion)
     Opc*f
 end
 
+function *(Op::AbstractZeroOperator,b::Basis)
+    ConcreteLazyOperator(AnyBasis(),AnyBasis(),ZeroOperator())
+end
+
+function *(Op::AbstractZeroOperator,b::DirectSum)
+    m = b.bases |> length
+    B = BlockAbstractOperator(fill(AbstractZeroOperator(),m,m))
+    B*b
+end
+
 function *(Op::BlockAbstractOperator,sp::Basis)
     if size(Op.Ops)[2] > 1
         @error "Incorrect block size."
@@ -173,7 +326,7 @@ function *(Op::BlockAbstractOperator,sp::DirectSum)
         @error "Incorrect block size."
         return
     end
-    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1] )
+    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1])
     COps = Op.Ops.*sps
     range = DirectSum([op.range for op in COps[:,1]]);
     for i = 2:size(Op.Ops)[2]

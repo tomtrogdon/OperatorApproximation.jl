@@ -47,7 +47,7 @@ function *(M::Multiplication,sp::Fourier)
     
     if typeof(ff.basis) <: Fourier && isconvertible(ff.basis,sp)
         np = N₋(length(ff.c)); nm = length(ff.c) - np + 1
-        Op = BasicBandedOperator(BI,np,np,toeplitz_function(ff.c))
+        Op = BasicBandedOperator{ℤ,ℤ}(np,np,toeplitz_function(ff.c))
     else 
         1 + 1 #TODO: just evaluate and expand, need transform
     end

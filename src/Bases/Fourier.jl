@@ -1,19 +1,13 @@
 struct Fourier <: Basis
-    GD::GridDomain
+    GD::GridInterval
 end
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####
 ####################################
+cfd(sp::Fourier) = ℤ
+
 function dim(sp::Fourier)
     Inf
-end
-
-function pad(f::BasisExpansion{T},N) where T <: Fourier
-    nm = N₋(length(f.c))
-    new_nm = N₋(N)
-    vm = pad(copy(f.c[1:nm]) |> reverse, new_nm) |> reverse;
-    vp = pad(copy(f.c[nm+1:end]), N - new_nm);
-    BasisExpansion(f.basis,vcat(vm,vp))
 end
 
 function testconv(f::BasisExpansion{T}) where T <: Fourier
@@ -52,7 +46,6 @@ function mdft(v)
         mm = m ÷ 2
         σ = 1im*pi/m
         rot = exp(mm*σ)
-        display(angle(rot))
         σ = exp(σ)
         w = mfft(v)
         @inbounds for i = 1:m
@@ -72,7 +65,6 @@ function midft(v)
         mm = m ÷ 2
         σ = 1im*pi/m
         rot = exp(mm*σ)
-        display(angle(rot))
         σ = exp(σ)
         @inbounds for i = 1:m
             w[i] /= rot
