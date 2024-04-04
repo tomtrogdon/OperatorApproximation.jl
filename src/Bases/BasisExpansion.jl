@@ -19,6 +19,18 @@ size(b::BasisExpansion{T}) where T <: DirectSum = size(b.basis.bases)
 size(b::BasisExpansion{T},i) where T <: DirectSum = size(b.basis.bases,i)
 lastindex(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
 length(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
+domainplot(f::BasisExpansion{T};kwargs...) where T = domainplot(f.basis.bases;kwargs...)
+coefplot(f::BasisExpansion{T};kwargs...) where T = plot(abs.(f.c) .+ eps(); yaxis = :log, kwargs...)
+coefplot!(f::BasisExpansion{T};kwargs...) where T = plot!(abs.(f.c) .+ eps(); yaxis = :log, kwargs...)
+coefplot!(p,f::BasisExpansion{T};kwargs...) where T = plot!(p,abs.(f.c) .+ eps(); yaxis = :log, kwargs...)
+
+function coefplot(f::BasisExpansion{T};kwargs...) where T <: DirectSum
+    p = coefplot(f[1];kwargs...)
+    for i = 2:length(f)
+        coefplot!(p,f[i];kwargs...)
+    end
+    p
+end
 
 function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
@@ -84,16 +96,16 @@ function plot(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot(real(x) + imag(x), y |> real)
-    plot!(real(x) + imag(x), y |> imag)
+    plot(abs.(x), y |> real)
+    plot!(abs.(x), y |> imag)
 end
 
 function plot!(f::BasisExpansion;dx = 0.01)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot!(real(x) + imag(x), y |> real)
-    plot!(real(x) + imag(x), y |> imag)
+    plot!(abs.(x), y |> real)
+    plot!(abs.(x), y |> imag)
 end
 
 function pad(v::Vector,n::Int64)

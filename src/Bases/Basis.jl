@@ -8,6 +8,10 @@ struct 𝕏 <: CoefficientDomain end ## for when multiplication is not defined
 
 struct AnyBasis <: Basis end
 
+domainplot(b::Basis;kwargs...) = domainplot(b.GD.D;kwargs...)
+domainplot!(b::Basis;kwargs...) = domainplot!(b.GD.D;kwargs...)
+domainplot(V::Vector{T};kwargs...) where T <: Basis = domainplot([b.GD.D for b in V];kwargs...)
+
 function ==(b1::AnyBasis,b2::Basis)
     true
 end
@@ -34,6 +38,7 @@ struct DirectSum <: Basis
         end
     end
 end
+domainplot(b::DirectSum) = domainplot(b.bases)
 
 getindex(b::DirectSum,i::Int64) = b.bases[i] |> DirectSum
 getindex(b::DirectSum,i::UnitRange{Int64}) = b.bases[i] |> DirectSum

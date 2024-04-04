@@ -15,6 +15,9 @@ struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Matrix{T}
 end
 function BlockAbstractOperator(Op::AbstractOperator,n,m)
+    if n == m && n == 1
+        return Op
+    end
     Ops = fill(Op,n,m)
     BlockAbstractOperator(Ops)
 end
@@ -36,6 +39,9 @@ function matrix2BlockOperator(M::Matrix{T}) where T <: Operator
 end
 
 function diagm(V::Vector{T}) where T <: AbstractOperator
+    if length(V) == 1
+        return V[1]
+    end
     c = convert(Vector{Int64},[])
     r = convert(Vector{Int64},[])
     for v in V
@@ -60,6 +66,7 @@ struct BlockDiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractO
     Ops::Vector{T}
 end
 
+size(B::AbstractOperator) = (1,1)
 size(B::BlockAbstractOperator) = size(B.Ops)
 size(B::BlockAbstractOperator,i) = size(B.Ops,i)
 size(B::BlockDiagonalAbstractOperator) = size(B.Ops)

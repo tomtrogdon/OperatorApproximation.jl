@@ -9,25 +9,49 @@ function _rhrange(D::Basis)
     DirectedLobattoMappedInterval(a,b)
 end
 
+function mvf2mof(f,n,m) # a bit lazy, tbh
+    out = Matrix{Any}(nothing,n,m)
+    for i = 1:n
+        for j = 1:m
+            out[i,j] = z -> f(z)[i,j]
+        end
+    end
+    convert(Matrix{Function},out)
+end
+
 function RHrange(D::DirectSum)
     ⊕(GridValues.(_rhrange.(D.bases))...)
 end
 
-function RHmult(Js::Function) 
-
+function RHrange(D::Basis)
+    GridValues(_rhrange(D))
 end
 
-function RHmult(Js::Vector{T}) where T # J is a vector of scalar-valued functions
-
+function RHmult(J::Matrix) 
+    m = size(J,1) # m is size of RHP
+    Js = Matrix{Any}(nothing,m,m)
+    for i = 1:m
+        for j = 1:m
+            Js[j,i] = Multiplication(J[i,j])
+        end
+    end
+    convert(Matrix{Multiplication},Js)
 end
+
+# function RHmult(Js::Vector{T}) where T # J is a vector of scalar-valued functions
+
+# end
 
 function RHmult(J::Vector{T}) where T <: Matrix # J is a vector of matrices of scalar-valued functions
+    if length(J) == 1
+        return RHmult(J[1])
+    end
     m = size(J[1],1) # m is size of RHP
     # length of J is # of contours
     Js = Matrix{Any}(nothing,m,m)
     for i = 1:m
         for j = 1:m
-            g = [ JJ[i,j] for JJ in J]
+            g = [JJ[i,j] for JJ in J]
             Js[j,i] = BlockDiagonalAbstractOperator(Multiplication.(g))
         end
     end
@@ -38,8 +62,9 @@ function RHrhs(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of 
     m = size(J[1],1) # m is size of RHP
     # length of J is # of contours
     Js = Vector{Any}(nothing,m)
+    id = Matrix(I,m,m)
     for i = 1:m
-        Js[i] = [ z -> (c*(ComplexF64.(map(x -> x(z),JJ)) - I))[i] for JJ in J]
+        Js[i] = [ z -> (c*(ComplexF64.(map(x -> x(z),JJ)) - id))[i] for JJ in J]
     end
     convert(Vector{Vector},Js)
 end
@@ -54,6 +79,9 @@ function (R::RHSolver)(c,n)
     u = \(R.S,b,n)
     k = length(R.jumps)
     m = length(c)
+    if k == 1
+        return [u[i] for i=1:m]
+    end
     [u[(i-1)*k+1:i*k] for i=1:m]
 end
 
