@@ -47,6 +47,8 @@ axes(b::DirectSum) = axes(b.bases)
 axes(b::DirectSum,i) = axes(b.bases,i)
 axes(b::Basis) = axes([b])
 axes(b::Basis,i) = axes([b],i)
+length(b::DirectSum) = length(b.bases)
+
 
 function bases(b::DirectSum)
     b.bases

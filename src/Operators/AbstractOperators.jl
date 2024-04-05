@@ -278,7 +278,6 @@ function ^(D1::FloquetDerivative,k::Integer)
     FloquetDerivative(k*D1.order,D1.μ)
 end
 
-
 function *(M::AbstractOperator,Op2::AbstractOperator)
     ProductOfAbstractOperators([M;Op2])
 end
