@@ -1,5 +1,5 @@
 # OperatorApproximation.jl
-[![codecov](https://codecov.io/gh/tomtrogdon/OperatorApproximation.jl/graph/badge.svg?token=QXMLQ083L3)](https://codecov.io/gh/tomtrogdon/OperatorApproximation.jl)
+[![codecov](https://codecov.io/gh/tomtrogdon/OperatorApproximation.jl/graph/badge.svg?token=QXMLQ083L3)](https://codecov.io/gh/tomtrogdon/OperatorApproximation.jl) ![CI](https://github.com/github/docs/actions/workflows/CI.yml/badge.svg)
 
 A framework for approximating functions, operators and solving operator equations
 
