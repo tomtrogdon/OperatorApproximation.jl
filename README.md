@@ -1,4 +1,6 @@
 # OperatorApproximation.jl
+[![codecov](https://codecov.io/gh/tomtrogdon/OperatorApproximation.jl/graph/badge.svg?token=QXMLQ083L3)](https://codecov.io/gh/tomtrogdon/OperatorApproximation.jl)
+
 A framework for approximating functions, operators and solving operator equations
 
 This is largely motivated by ApproxFun.jl and is a reimplemenation of many of those ideas for use by my research group.
