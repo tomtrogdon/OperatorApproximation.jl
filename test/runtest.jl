@@ -113,18 +113,21 @@ end
     z = 2.1
     @test abs(cff(z) - truth) < 1e-10
 
-    truth = 0.053855186206159714*im  # true integral wrt normalized weight function
-    f = x -> 0.5*sin.(x)
+    # c = NIntegrate[Sqrt[4 - x^2], {x, -2, 2}]
+    # truth = 1/(2 Pi I*c) 4*NIntegrate[Sin[x] Sqrt[4 - x^2]/(x - 2.1), {x, -2, 2}]
+    truth = 0.21542074482463697*im  # true integral wrt normalized weight function
+    f = x -> sin.(x)
     gd = JacobiMappedInterval(-2.0,2.0,0.5,0.5)
     sp = Jacobi(0.5,0.5,gd)
     ff = BasisExpansion(f,sp,100)
     @test abs(ff(.3) - f(.3)) < 1e-10
     cff = CauchyTransform()*ff
     z = 2.1
+    display(cff(z)/truth)
     @test abs(cff(z)-truth) < 1e-10
 
     truth = 0.0808961206892101 -  0.1554484139468048*im
-    f = x -> 0.5*sin.(x)
+    f = x -> 0.5*sin.(x)*sqrt(2)
     gd = JacobiMappedInterval(0.0,1im + 1.0,0.5,0.5)
     sp = Jacobi(0.5,0.5,gd)
     ff = BasisExpansion(f,sp,100)
