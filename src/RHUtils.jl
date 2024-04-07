@@ -129,7 +129,7 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
             deleteat!(doms,i)
             deleteat!(G,i)
             deleteat!(Gsamp,i)
-            m -= 1
+            k -= 1
             i -= 1
         else
             doms[i] = [a, b]
@@ -224,4 +224,23 @@ function (R::RHSolverVec)(c,n::Int64)
     parted_sol = part_vec(sol,ns)
     u = ⊕(BasisExpansion.(domains,parted_sol)...)
     [u[(i-1)*k+1:i*k] for i=1:m]
+end
+
+function dilog(z)
+    if abs(z) <= 3/4
+        sum = 0.0
+        Z = z
+        for i = 1:95
+            sum += Z/(i)^2
+            Z *= z
+        end
+        return sum
+    elseif abs(z) >= 4/3
+        return -pi^2/6 - (log(-z |> complex))^2/2 - dilog(1/z)
+    elseif abs(1-z) <= 3/4 || abs(1-z) >= 4/3
+        return pi^2/6 - log(z)*log(1-z) - dilog(1-z)
+    else
+        w = sqrt(z)
+        2*(dilog(w) + dilog(-w))
+    end
 end

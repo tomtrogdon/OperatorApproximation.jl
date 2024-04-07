@@ -17,7 +17,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     CauchyTransform, Exterior, Interior, CauchyOperator, ArgNum, LobattoMappedInterval, LobattoInterval, BoundaryValue, BlockDiagonalAbstractOperator, AbstractZeroOperator, ZeroOperator,
     DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval, Legendre, RHrange, RHdomain,
     BlockAbstractOperator, RHmult, RHrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
-    arclength, RHP, adapt, mofeval, mult2x2
+    arclength, RHP, adapt, mofeval, mult2x2, dilog
 
 struct StandardBasisVector
     j::Integer
