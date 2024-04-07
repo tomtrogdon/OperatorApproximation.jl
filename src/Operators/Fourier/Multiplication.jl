@@ -3,7 +3,6 @@ function toeplitz(c::Vector,N::Integer)
     m₋ = N₋(mm)
     m₊ = N₊(mm)
     dm = N - m₋ - 1
-    display(dm)
     range = m₋:-1:-convert(Int64,floor((mm-1)/2))
     range = range .+ (dm < 0 ? dm : 0)
     mstart = max(0,-dm)

@@ -34,7 +34,6 @@ function (P::BasisExpansion{Laurent})(X::Number) # Horner's method
     x = P.basis.GD.D.imap(X)
     m = length(P.c)
     mm = convert(Int64,floor( m/2 ))
-    display(x)
     ex = complex(float(x)).^(-mm)
     sum = P.c[1]*ex
     for i = 2:length(P.c) # probably should do Horner from the zero mode outwards

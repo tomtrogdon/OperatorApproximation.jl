@@ -10,6 +10,14 @@ abstract type Operator end
 
 abstract type AbstractOperator <: Operator end
 
+function *(Op::AbstractOperator,V::Vector)
+    [Op*v for v in V]
+end
+
+function *(Op::AbstractOperator,V::Matrix)
+    [Op*v for v in V]
+end
+
 # Note that we don't allow blocks of blocks (but maybe should...)
 struct BlockAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Matrix{T}

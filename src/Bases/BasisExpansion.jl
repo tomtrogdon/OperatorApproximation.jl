@@ -3,6 +3,16 @@ struct BasisExpansion{T<:Basis}
     c::Vector # if DirectSum then c is a vector of vectors
 end
 
+transpose(f::BasisExpansion{T}) where T = f
+
+function (V::Vector{T})(z) where T <: BasisExpansion
+    [v(z) for v in V]
+end
+
+function (V::Matrix{T})(z) where T <: BasisExpansion
+    [v(z) for v in V]
+end
+
 function sum(f::BasisExpansion{T}) where T<:DirectSum
     sum([sum(f[i]) for i = 1:length(f)])
 end

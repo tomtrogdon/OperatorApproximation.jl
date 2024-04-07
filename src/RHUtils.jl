@@ -9,6 +9,14 @@ function _rhrange(D::Basis)
     DirectedLobattoMappedInterval(a,b)
 end
 
+function mult2x2(A,B) # should be generalized
+    a11 = z -> A[1,1](z)*B[1,1](z) + A[1,2](z)*B[2,1](z)
+    a12 = z -> A[1,1](z)*B[1,2](z) + A[1,2](z)*B[2,2](z)
+    a21 = z -> A[2,1](z)*B[1,1](z) + A[2,2](z)*B[2,1](z)
+    a22 = z -> A[2,1](z)*B[1,2](z) + A[2,2](z)*B[2,2](z)
+    [a11 a12; a21 a22]
+end
+
 function mvf2mof(f,n,m) # a bit lazy, tbh
     out = Matrix{Any}(nothing,n,m)
     for i = 1:n
@@ -17,6 +25,10 @@ function mvf2mof(f,n,m) # a bit lazy, tbh
         end
     end
     convert(Matrix{Function},out)
+end
+
+function mofeval(f,z)
+    map(x -> x(z),f)
 end
 
 function RHrange(D::DirectSum)
@@ -94,7 +106,6 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
         x = gd.D.map.(gd.grid(N))
         vals = abs.(Gsamp[i].(x))
         j = 1
-        println(vals[1])
         if vals[1] < tol
             for v in vals
                 if v > tol
