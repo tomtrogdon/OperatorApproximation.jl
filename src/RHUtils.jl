@@ -74,6 +74,65 @@ struct RHSolver
     jumps
 end
 
+struct RHP
+    Γ::Matrix
+    J::Vector
+end
+
+function truncateRHP(Jsamp,J,Γ,tol,n)
+    Gsamp = copy(Jsamp)
+    G = copy(J)
+    doms = Γ |> copy
+    k = size(doms,1)
+    
+    doms = [doms[i,:] for i = 1:size(doms,1)]
+    i = 0
+    while i < k
+        i += 1
+        gd = LobattoMappedInterval(doms[i][1],doms[i][2])
+        N = round(Int,n*arclength(gd)) 
+        x = gd.D.map.(gd.grid(N))
+        vals = abs.(Gsamp[i].(x))
+        j = 1
+        println(vals[1])
+        if vals[1] < tol
+            for v in vals
+                if v > tol
+                    break
+                end
+                j += 1
+            end
+        end
+        a = x[max(1,j-1)]
+        l = length(vals)
+        if vals[end] < tol
+            for v in reverse(vals)
+                if v > tol
+                    break
+                end
+                l -= 1
+            end
+        end
+        b = x[min(length(vals),l+1)]
+        if j == length(vals) + 1 || l == 0
+            deleteat!(doms,i)
+            deleteat!(G,i)
+            deleteat!(Gsamp,i)
+            m -= 1
+            i -= 1
+        else
+            doms[i] = [a, b]
+        end
+    end
+    doms = [transpose(x) for x in doms]
+    G, vcat(doms...)
+end
+
+function adapt(rhp::RHP,j,ϵ::Float64)
+    J, Σ = truncateRHP(j,rhp.J,rhp.Γ,ϵ,100)
+    RHP(Σ,J)
+end
+
 function (R::RHSolver)(c,n)
     b = vcat(RHrhs(R.jumps,c)...)
     u = \(R.S,b,n)
@@ -85,23 +144,23 @@ function (R::RHSolver)(c,n)
     [u[(i-1)*k+1:i*k] for i=1:m]
 end
 
-function RHSolver(intervals::Matrix,jumps::Vector)
-    m = size(jumps[1],1) # size of RHP
-    k = size(intervals,1) # number of intervals
-    dom = RHdomain(intervals)
+function RHSolver(rhp::RHP)
+    m = size(rhp.J[1],1) # size of RHP
+    k = size(rhp.Γ,1) # number of intervals
+    dom = RHdomain(rhp.Γ)
     ran = RHrange(dom)
     ℰ⁻ = BoundaryValue(-1,ran)
     ℰ⁺ = BoundaryValue(+1,ran)
     𝒞 = BlockAbstractOperator(CauchyTransform(),k,k)
     𝒞⁺ = ℰ⁺*𝒞
     𝒞⁻ = ℰ⁻*𝒞
-    ℳ = RHmult(jumps)
+    ℳ = RHmult(rhp.J)
     ℳ𝒞⁻ = matrix2BlockOperator(ℳ.*fill(𝒞⁻,m,m))
     𝒞⁺ = diagm(fill(𝒞⁺,m))
     dom = ⊕([dom for i = 1:m]...)
     ran = ⊕([ran for i = 1:m]...)
     S = (-ℳ𝒞⁻ + 𝒞⁺)*dom
-    RHSolver(S,jumps)
+    RHSolver(S,rhp.J)
 end
 
 ### Vector "optimized" versions... that are slower... ###

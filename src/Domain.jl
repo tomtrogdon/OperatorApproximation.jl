@@ -170,6 +170,9 @@ struct MappedCircle <: Circle
     end
 end
 
+arclength(I::Interval) = abs(I.a - I.b)
+arclength(C::Circle) = 2*pi*C.rad
+
 function ==(C1::Circle,C2::Circle)
     C1.cen ≈ C2.cen && C1.rad ≈ C2.rad
 end
@@ -186,6 +189,8 @@ function iscompatible(GD1::GridDomain,GD2::GridDomain)
 end
 
 abstract type GridInterval <: GridDomain end
+
+arclength(gd::GridDomain) = arclength(gd.D)
 
 struct ChebyshevInterval <: GridInterval
     D::Interval
