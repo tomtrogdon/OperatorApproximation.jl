@@ -259,16 +259,16 @@ end
 
 function peel_endpoint(c)
     cc = [c[1]]
+    inds = [1]
     ccpy = copy(c)
     for i = 2:length(c)
         cccc = c[i]
         if abs(c[1][1]-cccc[1]) < 1e-14
-            println("pushed")
             push!(cc,cccc)
-            deleteat!(ccpy,i)
+            push!(inds,i)
         end
     end
-    deleteat!(ccpy,1)
+    deleteat!(ccpy,inds)
     (ccpy,cc)
 end
 
