@@ -1,4 +1,4 @@
-function RHdomain(endpoints::Matrix)
+function rhdomain(endpoints::Matrix)
      temp = [(endpoints[i,1],endpoints[i,2]) for i=1:size(endpoints,1)]
      return ⊕([Legendre(t...) for t in temp]...)
 end
@@ -31,11 +31,11 @@ function mofeval(f,z)
     map(x -> x(z),f)
 end
 
-function RHrange(D::DirectSum)
+function rhrange(D::DirectSum)
     ⊕(GridValues.(_rhrange.(D.bases))...)
 end
 
-function RHrange(D::Basis)
+function rhrange(D::Basis)
     GridValues(_rhrange(D))
 end
 
@@ -54,7 +54,7 @@ end
 
 # end
 
-function RHmult(J::Vector{T}) where T <: Matrix # J is a vector of matrices of scalar-valued functions
+function rhmult(J::Vector{T}) where T <: Matrix # J is a vector of matrices of scalar-valued functions
     if length(J) == 1
         return RHmult(J[1])
     end
@@ -70,7 +70,7 @@ function RHmult(J::Vector{T}) where T <: Matrix # J is a vector of matrices of s
     convert(Matrix{BlockDiagonalAbstractOperator},Js)
 end
 
-function RHrhs(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of scalar-valued functions
+function rhrhs(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of scalar-valued functions
     m = size(J[1],1) # m is size of RHP
     # length of J is # of contours
     Js = Vector{Any}(nothing,m)
@@ -90,6 +90,8 @@ struct RHP
     Γ::Matrix
     J::Vector
 end
+
+contourplot(rhp::RHP;kwargs...) = contourplot(rhdomain(rhp.Γ);kwargs...)
 
 function truncateRHP(Jsamp,J,Γ,tol,n)
     Gsamp = copy(Jsamp)
@@ -158,8 +160,8 @@ end
 function RHSolver(rhp::RHP)
     m = size(rhp.J[1],1) # size of RHP
     k = size(rhp.Γ,1) # number of intervals
-    dom = RHdomain(rhp.Γ)
-    ran = RHrange(dom)
+    dom = rhdomain(rhp.Γ)
+    ran = rhrange(dom)
     ℰ⁻ = BoundaryValue(-1,ran)
     ℰ⁺ = BoundaryValue(+1,ran)
     𝒞 = BlockAbstractOperator(CauchyTransform(),k,k)
@@ -187,14 +189,14 @@ end
 function RHSolverVec(intervals::Matrix,jumps::Vector)
     m = size(jumps[1],1) # size of RHP
     k = size(intervals,1) # number of intervals
-    dom = RHdomain(intervals)
-    ran = RHrange(dom)
+    dom = rhdomain(intervals)
+    ran = rhrange(dom)
     ℰ⁻ = BoundaryValue(-1,ran)
     ℰ⁺ = BoundaryValue(+1,ran)
     𝒞 = BlockAbstractOperator(CauchyTransform(),k,k)
     𝒞⁺ = ℰ⁺*𝒞
     𝒞⁻ = ℰ⁻*𝒞
-    ℳ = RHmult(jumps)
+    ℳ = rhmult(jumps)
     ℳ = matrix2BlockOperator(map(x -> diagm(x.Ops),ℳ))
     #ℳ = diagm.(ℳ.Ops)
     RHSolverVec(𝒞⁺*dom,𝒞⁻*dom,ℳ*(ran ⊕ ran),jumps, ran, dom) 
@@ -208,7 +210,7 @@ function (R::RHSolverVec)(c,n::Int64)
     ranges = vcat(fill(R.range.bases,m)...)
     domains = vcat(fill(R.domain.bases,m)...)
     ns = vcat(ns1,ns1)
-    b = vcat(RHrhs(R.jumps,c)...)
+    b = vcat(rhrhs(R.jumps,c)...)
     rhss = []
     for i = 1:length(ns)
         temp = BasisExpansion(b[i],ranges[i],ns[i])
@@ -293,11 +295,35 @@ function endpoint_check(ept,J)
 end
 
 function rhwellposed(rhp::RHP)
-    el = rhp.Γ |> RHdomain |> endpoint_list
+    el = rhp.Γ |> rhdomain |> endpoint_list
     out = []
     while length(el) > 0
         el, ept = peel_endpoint(el)
         push!(out,endpoint_check(ept,rhp.J))
     end
     out
+end
+
+function rhplot(rhp::RHP;kwargs...)
+    # need to extend for larger RHPs
+    dom = rhp.Γ |> rhdomain
+    p0 = domainplot(dom;kwargs...)
+    ran = rhrange(dom)
+    N = 100
+    plts = [p0]
+    y = 0
+    for i = 1:size(rhp.Γ,1)
+        d = dom[i]
+        x = d.GD.grid(N)
+        z = d.GD.D.map.(x)
+        y = vcat(map( x -> reshape(mofeval(rhp.J[i],x),1,:), z)...)
+        p1 = plot(x,y[:,1] |> real;legend = false, kwargs...)
+        plot!(p1,x,y[:,1] |> imag;legend = false, kwargs...)
+        for k = 2:size(y,2)
+            plot!(p1,x,y[:,k] |> real;legend = false, kwargs...)
+            plot!(p1,x,y[:,k] |> imag;legend = false, kwargs...)
+        end
+        push!(plts,p1)
+    end
+    plts
 end
