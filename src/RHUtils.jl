@@ -91,7 +91,7 @@ struct RHP
     J::Vector
 end
 
-contourplot(rhp::RHP;kwargs...) = contourplot(rhdomain(rhp.Γ);kwargs...)
+domainplot(rhp::RHP;kwargs...) = domainplot(rhdomain(rhp.Γ);kwargs...)
 
 function truncateRHP(Jsamp,J,Γ,tol,n)
     Gsamp = copy(Jsamp)
@@ -147,7 +147,7 @@ function adapt(rhp::RHP,j,ϵ::Float64)
 end
 
 function (R::RHSolver)(c,n)
-    b = vcat(RHrhs(R.jumps,c)...)
+    b = vcat(rhrhs(R.jumps,c)...)
     u = \(R.S,b,n)
     k = length(R.jumps)
     m = length(c)
@@ -167,7 +167,7 @@ function RHSolver(rhp::RHP)
     𝒞 = BlockAbstractOperator(CauchyTransform(),k,k)
     𝒞⁺ = ℰ⁺*𝒞
     𝒞⁻ = ℰ⁻*𝒞
-    ℳ = RHmult(rhp.J)
+    ℳ = rhmult(rhp.J)
     ℳ𝒞⁻ = matrix2BlockOperator(ℳ.*fill(𝒞⁻,m,m))
     𝒞⁺ = diagm(fill(𝒞⁺,m))
     dom = ⊕([dom for i = 1:m]...)
@@ -295,6 +295,16 @@ function endpoint_check(ept,J)
 end
 
 function rhwellposed(rhp::RHP)
+    if size(rhp.Γ,1) == 1
+        out = []
+        z = rhp.Γ[1,1]
+        y = mofeval(rhp.J[1],z)
+        push!(out,(z,y))
+        z = rhp.Γ[1,2]
+        y = mofeval(rhp.J[1],z)
+        push!(out,(z,y))
+        return out
+    end
     el = rhp.Γ |> rhdomain |> endpoint_list
     out = []
     while length(el) > 0

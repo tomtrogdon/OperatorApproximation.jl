@@ -37,7 +37,7 @@ function cauchy(a,b,seed,n,z::Number)
         #c = cauchy_off(a,b,n,z)
     else
         c = fill(0.0im,n+3)
-        c[1] = seed(z) |> complex;
+        c[1] = seed(z);
         Z = complex(z)
         c[2] = Z*c[1] - a(0)*c[1] + 1/(2im*pi)
         c[2] = c[2]/b(0)
