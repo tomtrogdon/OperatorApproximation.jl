@@ -244,3 +244,60 @@ function dilog(z)
         2*(dilog(w) + dilog(-w))
     end
 end
+
+function endpoint_list(dd)
+    c = []
+    for j = 1:length(dd)
+        d = dd[j]
+        an = d.GD.D.map(ArgNum(1.0,1.0,1.0*pi))
+        push!(c,(an.z,an.θ,j,1))
+        an = d.GD.D.map(ArgNum(-1.0,1.0,0.0))
+        push!(c,(an.z,an.θ,j,-1))
+    end
+    c
+end
+
+function peel_endpoint(c)
+    cc = [c[1]]
+    ccpy = copy(c)
+    for i = 2:length(c)
+        cccc = c[i]
+        if abs(c[1][1]-cccc[1]) < 1e-14
+            println("pushed")
+            push!(cc,cccc)
+            deleteat!(ccpy,i)
+        end
+    end
+    deleteat!(ccpy,1)
+    (ccpy,cc)
+end
+
+function endpoint_check(ept,J)
+    epts = sort(ept; lt = (x,y) -> x[2] < y[2])
+    z = epts[1][1]
+    σ = epts[1][4]
+    At = mofeval(J[epts[1][3]],z)
+    if σ == 1
+        At = inv(At)
+    end
+    A = At
+    for i = 2:length(epts)
+        σ = epts[i][4]
+        At = mofeval(J[epts[i][3]],z)
+        if σ == 1
+            At = inv(At)
+        end
+        A = A*At
+    end
+    (z, A)
+end
+
+function rhwellposed(rhp::RHP)
+    el = rhp.Γ |> RHdomain |> endpoint_list
+    out = []
+    while length(el) > 0
+        el, ept = peel_endpoint(el)
+        push!(out,endpoint_check(ept,rhp.J))
+    end
+    out
+end
