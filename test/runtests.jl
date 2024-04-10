@@ -123,7 +123,6 @@ end
     @test abs(ff(.3) - f(.3)) < 1e-10
     cff = CauchyTransform()*ff
     z = 2.1
-    display(cff(z)/truth)
     @test abs(cff(z)-truth) < 1e-10
 
     truth = 0.0808961206892101 -  0.1554484139468048*im

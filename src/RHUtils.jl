@@ -154,7 +154,24 @@ function (R::RHSolver)(c,n)
     if k == 1
         return [u[i] for i=1:m]
     end
-    [u[(i-1)*k+1:i*k] for i=1:m]
+    return [u[(i-1)*k+1:i*k] for i=1:m]
+end
+
+function (R::RHSolver)(c::Tuple,n)
+    b = map(c -> vcat(rhrhs(R.jumps,c)...), c)
+    u = \(R.S,b,n)
+    k = length(R.jumps)
+    m = length(c[1])
+    q = length(c)
+    out = []
+    for j = 1:q
+        if k == 1
+            push!(out, [u[j][i] for i=1:m])
+        else
+            push!(out, [u[j][(i-1)*k+1:i*k] for i=1:m])
+        end
+    end
+    return out
 end
 
 function RHSolver(rhp::RHP)

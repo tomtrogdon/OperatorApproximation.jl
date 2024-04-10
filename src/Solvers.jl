@@ -11,12 +11,8 @@ function part_vec(x,ns)
     out
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
-    ranges = bases(L.range)
-    domains = bases(L.domain)
-    dimflag = dim.(ranges) .< Inf
-    Op = Matrix(L,ns,ms)
 
+function _rhs_vec_gen(ns,dimflag,b,ranges)
     rhss = []
     for i = 1:length(ns)
         if dimflag[i] # functional just push vector
@@ -26,12 +22,54 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector
             push!(rhss,temp.c)
         end
     end
-    sol = Op\vcat(rhss...)
+    vcat(rhss...)
+end
+
+function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    ranges = bases(L.range)
+    domains = bases(L.domain)
+    dimflag = dim.(ranges) .< Inf
+    Op = Matrix(L,ns,ms)
+
+    # rhss = []
+    # for i = 1:length(ns)
+    #     if dimflag[i] # functional just push vector
+    #         push!(rhss,b[i])
+    #     else
+    #         temp = BasisExpansion(b[i],ranges[i],ns[i])
+    #         push!(rhss,temp.c)
+    #     end
+    # end
+    rhss = _rhs_vec_gen(ns, dimflag, b, ranges)
+    sol = Op\rhss
     parted_sol = part_vec(sol,ms)
     ⊕(BasisExpansion.(domains,parted_sol)...)
 end
 
+function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    ranges = bases(L.range)
+    domains = bases(L.domain)
+    dimflag = dim.(ranges) .< Inf
+    Op = Matrix(L,ns,ms)
+
+    rhss = map(b -> _rhs_vec_gen(ns, dimflag, b, ranges), b)
+    rhss = hcat(rhss...)
+    sol = Op\rhss
+    out = []
+    for i = 1:length(b)
+        parted_sol = part_vec(sol[:,i],ms)
+        u = ⊕(BasisExpansion.(domains,parted_sol)...)
+        push!(out,u)
+    end
+    out
+end
+
 function \(L::ConcreteLazyOperator{D,R,T},b::Vector,N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+    ns, ms = divide_DOF(L,N,N)
+    \(L,b,ns,ms)
+end
+
+function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
     ns, ms = divide_DOF(L,N,N)
     \(L,b,ns,ms)
 end
@@ -40,6 +78,19 @@ function \(L::ConcreteLazyOperator{D,R,T},b,N::Integer) where {D<:Basis,R<:Basis
     Op = Matrix(L,N,N)
     rhs = BasisExpansion(b,L.range,N)
     BasisExpansion(L.domain,Op\rhs.c)
+end
+
+function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R<:Basis,T<:LazyOperator}
+    Op = Matrix(L,N,N)
+    rhss = map(b -> BasisExpansion(b,L.range,N).c,b)
+    rhss = hcat(rhss...)
+    sol = Op\rhss
+    out = []
+    for i = 1:length(b)
+        u = BasisExpansion(L.domain,sol[:,i])
+        push!(out,u)
+    end
+    out
 end
 
 function testconv(f::Vector{T}) where T <: Number
