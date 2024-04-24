@@ -295,11 +295,11 @@ function endpoint_check(ept,J)
     epts = sort(ept; lt = (x,y) -> x[2] < y[2])
     z = epts[1][1]
     σ = epts[1][4]
-    At = mofeval(J[epts[1][3]],z)
+    At = complex.(mofeval(J[epts[1][3]],z))
     if σ == 1
         At = inv(At)
     end
-    A = complex.(At)
+    A = At
     for i = 2:length(epts)
         σ = epts[i][4]
         At = complex.(mofeval(J[epts[i][3]],z))
