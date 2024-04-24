@@ -302,7 +302,7 @@ function endpoint_check(ept,J)
     A = complex.(At)
     for i = 2:length(epts)
         σ = epts[i][4]
-        At = mofeval(J[epts[i][3]],z)
+        At = complex.(mofeval(J[epts[i][3]],z))
         if σ == 1
             At = inv(At)
         end
