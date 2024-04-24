@@ -146,7 +146,15 @@ function matanh_m(z) # limit from below for z > 1
 end
 
 function legendrestieltjes(z)
-    display(z)
+    return 1im/(4*pi)*(log(-complex(1)-z)-log(complex(1)-z))
+end
+
+function legendrestieltjes(Z::ArgNum)
+    if  -1 - 1e-14 <= real(Z) <= 1 + 1e-14 && imag(Z) < 1e-14
+        z = ArgNum(Z.z |> real |> complex, Z.ρ, Z.θ)
+    else
+        z = Z
+    end
     display(1im/(4*pi)*(log(-complex(1)-z)-log(complex(1)-z)))
     return 1im/(4*pi)*(log(-complex(1)-z)-log(complex(1)-z))
 end
