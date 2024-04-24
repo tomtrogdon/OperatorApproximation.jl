@@ -119,12 +119,12 @@ iM = (A,B,x) -> 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
 
 function isin(x::Number,I::Interval)
     X = I.imap(x)
-    -1 <= real(X) <= 1 && imag(X) ≈ 0
+    -1 <= real(X) <= 1 && imag(X) < 1e-14
 end
 
 function isin(x::Number,I::Circle)
     X = I.imap(x)
-    abs2(X) ≈ 1
+    abs(abs2(X) -1) < 1e-14
 end
 
 struct UnitInterval <: Interval

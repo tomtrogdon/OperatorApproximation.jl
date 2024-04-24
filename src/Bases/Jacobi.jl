@@ -146,15 +146,17 @@ function matanh_m(z) # limit from below for z > 1
 end
 
 function legendrestieltjes(z)
+    display(z)
+    display(1im/(4*pi)*(log(-complex(1)-z)-log(complex(1)-z)))
     return 1im/(4*pi)*(log(-complex(1)-z)-log(complex(1)-z))
 end
 
 function legendrestieltjes_pos(z)
-    return 1im/(4*pi)*(log(1+z) - 1im*pi -log(1-z))
+    return 1im/(4*pi)*(log(1+z) - 1im*pi - log(1-z))
 end
 
 function legendrestieltjes_neg(z)
-    return 1im/(4*pi)*(log(1+z) + 1im*pi -log(1-z))
+    return 1im/(4*pi)*(log(1+z) + 1im*pi - log(1-z))
 end
 
 function JacobiSeed(α,β)

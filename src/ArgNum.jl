@@ -65,8 +65,8 @@ end
 function log(z::ArgNum)
     if abs(z.z) < 1e-14
         return log(z.ρ) + 1im*mmod(z.θ) # return "finite part"
-    elseif imag(z.z) ≈ 0.0 && real(z.z) < 0
-        return log(abs.(z.z)) + 1im*π*sign(mmod(z.θ))
+    # elseif imag(z.z) ≈ 0.0 && real(z.z) < 0
+    #     return log(abs.(z.z)) + 1im*π*sign(mmod(z.θ))
     else
         return log(z.z)
     end

@@ -10,7 +10,7 @@ end
 
 function dist(z,n) # check if inside Bernstein ellipse that tends to
     # [-1,1] as n -> ∞
-    ρ = 1 + 1/n
+    ρ = 1 + 0.5/n
     a = (ρ+1/ρ)/2.0
     b = (ρ-1/ρ)/2.0
     if real(z)^2/a^2 + imag(z)^2/b^2 <= 1
