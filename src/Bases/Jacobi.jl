@@ -29,7 +29,7 @@ end
 #####  Important to implement  #####
 ####################################
 function sum(f::BasisExpansion{T}) where T <: Jacobi
-    (f.basis.GD.D.a - f.basis.GD.D.b)*f.c[1]
+    (f.basis.GD.D.b - f.basis.GD.D.a)*f.c[1]
 end
 
 function (P::BasisExpansion{Jacobi})(X::Number) # Clenshaw's algorithm
