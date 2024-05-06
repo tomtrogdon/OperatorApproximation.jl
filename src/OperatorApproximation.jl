@@ -1,6 +1,6 @@
 module OperatorApproximation
 
-using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunctions
+using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunctions, Memoize
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex, show, getindex, size, axes,
@@ -17,7 +17,11 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     CauchyTransform, Exterior, Interior, CauchyOperator, ArgNum, LobattoMappedInterval, LobattoInterval, BoundaryValue, BlockDiagonalAbstractOperator, AbstractZeroOperator, ZeroOperator,
     DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval, Legendre, rhrange, rhdomain,
     BlockAbstractOperator, rhmult, rhrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
-    arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot
+    arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache
+
+function clearCauchycache()
+    empty!(memoize_cache(cauchy))
+end
 
 struct StandardBasisVector
     j::Integer

@@ -20,17 +20,21 @@ function dist(z,n) # check if inside Bernstein ellipse that tends to
     end
 end
 
-function cauchy(a,b,seed,n,z::Number)
+@memoize function cauchy(a,b,seed,n,z::Number)
     if  dist(z,n) == 0   # the criterion for changing.
         # Non-adaptive method
-        m = n + 4; #over sampling, should be done adaptively
+        m = 16; #over sampling, should be done adaptively
         err = 1
-        while err > 1e-16
-            v = fill(0.0im,m)
-            v[1] = 1.0/(2im*pi)
-            c = ((jacobi(a,b,m-1) - complex(z)*I)\v)
-            err = maximum(abs.(c[end-3:end]))
+        while err > 1e-15
             m *= 2
+            c = fill(0.0im,m)
+            c[1] = 1.0/(2im*pi)
+            ldiv!(jacobi(a,b,m-1) - complex(z)*I,c)
+            #c = ((jacobi(a,b,m-1) - complex(z)*I)\v)
+            err = maximum(abs.(c[end-3:end]))
+        end
+        if m < n + 1
+            append!(c,zeros(n + 10 - m))
         end
         # Adaptive method
         #println("eval off")
@@ -50,5 +54,10 @@ function cauchy(a,b,seed,n,z::Number)
 end
 
 function cauchy(a,b,seed,n,z::Vector)  # vectorize!
-    vcat(map(zz -> cauchy(a,b,seed,n,zz) |> transpose, z)...)
+    A = zeros(ComplexF64,length(z),n+1)
+    for i = 1:length(z)
+        A[i,:] = cauchy(a,b,seed,n,z[i])
+    end
+    A
+    #vcat(map(zz -> cauchy(a,b,seed,n,zz) |> transpose, z)...)
 end

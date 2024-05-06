@@ -30,7 +30,6 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector
     domains = bases(L.domain)
     dimflag = dim.(ranges) .< Inf
     Op = Matrix(L,ns,ms)
-
     # rhss = []
     # for i = 1:length(ns)
     #     if dimflag[i] # functional just push vector
@@ -42,6 +41,7 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector
     # end
     rhss = _rhs_vec_gen(ns, dimflag, b, ranges)
     sol = Op\rhss
+    #sol = lu!(Op)\rhss
     parted_sol = part_vec(sol,ms)
     ⊕(BasisExpansion.(domains,parted_sol)...)
 end
@@ -51,10 +51,10 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,ns::Vector{Int64},ms::Vector{
     domains = bases(L.domain)
     dimflag = dim.(ranges) .< Inf
     Op = Matrix(L,ns,ms)
-
     rhss = map(b -> _rhs_vec_gen(ns, dimflag, b, ranges), b)
     rhss = hcat(rhss...)
     sol = Op\rhss
+    #sol = lu!(Op)\rhss
     out = []
     for i = 1:length(b)
         parted_sol = part_vec(sol[:,i],ms)
@@ -85,6 +85,7 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R
     rhss = map(b -> BasisExpansion(b,L.range,N).c,b)
     rhss = hcat(rhss...)
     sol = Op\rhss
+    sol = lu!(Op)\rhss
     out = []
     for i = 1:length(b)
         u = BasisExpansion(L.domain,sol[:,i])

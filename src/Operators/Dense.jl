@@ -120,7 +120,7 @@ function horner_mat(x,m)
     A[:,1] = exp.(-1im*pi*mm*x)
     ex1 = exp.(1im*pi*x)
     for i = 2:m
-        A[:,i]  =  copy(A[:,i-1]).*ex1
+        A[:,i]  .=  copy(A[:,i-1]).*ex1
     end
     return A
 end
