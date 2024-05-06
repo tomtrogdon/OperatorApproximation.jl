@@ -102,20 +102,34 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
 end
 
 ### needs to be extended
-function plot(f::BasisExpansion;dx = 0.01)
+function plot(f::BasisExpansion;dx = 0.01,kwargs...)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot(abs.(x), y |> real)
-    plot!(abs.(x), y |> imag)
+    a = f.basis.GD.D.a
+    b = f.basis.GD.D.b
+    if isreal(a) && isreal(b) && a < b
+        plot(x, y |> real;kwargs...)
+        plot!(y, y |> imag;kwargs...)
+    else # plot according to arclength
+        plot(abs.(x .- a), y |> real;kwargs...)
+        plot!(abs.(x .- a), y |> imag;kwargs...)
+    end
 end
 
-function plot!(f::BasisExpansion;dx = 0.01)
+function plot!(f::BasisExpansion;dx = 0.01,kwargs...)
     x = -1:dx:1
     x = f.basis.GD.D.map.(x)
     y = f.(x)
-    plot!(abs.(x), y |> real)
-    plot!(abs.(x), y |> imag)
+    a = f.basis.GD.D.a
+    b = f.basis.GD.D.b
+    if isreal(a) && isreal(b) && a < b
+        plot!(x, y |> real;kwargs...)
+        plot!(y, y |> imag;kwargs...)
+    else # plot according to arclength
+        plot!(abs.(x .- a), y |> real;kwargs...)
+        plot!(abs.(x .- a), y |> imag;kwargs...)
+    end
 end
 
 function pad(v::Vector,n::Int64)

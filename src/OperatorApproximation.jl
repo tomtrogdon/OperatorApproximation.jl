@@ -21,6 +21,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
+    GC.gc()
 end
 
 struct StandardBasisVector
