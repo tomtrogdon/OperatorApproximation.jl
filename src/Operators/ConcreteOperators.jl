@@ -74,6 +74,10 @@ function *(a::Number,L::SumOfLazyOperators)
     SumOfLazyOperators(L.Ops,a*L.c)
 end
 
+function *(Op1::SumOfLazyOperators,Op2::LazyOperator)
+    SumOfLazyOperators([l*Op2 for l in Op1.Ops],Op1.c)
+end
+
 function getindex(Op::ConcreteLazyOperator{D,R,T},n) where {D,R,T <: SumOfLazyOperators}
     ConcreteLazyOperator(Op.domain,Op.range,Op.L.Ops[n])
 end
