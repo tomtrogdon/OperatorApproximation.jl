@@ -84,7 +84,7 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R
     Op = Matrix(L,N,N)
     rhss = map(b -> BasisExpansion(b,L.range,N).c,b)
     rhss = hcat(rhss...)
-    sol = Op\rhss
+    #sol = Op\rhss
     sol = lu!(Op)\rhss
     out = []
     for i = 1:length(b)
