@@ -18,6 +18,6 @@ function chop(f::BasisExpansion{T}) where T <: Erf
 end
 
 function (P::BasisExpansion{Erf})(X::Number) # Clenshaw's algorithm
-    x = P.basis.GD.D.imap(X)
+    #x = P.basis.GD.D.imap(X)
     P.c[1]*0.5*(1 + erf(X/sqrt(2)))
 end

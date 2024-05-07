@@ -1,6 +1,6 @@
 module OperatorApproximation
 
-using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunctions, Memoize
+using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunctions, Memoize, SpecialFunctions
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex, show, getindex, size, axes,
