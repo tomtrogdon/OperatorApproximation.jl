@@ -246,6 +246,11 @@ struct Conversion <: AbstractOperator
     range::Basis
 end
 
+struct CoefConversion <: AbstractOperator
+    range::Basis
+end
+
+
 struct BoundaryValue <: AbstractOperator
     o::Int64
     range::Basis

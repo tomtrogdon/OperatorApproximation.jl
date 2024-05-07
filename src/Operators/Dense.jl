@@ -47,12 +47,29 @@ function *(CC::Conversion,dom::Basis)
     end
 end
 
+function *(CC::CoefConversion,dom::Basis)
+    if cfd(dom) == cfd(CC.range)
+        ConcreteLazyOperator(dom,CC.range,BasicBandedOperator{cfd(dom),cfd(dom)}(0,0,(i,j) ->  i == j ? 1.0 : 0.0))
+         # convert from dom to CC.range
+    else
+        @error "Bases are not coef-convertible."
+    end
+end
+
 struct OPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Function
     a::Function # Jacobi coefficients
     b::Function
 end
 OPEvaluationOperator(grid,a,b) = OPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
+
+struct WeightedOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Function
+    a::Function # Jacobi coefficients
+    b::Function
+    W::Function
+end
+WeightedOPEvaluationOperator(grid,a,b) = WeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
 struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Function
@@ -65,6 +82,14 @@ struct FixedGridOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDom
     b::Function
 end
 FixedGridOPEvaluationOperator(grid,a,b) = FixedGridOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
+
+struct FixedGridWeightedOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Vector
+    a::Function # Jacobi coefficients
+    b::Function
+    W::Function
+end
+FixedGridWeightedOPEvaluationOperator(grid,a,b) = FixedGridWeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
 
 struct FixedGridFourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
@@ -90,6 +115,17 @@ mutable struct OPEigenTransform{T <: CoefficientDomain, S <: CoefficientDomain} 
 end
 OPEigenTransform(a,b) = OPEigenTransform{𝔼,ℕ₊}(a,b)
 
+mutable struct OPWeightedEigenTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: NaiveTransform
+    const a::Function # Jacobi coefficients
+    const b::Function
+    A::Matrix # saves transform matrix
+    W::Function
+    function OPWeightedEigenTransform{𝔼,ℕ₊}(a,b,W)
+        return new(a,b,hcat(1.0),W)
+    end
+end
+OPWeightedEigenTransform(a,b,W) = OPWeightedEigenTransform{𝔼,ℕ₊}(a,b,W)
+
 struct DiscreteFourierTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
     T::Function
     function DiscreteFourierTransform{𝔼,ℤ}()
@@ -114,6 +150,10 @@ function Matrix(Op::OPEvaluationOperator,n,m)
     poly(Op.a,Op.b,m,Op.grid(n)) 
 end
 
+function Matrix(Op::WeightedOPEvaluationOperator,n,m)
+    Diagonal(Op.W.(Op.grid(n)))*poly(Op.a,Op.b,m,Op.grid(n)) 
+end
+
 function horner_mat(x,m)
     A = zeros(ComplexF64,length(x),m)
     mm = convert(Int64,floor( m/2 ))
@@ -127,6 +167,15 @@ end
 
 function Matrix(Op::FourierEvaluationOperator,n,m)
     hornermat(Op.grid(n),m)
+end
+
+function Matrix(Op::FixedGridWeightedOPEvaluationOperator,n,m)
+    if n <= length(Op.grid)
+        return Diagonal(Op.W.(Op.grid[1:n]))*poly(Op.a,Op.b,m,Op.grid[1:n])
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return Diagonal(Op.W.(Op.grid))*poly(Op.a,Op.b,m,Op.grid)
+    end
 end
 
 function Matrix(Op::FixedGridOPEvaluationOperator,n,m)
@@ -163,9 +212,32 @@ function Matrix(Op::OPEigenTransform,n)
     return Op.A
 end
 
+function Matrix(Op::OPWeightedEigenTransform,n)
+    if size(Op.A)[1] == n
+        return Op.A
+    end
+    λ, O = Interp_transform(Op.a,Op.b,n-1)
+    Op.A = O*Diagonal(Op.W(λ))
+    return Op.A
+end
+
 function Matrix(Op::OPEigenTransform,n,m)
     if size(Op.A)[1] != m
         Op.A = Interp_transform(Op.a,Op.b,m-1)[2]
+    end
+    if n == m
+        return Op.A
+    elseif n < m
+        return Op.A[1:n,1:m]
+    else
+        return vcat(Op.A,zeros(n-m,m))
+    end
+end
+
+function Matrix(Op::OPWeightedEigenTransform,n,m)
+    if size(Op.A)[1] != m
+        λ, O = Interp_transform(Op.a,Op.b,n-1)
+        Op.A = O*Diagonal(Op.W(λ))
     end
     if n == m
         return Op.A

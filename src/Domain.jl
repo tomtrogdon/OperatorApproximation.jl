@@ -1,6 +1,7 @@
 abstract type Domain end
 abstract type Interval <: Domain end
 abstract type Circle <: Domain end
+abstract type Axis <: Domain end
 abstract type GridDomain end
 abstract type GridRegion <: GridDomain end  # the grid is on the boundary
 
@@ -147,6 +148,16 @@ struct UnitCircle <: Circle  ## could be a map of UnitInterval()
     end
 end
 
+struct RealAxis <: Axis
+    map::Function
+    imap::Function
+    cen::Union{ComplexF64,Float64}
+    θ::Float64
+    function RealAxis()
+        return new(x -> x, x -> x, 0.0, 0.0)
+    end
+end
+
 Base.show(io::IO, ::MIME"text/plain", z::UnitInterval)  =
            print(io, "UnitInterval(",z.a,",",z.b,")")
 
@@ -177,6 +188,10 @@ function ==(C1::Circle,C2::Circle)
     C1.cen ≈ C2.cen && C1.rad ≈ C2.rad
 end
 
+function ==(C1::Axis,C2::Axis)
+    C1.cen ≈ C2.cen && C1.θ ≈ C2.θ
+end
+
 Base.show(io::IO, z::MappedInterval)  =
            print(io, "MappedInterval(",z.a,",",z.b,")")
 
@@ -189,6 +204,8 @@ function iscompatible(GD1::GridDomain,GD2::GridDomain)
 end
 
 abstract type GridInterval <: GridDomain end
+abstract type GridAxis <: GridDomain end
+abstract type GridCircle <: GridDomain end 
 
 arclength(gd::GridDomain) = arclength(gd.D)
 
@@ -238,14 +255,26 @@ end
 Base.show(io::IO, ::MIME"text/plain", z::PeriodicInterval)  =
            print(io, "PeriodicInterval(",sprint(print,z.D),")")
 
-abstract type GridCircle <: GridDomain end 
-
 struct PeriodicCircle <: GridCircle
     D::Circle
     grid::Function
     function PeriodicCircle()
         return new(UnitCircle(), Lgrid)
     end
+end
+
+struct HermiteRealAxis <: GridAxis
+    D::Axis
+    grid::Function
+    function HermiteRealAxis()
+        a, b = Hermite_ab()
+        gridfun = n -> Gauss_quad(a,b,n-1)[1]
+        return new(RealAxis(),gridfun)
+    end
+end
+
+struct HermiteAxis <: GridAxis
+    ## TODO
 end
 
 struct JacobiInterval <: GridInterval
@@ -255,7 +284,7 @@ struct JacobiInterval <: GridInterval
     grid::Function
     function JacobiInterval(α,β)
         a, b = Jacobi_ab(α,β)
-        gridfun = n -> Gauss_quad(a,b,n)[1]
+        gridfun = n -> Gauss_quad(a,b,n-1)[1]
         return new(UnitInterval(),α,β, gridfun)
     end
 end
@@ -345,7 +374,6 @@ struct DirectedRLobattoMappedInterval <: DirectedGridInterval
         return new(MappedInterval(a,b), REgrid, DirectedREgrid)
     end
 end
-
 
 struct PeriodicMappedInterval <: GridInterval
     D::Interval

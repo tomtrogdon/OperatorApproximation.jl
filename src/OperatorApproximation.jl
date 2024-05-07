@@ -17,7 +17,8 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     CauchyTransform, Exterior, Interior, CauchyOperator, ArgNum, LobattoMappedInterval, LobattoInterval, BoundaryValue, BlockDiagonalAbstractOperator, AbstractZeroOperator, ZeroOperator,
     DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval, Legendre, rhrange, rhdomain,
     BlockAbstractOperator, rhmult, rhrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
-    arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache
+    arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
+    HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
@@ -64,11 +65,14 @@ end
 include("Domain.jl")
 include("Bases/Basis.jl")
 include("ArgNum.jl")
+include("OrthogonalPolynomials.jl")
 include("Operators/AbstractOperators.jl")
 include("Operators/ConcreteOperators.jl")
 include("Solvers.jl")
 include("RHUtils.jl")
 
+
+# probably not good to have these global variables
 global N = "adaptive"
 function setN(n)
     global N = n
