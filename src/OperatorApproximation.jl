@@ -18,7 +18,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     DirectedLobattoMappedInterval, DirectedLLobattoMappedInterval, DirectedRLobattoMappedInterval, Legendre, rhrange, rhdomain,
     BlockAbstractOperator, rhmult, rhrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
     arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
-    HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf
+    HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
@@ -68,6 +68,7 @@ include("ArgNum.jl")
 include("OrthogonalPolynomials.jl")
 include("Operators/AbstractOperators.jl")
 include("Operators/ConcreteOperators.jl")
+include("LinAlg.jl")
 include("Solvers.jl")
 include("RHUtils.jl")
 

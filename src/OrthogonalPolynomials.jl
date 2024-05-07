@@ -183,3 +183,38 @@ function JacobiSeedNeg(α,β)
         return z -> 1im/(2*pi)*stieltjesjacobimoment(α,β,z - 1im*eps())
     end
 end
+
+#### General recurrence coefficients ####
+#### Note that this process is       ####
+#### inherently unstable for on      ####
+#### unbounded intervals             ####
+mutable struct RecCoef
+    const ΛW::Function
+    const NN::Function
+    J::SymTridiagonal
+    function RecCoef(ΛW,NN)
+        new(ΛW,NN,SymTridiagonal([1.0,1.0],[0.0]))
+    end
+end
+
+function _update!(RC::RecCoef,n::Int64)
+    N = RC.NN(n+1)
+    Λ, W = RC.ΛW(N)
+    display(RC.J)
+    display(lancz(n+1,Λ,W))
+    RC.J = lancz(n+1,Λ,W)
+end
+
+function _a(RC::RecCoef,n)
+    if size(RC.J,1) < n + 1
+        _update!(RC,2n)
+    end
+    RC.J[n+1,n+1]
+end
+
+function _b(RC::RecCoef,n)
+    if size(RC.J,1) < n + 2
+        _update!(RC,2n+1)
+    end
+    RC.J[n+1,n+2]
+end
