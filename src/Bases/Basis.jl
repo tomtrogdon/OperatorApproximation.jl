@@ -1,11 +1,11 @@
 abstract type Basis end
+abstract type FiniteBasis <: Basis end
 abstract type CoefficientDomain end
 struct ℤ <: CoefficientDomain end
 struct ℕ₊ <: CoefficientDomain end
 struct ℕ₋ <: CoefficientDomain end
 struct 𝔼 <: CoefficientDomain end
 struct 𝕏 <: CoefficientDomain end ## for when multiplication is not defined
-
 struct AnyBasis <: Basis end
 
 domainplot(b::Basis;kwargs...) = domainplot(b.GD.D;kwargs...)
@@ -108,3 +108,4 @@ include("Fourier.jl")
 include("Laurent.jl")
 include("Hardy.jl")
 include("Hermite.jl")
+include("Erf.jl")
