@@ -156,6 +156,18 @@ end
 
 end
 
+@testset "OperatorApproximation.jl: Hermite testing" begin
+    gd = HermiteRealAxis()
+    sp1 = HermiteFun(gd)
+    sp2 = Erf(gd)
+    D = Derivative()
+    Op = (D ⊞ D)*(sp2 ⊕ sp1)
+    f = x -> exp(-x^2/2)
+    F = x -> (2pi)^(0.25)*exp(-x^2/2 + x^2/4)
+    ff = CoefConversion(sp1)*BasisExpansion(F, HermitePoly(gd), 100)
+    sol = \(Op,[ff],200)
+    @test abs(sol(0.0) - sqrt(pi/2)) < 1e-12
+end
 
 @testset "OperatorApproximation.jl: Riemann-Hilbert test" begin
     gd = PeriodicCircle()

@@ -1,8 +1,13 @@
 function herm_d(i,j)
+    # if i == 1 && j == 2
+    #     return 0.5
+    # elseif j == 1 && i == 2
+    #     return 0.5
+    # else
     if j == i + 1
-        return -sqrt(i)
+        return sqrt(i)/2
     elseif j == i - 1
-        return sqrt(j)
+        return -sqrt(j)/2
     else
         return 0.0
     end

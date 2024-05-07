@@ -164,7 +164,7 @@ end
 
 ## TODO: Need implmentation for DirectSum
 function pad(f::BasisExpansion,N::Int64)
-    BasisExpansion(f.basis,pad(cfd(f.basis),f.c,f,N))
+    BasisExpansion(f.basis,pad(cfd(f.basis),f.c,N))
 end
 
 function chop(c::Vector)

@@ -19,5 +19,5 @@ end
 
 function (P::BasisExpansion{Erf})(X::Number) # Clenshaw's algorithm
     #x = P.basis.GD.D.imap(X)
-    P.c[1]*0.5*(1 + erf(X/sqrt(2)))
+    P.c[1]*(pi/2)^(0.25)*(1 + erf(X/2))
 end
