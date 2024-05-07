@@ -98,7 +98,8 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     if length(g.c) < N  # TODO:  Not correct for bi-infinite vectors
         @warn "Input dimension smaller than linear system size. Padding with zeros."
     end
-    BasisExpansion(g.basis,pad(g,N))
+    #BasisExpansion(g.basis,pad(g,N).c)
+    pad(g,N)
 end
 
 ### needs to be extended
