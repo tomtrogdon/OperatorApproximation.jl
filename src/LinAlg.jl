@@ -32,14 +32,14 @@ function lancz(N,x,w)
             tmp = gam*rho
             tsig = sig
             if rho <= 0
-                gam=1
-                sig=0
+                gam = 1
+                sig = 0
             else
                 gam = p1[k]/rho;
                 sig = pn/rho;
             end
             tk = sig*(p0[k]-xlam) - gam*t
-            p0[k] = p0[k] - (tk-t)
+            p0[k] -= (tk-t)
             t = tk
             if sig <= 0
                 pn = tsig*p1[k]

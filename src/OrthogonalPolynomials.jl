@@ -200,8 +200,6 @@ end
 function _update!(RC::RecCoef,n::Int64)
     N = RC.NN(n+1)
     Λ, W = RC.ΛW(N)
-    display(RC.J)
-    display(lancz(n+1,Λ,W))
     RC.J = lancz(n+1,Λ,W)
 end
 
