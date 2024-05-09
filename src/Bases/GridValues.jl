@@ -7,6 +7,8 @@ end
 struct FixedGridValues <: DiscreteBasis
     pts::Vector
     GD::GridDomain # Don't need the grid here, but for consistency...
+    # All of the points should lie within GD
+    # GD could be a continuous domain, or discrete
     function FixedGridValues(pts::Vector,GD::GridDomain)
         if  map(x -> isin(x,GD.D),pts) |> prod
             new(GD.D.imap.(pts),GD)
@@ -15,6 +17,7 @@ struct FixedGridValues <: DiscreteBasis
         end
     end
 end
+FixedGridValues(GD::Grid) = FixedGridValues(GD.grid,GD)
 
 ####################################
 #### REQUIRED TO BE IMPLEMENTED ####

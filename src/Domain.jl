@@ -5,6 +5,18 @@ abstract type Axis <: Domain end
 abstract type GridDomain end
 abstract type GridRegion <: GridDomain end  # the grid is on the boundary
 
+struct DiscreteDomain <: Domain
+    map::Function
+    imap::Function
+    pts::Vector{ComplexF64}
+    function DiscreteDomain(pts::Vector)
+        new(x -> x, x -> x, pts)
+    end
+end
+function isin(x::Number,D::DiscreteDomain)
+    minimum(abs.( x .- D.pts)) < 1e-15
+end
+
 Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 Egrid = n -> cos.( (0:n-1)/(n-1) * pi ) |> reverse
 LEgrid = n -> cos.( (1:n)/(n) * pi ) |> reverse
@@ -18,6 +30,14 @@ function domainplot(D::Interval;kwargs...)
     endpts = [zs[1],zs[end]]
     plot(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
     scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
+end
+
+function domainplot(D::DiscreteDomain;kwargs...)
+    scatter(real(D.pts),imag(D.pts), markersize = 5, markercolor = :black; kwargs...)
+end
+
+function domainplot!(D::DiscreteDomain;kwargs...)
+    scatter!(real(D.pts),imag(D.pts), markersize = 5, markercolor = :black; kwargs...)
 end
 
 function domainplot!(D::Interval;kwargs...)
@@ -96,7 +116,7 @@ end
 
 struct Exterior{T <: GridDomain} <: GridRegion
     D::Domain
-    grid::Function
+    grid::Union{Function,Vector}
     GD::T
     function Exterior{T}(GD::T) where T <: GridDomain
         return new(GD.D,GD.grid,GD)
@@ -106,7 +126,7 @@ Exterior(GD) = Exterior{typeof(GD)}(GD)
 
 struct Interior{T <: GridDomain} <: GridRegion
     D::Domain
-    grid::Function
+    grid::Union{Function,Vector}
     GD::T
     function Interior{T}(GD::T) where T <: GridDomain
         return new(GD.D,GD.grid,GD)
@@ -208,6 +228,12 @@ abstract type GridAxis <: GridDomain end
 abstract type GridCircle <: GridDomain end 
 
 arclength(gd::GridDomain) = arclength(gd.D)
+
+struct Grid <: GridDomain
+    D::DiscreteDomain
+    grid::Vector
+end
+Grid(D::DiscreteDomain) = Grid(D,D.pts)
 
 struct ChebyshevInterval <: GridInterval
     D::Interval
