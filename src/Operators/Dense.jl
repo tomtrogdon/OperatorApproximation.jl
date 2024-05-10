@@ -91,7 +91,6 @@ struct FixedGridWeightedOPEvaluationOperator{T <: CoefficientDomain, S <: Coeffi
 end
 FixedGridWeightedOPEvaluationOperator(grid,a,b) = FixedGridWeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
-
 struct FixedGridFourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Vector
 end
@@ -104,6 +103,12 @@ struct OPCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain
     seed::Function
 end
 OPCauchyEvaluationOperator(grid,a,b,seed) = OPCauchyEvaluationOperator{ℕ₊,𝔼}(grid,a,b,seed)
+
+struct PoleResCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Union{Function,Vector}
+    ps::Vector # poles
+end
+PoleResCauchyEvaluationOperator(grid,ps) = OPCauchyEvaluationOperator{ℕ₊,𝔼}(grid,ps)
 
 mutable struct OPEigenTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: NaiveTransform
     const a::Function # Jacobi coefficients
@@ -206,6 +211,21 @@ end
 
 function Matrix(Op::OPCauchyEvaluationOperator,n,m)
     cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid(n))*2
+end
+
+function Matrix(Op::PoleResCauchyEvaluationOperator,n,m)
+    if m != length(ps)
+        @warn "PoleResCauchyEvaluationOperator: Incorrect residue dim"
+    end
+    if typeof(Op.grid) <: Function
+        return poleres_cauchy(Op.ps,Op.grid(n))
+    else
+        if n > length(Op.grid)
+            @warn "PoleResCauchyEvaluationOperator: Incorrect grid dim"
+            return poleres_cauchy(Op.ps,Op.grid)
+        end
+        return poleres_cauchy(Op.ps,Op.grid[1:n])
+    end
 end
 
 function Matrix(Op::OPEigenTransform,n)

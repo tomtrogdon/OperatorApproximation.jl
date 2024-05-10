@@ -8,6 +8,8 @@ Hardy(GD) = Hardy{typeof(GD),typeof(GD.GD.D)}(GD)
 ####################################
 cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: Circle} = ℕ₋
 cfd(sp::Hardy{T,S})  where {T <: Interior, S <: Circle} = ℕ₊
+cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: DiscreteDomain} = ℕ₊
+cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: Interval} = ℕ₊
 
 function dim(sp::Hardy)
     Inf
@@ -59,4 +61,8 @@ function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: I
     β = P.basis.GD.GD.β
     a, b = Jacobi_ab(α,β)
     dot(cauchy(a,b,JacobiSeed(α,β),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2
+end
+
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: DiscreteDomain}
+    dot(poleres_cauchy(P.basis.GD.grid,X) |> conj,P.c)
 end
