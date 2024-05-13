@@ -25,7 +25,7 @@ function _rhs_vec_gen(ns,dimflag,b,ranges)
     vcat(rhss...)
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function \(L::ConcreteOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ranges = bases(L.range)
     domains = bases(L.domain)
     dimflag = dim.(ranges) .< Inf
@@ -47,7 +47,7 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector
     ⊕(BasisExpansion.(domains,parted_sol)...)
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function \(L::ConcreteOperator{D,R,T},b::Tuple,ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ranges = bases(L.range)
     domains = bases(L.domain)
     dimflag = dim.(ranges) .< Inf
@@ -65,23 +65,23 @@ function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,ns::Vector{Int64},ms::Vector{
     out
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b::Vector,N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function \(L::ConcreteOperator{D,R,T},b::Vector,N::Integer) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ns, ms = divide_DOF(L,N,N)
     \(L,b,ns,ms)
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function \(L::ConcreteOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ns, ms = divide_DOF(L,N,N)
     \(L,b,ns,ms)
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b,N::Integer) where {D<:Basis,R<:Basis,T<:LazyOperator}
+function \(L::ConcreteOperator{D,R,T},b,N::Integer) where {D<:Basis,R<:Basis,T<:MatrixOperator}
     Op = Matrix(L,N,N)
     rhs = BasisExpansion(b,L.range,N)
     BasisExpansion(L.domain,Op\rhs.c)
 end
 
-function \(L::ConcreteLazyOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R<:Basis,T<:LazyOperator}
+function \(L::ConcreteOperator{D,R,T},b::Tuple,N::Integer) where {D<:Basis,R<:Basis,T<:MatrixOperator}
     Op = Matrix(L,N,N)
     rhss = map(b -> BasisExpansion(b,L.range,N).c,b)
     rhss = hcat(rhss...)
@@ -142,7 +142,7 @@ struct ContinuousEigen
 end
 
 ## non-generalized, block problem
-function eigen(L::ConcreteLazyOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function eigen(L::ConcreteOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     E =  eigen(Matrix(L,ns,ms) |> Matrix)
     domains = bases(L.domain)
     vs = [part_vec(E.vectors[:,i],ns) for i in 1:size(E.vectors,2)]
@@ -150,13 +150,13 @@ function eigen(L::ConcreteLazyOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64
     ContinuousEigen(E.values,vs)
 end
 #
-function eigen(L::ConcreteLazyOperator{D,R,T},N::Int64) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function eigen(L::ConcreteOperator{D,R,T},N::Int64) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ns, ms = divide_DOF(L,N,N)
     eigen(L,ns,ms)
 end
 
 ## non-generalized, single problem
-function eigen(L::ConcreteLazyOperator{D,R,T},N::Int64) where {D<:Basis,R<:Basis,T}
+function eigen(L::ConcreteOperator{D,R,T},N::Int64) where {D<:Basis,R<:Basis,T}
     E =  eigen(Matrix(L,N,N) |> Matrix)
     vs = [BasisExpansion(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
     ContinuousEigen(E.values,vs)
@@ -171,7 +171,7 @@ function makeinf(x)
 end
 
 ## generalized, block problem
-function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function eigen(L::ConcreteOperator{D,R,T},M::ConcreteOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     E =  eigen(Matrix(L,ns,ms) |> Matrix, Matrix(M,ns,ms) |> Matrix)
     domains = bases(L.domain)
     vs = [part_vec(E.vectors[:,i],ns) for i in 1:size(E.vectors,2)]
@@ -179,13 +179,13 @@ function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},ns:
     ContinuousEigen(makeinf.(E.values),vs)
 end
 #
-function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T<:BlockLazyOperator}
+function eigen(L::ConcreteOperator{D,R,T},M::ConcreteOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ns, ms = divide_DOF(L,N,N)
     eigen(L,M,ns,ms)
 end
 
 ## generalized, single problem
-function eigen(L::ConcreteLazyOperator{D,R,T},M::ConcreteLazyOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T}
+function eigen(L::ConcreteOperator{D,R,T},M::ConcreteOperator{D,R,T},N::Integer) where {D<:Basis,R<:Basis,T}
     E =  eigen(Matrix(L,N,N) |> Matrix, Matrix(M,N,N) |> Matrix)
     domains = bases(L.domain)
     p = x -> part_vec(x,ns)

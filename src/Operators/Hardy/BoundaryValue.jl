@@ -17,5 +17,5 @@ function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: Interval}
     elseif B.o == -1
         Op = OPCauchyEvaluationOperator(basegrid, a, b, JacobiSeedNeg(α,β))
     end
-    ConcreteLazyOperator(b1,B.range,Op)
+    ConcreteOperator(b1,B.range,Op)
 end

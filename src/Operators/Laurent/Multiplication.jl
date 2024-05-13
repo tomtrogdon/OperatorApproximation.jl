@@ -14,5 +14,5 @@ function *(M::Multiplication,sp::Laurent)
     else 
         1 + 1 #TODO: just evaluate and expand, need transform
     end
-    ConcreteLazyOperator(sp,sp,Op)
+    ConcreteOperator(sp,sp,Op)
 end

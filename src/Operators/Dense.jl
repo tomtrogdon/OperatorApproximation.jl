@@ -1,15 +1,31 @@
 ## Not really dense, per se, but no band structure
 
-abstract type DenseOperator <: LazyOperator end
+abstract type DenseOperator <: MatrixOperator end  #sometimes lazy
 abstract type BasisEvaluationOperator <: DenseOperator end  # Always true for spectral methods
 abstract type NaiveTransform <: DenseOperator end
 abstract type FastTransform <: DenseOperator end
+
+struct FixedMatrix{T<:CoefficientDomain, S <: CoefficientDomain} <: DenseOperator# where T <: DiscreteDomain
+    A::Union{SparseMatrixCSC,Matrix}
+end
+FixedMatrix(A) = FixedMatrix{𝕏,𝕏}(A) # what should default be?
+
+function Matrix(Op::FixedMatrix,n,m)
+    nn, mm = size(Op.A)
+    if n > nn
+        @warn "MatrixOperator: n is too large"
+    end
+    if m > mm
+        @warn "MatrixOperator: m is too large"
+    end
+    Op.A[1:min(n,nn),1:min(m,mm)]
+end
 
 struct DenseTimesBanded{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
     dense::TT where TT <: DenseOperator
     banded::SS where SS <: BandedOperator
 end
-DenseTimesBanded(dense,banded) = DenseTimesBanded{𝔼,dom(banded)}(dense,banded)
+DenseTimesBanded(dense,banded) = DenseTimesBanded{ran(dense),dom(banded)}(dense,banded)
 
 ## This should resolve the ambiguity of the inner dimensions in the
 ## dense x dense multiplications.  But not now...
@@ -17,8 +33,7 @@ struct DenseTimesDense{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseO
     denseL::DenseOperator
     denseR::DenseOperator
 end
-DenseTimesDense(denseL,denseR) = DenseTimesDense{𝔼,𝔼}(denseL,denseR)
-
+DenseTimesDense(denseL,denseR) = DenseTimesDense{ran(denseL),dom(denseR)}(denseL,denseR)
 
 function *(dense::DenseOperator,banded::BandedOperator)
     DenseTimesBanded(dense,banded)
@@ -49,7 +64,7 @@ end
 
 function *(CC::CoefConversion,dom::Basis)
     if cfd(dom) == cfd(CC.range)
-        ConcreteLazyOperator(dom,CC.range,BasicBandedOperator{cfd(dom),cfd(dom)}(0,0,(i,j) ->  i == j ? 1.0 : 0.0))
+        ConcreteOperator(dom,CC.range,BasicBandedOperator{cfd(dom),cfd(dom)}(0,0,(i,j) ->  i == j ? 1.0 : 0.0))
          # convert from dom to CC.range
     else
         @error "Bases are not coef-convertible."

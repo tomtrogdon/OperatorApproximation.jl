@@ -5,7 +5,7 @@ function *(C::CauchyTransform,domain::Jacobi)
     β = domain.β
     gd = JacobiMappedInterval(a,b,α,β)
     range = Hardy(Exterior(gd)) # Just to ensure the right weight is encoded
-    ConcreteLazyOperator(domain,range,BasicBandedOperator{ℕ₊,ℕ₊}(0,0, (i,j) -> i == j && i >= 0 ? complex(1.0) : 0.0im ))
+    ConcreteOperator(domain,range,BasicBandedOperator{ℕ₊,ℕ₊}(0,0, (i,j) -> i == j && i >= 0 ? complex(1.0) : 0.0im ))
 end
 
 function dist(z,n) # check if inside Bernstein ellipse that tends to

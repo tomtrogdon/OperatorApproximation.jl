@@ -82,7 +82,7 @@ function rhrhs(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of 
 end
 
 struct RHSolver
-    S::ConcreteLazyOperator
+    S::ConcreteOperator
     jumps
 end
 
@@ -195,9 +195,9 @@ end
 
 ### Vector "optimized" versions... that are slower... ###
 struct RHSolverVec
-    𝒞⁺::ConcreteLazyOperator
-    𝒞⁻::ConcreteLazyOperator
-    ℳ::ConcreteLazyOperator
+    𝒞⁺::ConcreteOperator
+    𝒞⁻::ConcreteOperator
+    ℳ::ConcreteOperator
     jumps
     range
     domain

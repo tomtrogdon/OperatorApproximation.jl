@@ -18,7 +18,7 @@ function *(M::Multiplication,sp::Ultraspherical)
     else 
         1 + 1 #TODO: just evaluate and expand, need transform
     end
-    ConcreteLazyOperator(sp,sp,Op)
+    ConcreteOperator(sp,sp,Op)
 end
 
 function *(M::Multiplication,f::BasisExpansion{T}) where T <: Ultraspherical

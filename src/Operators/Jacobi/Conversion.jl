@@ -11,12 +11,12 @@ function conversion(b1::Jacobi,b2::GridValues)
     # be the identity
     a, b = Jacobi_ab(b1.α, b1.β)
     Op = OPEvaluationOperator(basegrid,a,b)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::Jacobi,b2::FixedGridValues)
     # See conversion remark above.
     a, b = Jacobi_ab(b1.α, b1.β)
     Op = FixedGridOPEvaluationOperator(b2.pts,a,b)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end

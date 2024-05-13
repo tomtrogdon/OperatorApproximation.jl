@@ -14,16 +14,16 @@ function conversion(b1::Fourier,b2::GridValues)
     # and currently this forces the composition of the maps to
     # be the identity
     Op = FourierEvaluationOperator(basegrid)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::Fourier,b2::FixedGridValues)
     # See conversion remark above.
     Op = FixedGridFourierEvaluationOperator(b2.pts)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::Fourier,b2::Fourier)
     # TODO:  identity operator
-    ConcreteLazyOperator(b1,b2,IdentityOperator())
+    ConcreteOperator(b1,b2,IdentityOperator())
 end

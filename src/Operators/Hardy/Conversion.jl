@@ -14,10 +14,10 @@ function conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: In
     β = b1.GD.GD.β
     a, b = Jacobi_ab(α,β)
     Op = OPCauchyEvaluationOperator(gridfun, a, b, JacobiSeed(α,β))
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: DiscreteDomain}
     Op = PoleResCauchyEvaluationOperator(b2.GD.grid,b1.GD.grid)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end

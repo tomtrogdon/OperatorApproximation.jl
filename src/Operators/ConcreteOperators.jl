@@ -1,55 +1,54 @@
-abstract type LazyOperator <: Operator end
 abstract type MatrixOperator <: Operator end
-abstract type ConcreteOperator <: Operator end
-abstract type BandedOperator <: LazyOperator end
+#abstract type LazyOperator <: MatrixOperator end
+abstract type BandedOperator <: MatrixOperator end  #likely don't need this distinction
 abstract type SingleBandedOperator <: BandedOperator end
 
-struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:Union{LazyOperator,MatrixOperator}} <: ConcreteOperator
+struct ConcreteOperator{D<:Basis,R<:Basis,T<:MatrixOperator} <: Operator
     domain::D
     range::R
     L::T
 end
 
-function *(Op::AbstractOperator,C::ConcreteLazyOperator)  
+function *(Op::AbstractOperator,C::ConcreteOperator)  
     # Default.  Requires that the multiplication below
     # is defined...
     (Op*C.range)*C
 end
 
-function *(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator)
+function *(Op1::ConcreteOperator,Op2::ConcreteOperator)
     if Op1.domain != Op2.range
         @error "Domain-range mismatch."
     end
-    ConcreteLazyOperator(Op2.domain,Op1.range,Op1.L*Op2.L)
+    ConcreteOperator(Op2.domain,Op1.range,Op1.L*Op2.L)
 end
 
 for op in (:+,:-)
     @eval begin 
-        function $op(Op1::ConcreteLazyOperator,Op2::ConcreteLazyOperator) # need to check that the range and domain are compatible.
+        function $op(Op1::ConcreteOperator,Op2::ConcreteOperator) # need to check that the range and domain are compatible.
             #TODO: Check domain and range here
             if Op1.range != Op2.range
                 @error "Range mismatch."
             elseif Op1.domain != Op2.domain
                 @error "Domain mismatch."
             end
-            ConcreteLazyOperator(Op1.domain,Op1.range, $op(Op1.L,Op2.L))
+            ConcreteOperator(Op1.domain,Op1.range, $op(Op1.L,Op2.L))
         end
     end
 end
 
-function *(a::Number,Op::ConcreteLazyOperator) 
-    ConcreteLazyOperator(Op.domain,Op.range, a*Op.L)
+function *(a::Number,Op::ConcreteOperator) 
+    ConcreteOperator(Op.domain,Op.range, a*Op.L)
 end
 
-function Matrix(Op::ConcreteLazyOperator{D,R,T},n,m) where {D,R,T}
+function Matrix(Op::ConcreteOperator{D,R,T},n,m) where {D,R,T}
     Matrix(Op.L,n,m)
 end
 
-function Matrix(Op::ConcreteLazyOperator,m)
+function Matrix(Op::ConcreteOperator,m)
     Matrix(Op.L,m)
 end
 
-function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T,S}
+function *(Op::ConcreteOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T,S}
     BasisExpansion(Op.range,Op.L*f.c)
 end
 
@@ -61,29 +60,29 @@ function rank(OP::ConcreteOperator)
     dim(OP.range)
 end
 
-struct SumOfLazyOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: LazyOperator
-    Ops::Vector{S} where S <: LazyOperator
+struct SumOfMatrixOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: MatrixOperator
+    Ops::Vector{S} where S <: MatrixOperator
     c::Vector{Number} # be more specific?
 end
-SumOfLazyOperators(Ops,c) = SumOfLazyOperators{dom(Ops[1]),ran(Ops[1])}(Ops,c)
+SumOfMatrixOperators(Ops,c) = SumOfMatrixOperators{dom(Ops[1]),ran(Ops[1])}(Ops,c)
 
-function *(a::Number,L::LazyOperator)
-    SumOfLazyOperators([L],[a])
+function *(a::Number,L::MatrixOperator)
+    SumOfMatrixOperators([L],[a])
 end
 
-function *(a::Number,L::SumOfLazyOperators)
-    SumOfLazyOperators(L.Ops,a*L.c)
+function *(a::Number,L::SumOfMatrixOperators)
+    SumOfMatrixOperators(L.Ops,a*L.c)
 end
 
-function *(Op1::SumOfLazyOperators,Op2::LazyOperator)
-    SumOfLazyOperators([l*Op2 for l in Op1.Ops],Op1.c)
+function *(Op1::SumOfMatrixOperators,Op2::MatrixOperator)
+    SumOfMatrixOperators([l*Op2 for l in Op1.Ops],Op1.c)
 end
 
-function getindex(Op::ConcreteLazyOperator{D,R,T},n) where {D,R,T <: SumOfLazyOperators}
-    ConcreteLazyOperator(Op.domain,Op.range,Op.L.Ops[n])
+function getindex(Op::ConcreteOperator{D,R,T},n) where {D,R,T <: SumOfMatrixOperators}
+    ConcreteOperator(Op.domain,Op.range,Op.L.Ops[n])
 end
 
-function Matrix(Op::ConcreteLazyOperator{D,R,T},n,m) where {D,R,T <: SumOfLazyOperators}
+function Matrix(Op::ConcreteOperator{D,R,T},n,m) where {D,R,T <: SumOfMatrixOperators}
     A = Op.L.c[1]*Matrix(Op[1],n,m)
     for i = 2:length(Op.L.c)
         A += Op.L.c[i]*Matrix(Op[i],n,m)
@@ -91,7 +90,7 @@ function Matrix(Op::ConcreteLazyOperator{D,R,T},n,m) where {D,R,T <: SumOfLazyOp
     A
 end
 
-function Matrix(Op::SumOfLazyOperators,n,m)
+function Matrix(Op::SumOfMatrixOperators,n,m)
     # TODO: check domain & range
     A = Op.c[1]*Matrix(Op.Ops[1],n,m)
     for i = 2:length(Op.c)
@@ -120,11 +119,11 @@ struct ZeroOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBanded
 end
 ZeroOperator() = ZeroOperator{𝕏,𝕏}(0,0,x -> 0)
 
-function *(Op::ZeroOperator,Op2::LazyOperator)
+function *(Op::ZeroOperator,Op2::MatrixOperator)
     Op
 end
 
-function *(Op::LazyOperator,Op2::ZeroOperator)
+function *(Op::MatrixOperator,Op2::ZeroOperator)
     Op2
 end
 
@@ -133,14 +132,14 @@ struct ProductOfBandedOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: B
 end
 ProductOfBandedOperators(V) = ProductOfBandedOperators{dom(V[end]),ran(V[1])}(V)
 
-struct BlockLazyOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: LazyOperator
-    Ops::Matrix{LazyOperator}
+struct BlockMatrixOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: MatrixOperator
+    Ops::Matrix{MatrixOperator}
 end
-function BlockLazyOperator(Ops)
+function BlockMatrixOperator(Ops)
     if typeof(Ops) <: Vector
-        BlockLazyOperator{𝕏,𝕏}(reshape(Ops,:,1))
+        BlockMatrixOperator{𝕏,𝕏}(reshape(Ops,:,1))
     else
-        BlockLazyOperator{𝕏,𝕏}(Ops)
+        BlockMatrixOperator{𝕏,𝕏}(Ops)
     end
 end
 
@@ -148,43 +147,43 @@ end
 # could be simplified using *
 for op in (:+,:-)
     @eval begin
-        function $op(L::SumOfLazyOperators)
+        function $op(L::SumOfMatrixOperators)
             SumOfLazyOperators(L.Ops,$op(L.c))
         end
 
-        function $op(L::LazyOperator)
+        function $op(L::MatrixOperator)
             $op(1.0)*L
         end
 
-        function $op(L1::SumOfLazyOperators,L2::SumOfLazyOperators)
+        function $op(L1::SumOfMatrixOperators,L2::SumOfMatrixOperators)
             SumOfLazyOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
         end
 
-        function $op(L1::SumOfLazyOperators,L2::LazyOperator)
+        function $op(L1::SumOfMatrixOperators,L2::MatrixOperator)
             $op(L1,1.0*L2)
         end
 
-        function $op(L1::LazyOperator,L2::SumOfLazyOperators)
+        function $op(L1::MatrixOperator,L2::SumOfMatrixOperators)
             $op(1.0*L1,L2)
         end
 
-        function $op(L1::LazyOperator,L2::LazyOperator)
+        function $op(L1::MatrixOperator,L2::MatrixOperator)
             L1 + $op(1.0)*L2
         end
 
-        function $op(L1::BlockLazyOperator,L2::BlockLazyOperator)
-            BlockLazyOperator($op.(L1.Ops,L2.Ops))
+        function $op(L1::BlockMatrixOperator,L2::BlockMatrixOperator)
+            BlockMatrixOperator($op.(L1.Ops,L2.Ops))
         end
     end
 end
 
 # Here S is not a DirectSum
-function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S}
+function *(Op::ConcreteOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockMatrixOperator, S}
     BasisExpansion(Op.range,[Op.L.Ops[i,1]*f.c for i in 1:size(Op.L.Ops,1)])
 end
 
 # Here S is a DirectSum
-function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockLazyOperator, S <: DirectSum}
+function *(Op::ConcreteOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T <: BlockMatrixOperator, S <: DirectSum}
     #return Op[1:end,1]
     out = Op[1:end,1]*f[1]
     for i = 2:size(Op,2)
@@ -193,33 +192,33 @@ function *(Op::ConcreteLazyOperator{D,R,T},f::BasisExpansion{S}) where {D, R, T 
     out
 end
 
-size(L::BlockLazyOperator) = size(L.Ops)
-size(Op::ConcreteLazyOperator{D,R,T}) where {D, R, T <: BlockLazyOperator} = size(Op.L)
+size(L::BlockMatrixOperator) = size(L.Ops)
+size(Op::ConcreteOperator{D,R,T}) where {D, R, T <: BlockMatrixOperator} = size(Op.L)
 
-size(L::BlockLazyOperator,j) = size(L.Ops,j)
-size(Op::ConcreteLazyOperator{D,R,T},j) where {D, R, T <: BlockLazyOperator} = size(Op.L,j)
+size(L::BlockMatrixOperator,j) = size(L.Ops,j)
+size(Op::ConcreteOperator{D,R,T},j) where {D, R, T <: BlockMatrixOperator} = size(Op.L,j)
 
-axes(L::BlockLazyOperator) = axes(L.Ops)
-axes(Op::ConcreteLazyOperator{D,R,T}) where {D, R, T <: BlockLazyOperator} = axes(Op.L)
+axes(L::BlockMatrixOperator) = axes(L.Ops)
+axes(Op::ConcreteOperator{D,R,T}) where {D, R, T <: BlockMatrixOperator} = axes(Op.L)
 
-axes(L::BlockLazyOperator,j) = axes(L.Ops,j)
-axes(Op::ConcreteLazyOperator{D,R,T},j) where {D, R, T <: BlockLazyOperator} = axes(Op.L,j)
+axes(L::BlockMatrixOperator,j) = axes(L.Ops,j)
+axes(Op::ConcreteOperator{D,R,T},j) where {D, R, T <: BlockMatrixOperator} = axes(Op.L,j)
 
-function getindex(L::BlockLazyOperator,i::Int64,j::Int64)
+function getindex(L::BlockMatrixOperator,i::Int64,j::Int64)
     L.Ops[i,j]
 end
-function getindex(L::BlockLazyOperator,i::Int64,j::UnitRange{Int64})
-    BlockLazyOperator(L.Ops[i,j])
+function getindex(L::BlockMatrixOperator,i::Int64,j::UnitRange{Int64})
+    BlockMatrixOperator(L.Ops[i,j])
 end
-function getindex(L::BlockLazyOperator,i::UnitRange{Int64},j::Int64)
-    BlockLazyOperator(L.Ops[i,j])
+function getindex(L::BlockMatrixOperator,i::UnitRange{Int64},j::Int64)
+    BlockMatrixOperator(L.Ops[i,j])
 end
-function getindex(L::BlockLazyOperator,i::UnitRange{Int64},j::UnitRange{Int64})
-    BlockLazyOperator(L.Ops[i,j])
+function getindex(L::BlockMatrixOperator,i::UnitRange{Int64},j::UnitRange{Int64})
+    BlockMatrixOperator(L.Ops[i,j])
 end
 
-function getindex(Op::ConcreteLazyOperator{D,R,T},i,j) where {D, R, T <: BlockLazyOperator}
-    ConcreteLazyOperator(Op.domain[j],Op.range[i],Op.L[i,j])
+function getindex(Op::ConcreteOperator{D,R,T},i,j) where {D, R, T <: BlockMatrixOperator}
+    ConcreteOperator(Op.domain[j],Op.range[i],Op.L[i,j])
 end
 
 # momtm = matrix of matrices to matrix
@@ -236,7 +235,7 @@ function momtm(Ms::Matrix{T}) where T <: Union{Matrix,SparseMatrixCSC,AbstractMa
     A
 end
 
-function Matrix(Op::BlockLazyOperator,ns::Vector{Int64},ms::Vector{Int64})
+function Matrix(Op::BlockMatrixOperator,ns::Vector{Int64},ms::Vector{Int64})
     # Make robust to length of vectors?
     nmat = repeat(ns',length(ms))' |> Matrix
     mmat = repeat(ms',length(ns))
@@ -267,71 +266,71 @@ function divide_DOF(b::Basis,n::Integer)
     ns
 end
 
-function divide_DOF(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis,T <: BlockLazyOperator}
+function divide_DOF(Op::ConcreteOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis,T <: BlockMatrixOperator}
     ns = divide_DOF(Op.range,n)
     ms = divide_DOF(Op.domain,m)
     ns, ms
 end
 
-function Matrix(Op::ConcreteLazyOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis, T <: BlockLazyOperator}
+function Matrix(Op::ConcreteOperator{D,R,T},n::Integer,m::Integer) where {D <: Basis,R <: Basis, T <: BlockMatrixOperator}
     ns, ms = divide_DOF(Op,n,m)
     Matrix(Op.L,ns,ms)
 end
 
 ####
-function ⊞(A1::LazyOperator,A2::LazyOperator)
-    BlockLazyOperator(reshape(A1,A2,1,:))
+function ⊞(A1::MatrixOperator,A2::MatrixOperator)
+    BlockMatrixOperator(reshape(A1,A2,1,:))
 end
 
-function ⊞(A1::BlockLazyOperator,A2::LazyOperator)
-    BlockLazyOperator(hcat(A1.Ops,A2))
+function ⊞(A1::BlockMatrixOperator,A2::MatrixOperator)
+    BlockMatrixOperator(hcat(A1.Ops,A2))
 end
 
-function ⊞(A1::LazyOperator,A2::BlockLazyOperator)
-    BlockLazyOperator(hcat(A1,A2.Ops))
+function ⊞(A1::MatrixOperator,A2::BlockMatrixOperator)
+    BlockMatrixOperator(hcat(A1,A2.Ops))
 end
 
-function ⊞(A1::BlockLazyOperator,A2::BlockLazyOperator)
-    BlockLazyOperator(hcat(A1.Ops,A2.Ops))
+function ⊞(A1::BlockMatrixOperator,A2::BlockMatrixOperator)
+    BlockMatrixOperator(hcat(A1.Ops,A2.Ops))
 end
 ####
 ####
-function ⊘(A1::LazyOperator,A2::LazyOperator)
-    BlockLazyOperator(reshape([A1 A2],:,1))
+function ⊘(A1::MatrixOperator,A2::MatrixOperator)
+    BlockMatrixOperator(reshape([A1 A2],:,1))
 end
 
-function ⊘(A1::BlockLazyOperator,A2::LazyOperator)
-    BlockLazyOperator(vcat(A1.Ops,A2))
+function ⊘(A1::BlockMatrixOperator,A2::MatrixOperator)
+    BlockMatrixOperator(vcat(A1.Ops,A2))
 end
 
-function ⊘(A1::LazyOperator,A2::BlockLazyOperator)
-    BlockLazyOperator(vcat(A1,A2.Ops))
+function ⊘(A1::MatrixOperator,A2::BlockMatrixOperator)
+    BlockMatrixOperator(vcat(A1,A2.Ops))
 end
 
-function ⊘(A1::BlockLazyOperator,A2::BlockLazyOperator)
-    BlockLazyOperator(vcat(A1.Ops,A2.Ops))
+function ⊘(A1::BlockMatrixOperator,A2::BlockMatrixOperator)
+    BlockMatrixOperator(vcat(A1.Ops,A2.Ops))
 end
 ####
 ####
 
-function ⊞(A1::ConcreteLazyOperator,A2::ConcreteLazyOperator)
+function ⊞(A1::ConcreteOperator,A2::ConcreteOperator)
     if A1.range == A2.range
-        return ConcreteLazyOperator(A1.domain ⊕ A2.domain, A1.range, A1.L ⊞ A2.L)
+        return ConcreteOperator(A1.domain ⊕ A2.domain, A1.range, A1.L ⊞ A2.L)
     else
         @error "Ranges are not compatible"
     end
 end
 
-function ⊘(A1::ConcreteLazyOperator,A2::ConcreteLazyOperator)
+function ⊘(A1::ConcreteOperator,A2::ConcreteOperator)
     if A1.domain == A2.domain
-        return ConcreteLazyOperator(A1.domain, A1.range ⊕ A2.range, A1.L ⊘ A2.L)
+        return ConcreteOperator(A1.domain, A1.range ⊕ A2.range, A1.L ⊘ A2.L)
     else
         @error "Ranges are not compatible"
     end
 end
 
-dom(op::LazyOperator) = collect(typeof(op).parameters)[1]
-ran(op::LazyOperator) = collect(typeof(op).parameters)[2]
+dom(op::MatrixOperator) = collect(typeof(op).parameters)[1]
+ran(op::MatrixOperator) = collect(typeof(op).parameters)[2]
 
 for sop in (:BasicBandedOperator,:SemiLazyBandedOperator)
     @eval begin
@@ -361,12 +360,9 @@ function *(B::ProductOfBandedOperators,A::ProductOfBandedOperators)
     ProductOfBandedOperators(vcat(B.V,A.V))
 end
 
-function *(Ops::SumOfLazyOperators,Op::ProductOfBandedOperators)
-    SumOfLazyOperators([op*Op for op in Ops.Ops],Ops.c)
+function *(Ops::SumOfMatrixOperators,Op::ProductOfBandedOperators)
+    SumOfMatrixOperators([op*Op for op in Ops.Ops],Ops.c)
 end
-
-
-
 
 # include("SemiInfinite.jl")
 # include("BiInfinite.jl")

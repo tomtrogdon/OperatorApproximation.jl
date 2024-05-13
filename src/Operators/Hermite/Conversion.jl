@@ -15,7 +15,7 @@ function conversion(b1::HermitePoly,b2::GridValues)
     # be the identity
     a, b = Hermite_ab()
     Op = OPEvaluationOperator(basegrid,a,b)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::HermiteFun,b2::GridValues)
@@ -27,27 +27,27 @@ function conversion(b1::HermiteFun,b2::GridValues)
     # be the identity
     a, b = Hermite_ab()
     Op = OPWeightedEvaluationOperator(basegrid,a,b,x -> (2pi)^(-0.25)exp(-x^2/4))
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::HermitePoly,b2::FixedGridValues)
     # See conversion remark above.
     a, b = Hermite_ab()
     Op = FixedGridOPEvaluationOperator(b2.pts,a,b)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::HermitePoly,b2::HermitePoly)
-    ConcreteLazyOperator(b1,b2,BasicBandedOperator{cfd(b1),cfd(b2)}(0,0, (i,j) -> i == j ? 1.0 : 0.0 ))
+    ConcreteOperator(b1,b2,BasicBandedOperator{cfd(b1),cfd(b2)}(0,0, (i,j) -> i == j ? 1.0 : 0.0 ))
 end
 
 function conversion(b1::HermiteFun,b2::HermiteFun)
-    ConcreteLazyOperator(b1,b2,BasicBandedOperator{cfd(b1),cfd(b2)}(0,0, (i,j) -> i == j ? 1.0 : 0.0 ))
+    ConcreteOperator(b1,b2,BasicBandedOperator{cfd(b1),cfd(b2)}(0,0, (i,j) -> i == j ? 1.0 : 0.0 ))
 end
 
 function conversion(b1::HermiteFun,b2::FixedGridValues)
     # See conversion remark above.
     a, b = Hermite_ab()
     Op = FixedGridWeightedOPEvaluationOperator(b2.pts,a,x -> (2pi)^(-0.25)exp(-x^2/4))
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end

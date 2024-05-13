@@ -312,8 +312,8 @@ end
 
 function *(Op::SumOfAbstractOperators,sp::Basis)
     ops = [op*sp for op in Op.Ops]
-    L = SumOfLazyOperators([op.L for op in ops],Op.c)
-    ConcreteLazyOperator(ops[1].domain,ops[1].range,L)
+    L = SumOfMatrixOperators([op.L for op in ops],Op.c)
+    ConcreteOperator(ops[1].domain,ops[1].range,L)
 end
 
 function *(Op::AbstractOperator,f::BasisExpansion)
@@ -322,7 +322,7 @@ function *(Op::AbstractOperator,f::BasisExpansion)
 end
 
 function *(Op::AbstractZeroOperator,b::Basis)
-    ConcreteLazyOperator(AnyBasis(),AnyBasis(),ZeroOperator())
+    ConcreteOperator(AnyBasis(),AnyBasis(),ZeroOperator())
 end
 
 function *(Op::AbstractZeroOperator,b::DirectSum)
@@ -339,8 +339,7 @@ function *(Op::BlockAbstractOperator,sp::Basis)
     COps = [op*sp for op in Op.Ops]
     sps = [op.range for op in COps][:,1]
     Ls = [op.L for op in COps]
-    BlockLazyOperator(Ls)
-    ConcreteLazyOperator(sp,DirectSum(sps),BlockLazyOperator(Ls))
+    ConcreteOperator(sp,DirectSum(sps),BlockMatrixOperator(Ls))
 end
 
 function *(Op::BlockAbstractOperator,sp::DirectSum)
@@ -358,6 +357,6 @@ function *(Op::BlockAbstractOperator,sp::DirectSum)
         end
     end
     Ls = map(x -> x.L, COps)
-    BlockLazyOperator(Ls)
-    return ConcreteLazyOperator(sp,range,BlockLazyOperator(Ls))
+    BlockMatrixOperator(Ls)
+    return ConcreteOperator(sp,range,BlockMatrixOperator(Ls))
 end

@@ -1,11 +1,11 @@
 function *(M::Multiplication,sp::GridValues)
     Op = GridMultiplication(M.f, n -> sp.GD.D.map(sp.GD.grid(n)))
-    ConcreteLazyOperator(sp,sp,Op)
+    ConcreteOperator(sp,sp,Op)
 end
 
 function *(M::Multiplication,sp::FixedGridValues)
     Op = FixedGridMultiplication(M.f(sp.GD.D.map(sp.pts)))
-    ConcreteLazyOperator(sp,sp,Op)
+    ConcreteOperator(sp,sp,Op)
 end
 
 function Matrix(GM::GridMultiplication,n,m)

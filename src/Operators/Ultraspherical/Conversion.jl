@@ -15,14 +15,14 @@ function conversion(b1::Ultraspherical,b2::GridValues)
     # be the identity
     a, b = Jacobi_ab(b1.λ - 1/2, b1.λ - 1/2)
     Op = OPEvaluationOperator(basegrid,a,b)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::Ultraspherical,b2::FixedGridValues)
     # See conversion remark above.
     a, b = Jacobi_ab(b1.λ - 1/2, b1.λ - 1/2)
     Op = FixedGridOPEvaluationOperator(b2.pts,a,b)
-    ConcreteLazyOperator(b1,b2,Op)
+    ConcreteOperator(b1,b2,Op)
 end
 
 function _s(j,λ)
@@ -51,15 +51,15 @@ end
 function conversion(b1::Ultraspherical,b2::Ultraspherical)
     # λ0 = b1.λ
     # sp0 = Ultraspherical(λ0 + 1, b2.GD)
-    # L0 = ConcreteLazyOperator(b1,sp0,BasicBandedOperator(0,2,(i,j) -> _conv_ultra(i,j,λ0)))
+    # L0 = ConcreteOperator(b1,sp0,BasicBandedOperator(0,2,(i,j) -> _conv_ultra(i,j,λ0)))
     # λ0 += 1
     # while λ0 - b2.λ !≈ 0
-    #     L0 = ConcreteLazyOperator(b1,sp0,BasicBandedOperator(0,2,(i,j) -> _conv_ultra(i,j,λ0)))*L0
+    #     L0 = ConcreteOperator(b1,sp0,BasicBandedOperator(0,2,(i,j) -> _conv_ultra(i,j,λ0)))*L0
     #     λ0 += 1
     # end
     # L0
     if b1.λ ≈ b2.λ
-         return ConcreteLazyOperator(b1,b2,BasicBandedOperator{ℕ₊,ℕ₊}(0,0,(i,j) -> Float64(i == j)))
+         return ConcreteOperator(b1,b2,BasicBandedOperator{ℕ₊,ℕ₊}(0,0,(i,j) -> Float64(i == j)))
     end
 
     λ0 = b1.λ
@@ -69,5 +69,5 @@ function conversion(b1::Ultraspherical,b2::Ultraspherical)
         L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0))*L0
         λ0 += 1
     end
-    ConcreteLazyOperator(b1,b2,L0)
+    ConcreteOperator(b1,b2,L0)
 end
