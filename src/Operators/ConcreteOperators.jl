@@ -1,9 +1,10 @@
 abstract type LazyOperator <: Operator end
+abstract type MatrixOperator <: Operator end
 abstract type ConcreteOperator <: Operator end
 abstract type BandedOperator <: LazyOperator end
 abstract type SingleBandedOperator <: BandedOperator end
 
-struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:LazyOperator} <: ConcreteOperator
+struct ConcreteLazyOperator{D<:Basis,R<:Basis,T<:Union{LazyOperator,MatrixOperator}} <: ConcreteOperator
     domain::D
     range::R
     L::T
@@ -103,7 +104,7 @@ mutable struct SemiLazyBandedOperator{T<:CoefficientDomain, S<: CoefficientDomai
     const nm::Integer
     const np::Integer
     const mat::Function
-    A::SparseMatrixCSC
+    A::Union{SparseMatrixCSC,Matrix}
 end
 
 struct BasicBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator

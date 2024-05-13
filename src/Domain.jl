@@ -234,6 +234,7 @@ struct Grid <: GridDomain
     grid::Vector
 end
 Grid(D::DiscreteDomain) = Grid(D,D.pts)
+Grid(V::Vector) = Grid(DiscreteDomain(V),V)
 
 struct ChebyshevInterval <: GridInterval
     D::Interval

@@ -259,6 +259,9 @@ function BoundaryValue(o::Int64,ran::DirectSum)
     BlockDiagonalAbstractOperator(map(z -> BoundaryValue(o,z), ran.bases))
 end
 
+struct Residue <: AbstractOperator
+    range::Basis
+end
 ### ###
 
 struct CauchyTransform <: AbstractOperator end
