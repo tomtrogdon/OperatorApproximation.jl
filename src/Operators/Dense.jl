@@ -1,6 +1,6 @@
 ## Not really dense, per se, but no band structure
 
-abstract type DenseOperator <: MatrixOperator end  #sometimes lazy
+abstract type DenseOperator <: MatrixOperator end  #sometimes P
 abstract type BasisEvaluationOperator <: DenseOperator end  # Always true for spectral methods
 abstract type NaiveTransform <: DenseOperator end
 abstract type FastTransform <: DenseOperator end
@@ -72,14 +72,14 @@ function *(CC::CoefConversion,dom::Basis)
 end
 
 struct OPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Function
+    grid::Union{Function,Vector}
     a::Function # Jacobi coefficients
     b::Function
 end
 OPEvaluationOperator(grid,a,b) = OPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
 struct WeightedOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Function
+    grid::Union{Function,Vector}
     a::Function # Jacobi coefficients
     b::Function
     W::Function
@@ -87,32 +87,12 @@ end
 WeightedOPEvaluationOperator(grid,a,b) = WeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
 
 struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Function
+    grid::Union{Function,Vector}
 end
 FourierEvaluationOperator(grid) = FourierEvaluationOperator{ℤ,𝔼}(grid)
 
-struct FixedGridOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Vector
-    a::Function # Jacobi coefficients
-    b::Function
-end
-FixedGridOPEvaluationOperator(grid,a,b) = FixedGridOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
-
-struct FixedGridWeightedOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Vector
-    a::Function # Jacobi coefficients
-    b::Function
-    W::Function
-end
-FixedGridWeightedOPEvaluationOperator(grid,a,b) = FixedGridWeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
-
-struct FixedGridFourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Vector
-end
-FixedGridFourierEvaluationOperator(grid) = FixedGridFourierEvaluationOperator{ℤ,𝔼}(grid)
-
 struct OPCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
-    grid::Function
+    grid::Union{Function,Vector}
     a::Function # Jacobi coefficients
     b::Function
     seed::Function
@@ -123,7 +103,7 @@ struct PoleResCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientD
     grid::Union{Function,Vector}
     ps::Vector # poles
 end
-PoleResCauchyEvaluationOperator(grid,ps) = OPCauchyEvaluationOperator{ℕ₊,𝔼}(grid,ps)
+PoleResCauchyEvaluationOperator(grid,ps) = PoleResCauchyEvaluationOperator{ℕ₊,𝔼}(grid,ps)
 
 mutable struct OPEigenTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: NaiveTransform
     const a::Function # Jacobi coefficients
@@ -160,7 +140,7 @@ end
 
 struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator # even though it is sparse...
     # it is simpler to treat grid multiplication as dense
-    f::Function
+    f::Union{Function,Vector}
     grid::Function
 end
 GridMultiplication(f,grid) = GridMultiplication{𝔼,𝔼}(f,grid)
@@ -171,11 +151,27 @@ end
 FixedGridMultiplication(f,grid) = FixedGridMultiplication{𝔼,𝔼}(f,grid)
 
 function Matrix(Op::OPEvaluationOperator,n,m)
-    poly(Op.a,Op.b,m,Op.grid(n)) 
+    if typeof(Op.grid) <: Function
+        return poly(Op.a,Op.b,m,Op.grid(n)) 
+    end
+    if n <= length(Op.grid)
+        return poly(Op.a,Op.b,m,Op.grid[1:n])
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return poly(Op.a,Op.b,m,Op.grid)
+    end
 end
 
 function Matrix(Op::WeightedOPEvaluationOperator,n,m)
-    Diagonal(Op.W.(Op.grid(n)))*poly(Op.a,Op.b,m,Op.grid(n)) 
+    if typeof(Op.grid) <: Function
+        return Diagonal(Op.W.(Op.grid(n)))*poly(Op.a,Op.b,m,Op.grid(n)) 
+    end
+    if n <= length(Op.grid)
+        return Diagonal(Op.W.(Op.grid[1:n]))*poly(Op.a,Op.b,m,Op.grid[1:n])
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return Diagonal(Op.W.(Op.grid))*poly(Op.a,Op.b,m,Op.grid)
+    end
 end
 
 function horner_mat(x,m)
@@ -190,28 +186,9 @@ function horner_mat(x,m)
 end
 
 function Matrix(Op::FourierEvaluationOperator,n,m)
-    hornermat(Op.grid(n),m)
-end
-
-function Matrix(Op::FixedGridWeightedOPEvaluationOperator,n,m)
-    if n <= length(Op.grid)
-        return Diagonal(Op.W.(Op.grid[1:n]))*poly(Op.a,Op.b,m,Op.grid[1:n])
-    else
-        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
-        return Diagonal(Op.W.(Op.grid))*poly(Op.a,Op.b,m,Op.grid)
+    if typeof(Op.grid) <: Function
+        return hornermat(Op.grid(n),m)
     end
-end
-
-function Matrix(Op::FixedGridOPEvaluationOperator,n,m)
-    if n <= length(Op.grid)
-        return poly(Op.a,Op.b,m,Op.grid[1:n])
-    else
-        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
-        return poly(Op.a,Op.b,m,Op.grid)
-    end
-end
-
-function Matrix(Op::FixedGridFourierEvaluationOperator,n,m)
     if n <= length(Op.grid)
         return hornermat(Op.grid[1:n],m)
     else
@@ -220,7 +197,11 @@ function Matrix(Op::FixedGridFourierEvaluationOperator,n,m)
     end
 end
 
-function Matrix(Op::FixedGridOPEvaluationOperator,m)  # only one dim for Functional
+function Matrix(Op::OPEvaluationOperator,m)  # only one dim for Functional
+    if typeof(Op.grid) <: Function
+        @error "Need another dimension"
+        return
+    end
     return poly(Op.a,Op.b,m,Op.grid)
 end
 
@@ -229,7 +210,7 @@ function Matrix(Op::OPCauchyEvaluationOperator,n,m)
 end
 
 function Matrix(Op::PoleResCauchyEvaluationOperator,n,m)
-    if m != length(ps)
+    if m != length(Op.ps)
         @warn "PoleResCauchyEvaluationOperator: Incorrect residue dim"
     end
     if typeof(Op.grid) <: Function

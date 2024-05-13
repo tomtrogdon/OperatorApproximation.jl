@@ -17,6 +17,6 @@ end
 function conversion(b1::Jacobi,b2::FixedGridValues)
     # See conversion remark above.
     a, b = Jacobi_ab(b1.α, b1.β)
-    Op = FixedGridOPEvaluationOperator(b2.pts,a,b)
+    Op = OPEvaluationOperator(b2.pts,a,b)
     ConcreteOperator(b1,b2,Op)
 end

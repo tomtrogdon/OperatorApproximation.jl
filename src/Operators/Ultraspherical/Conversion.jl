@@ -21,7 +21,7 @@ end
 function conversion(b1::Ultraspherical,b2::FixedGridValues)
     # See conversion remark above.
     a, b = Jacobi_ab(b1.λ - 1/2, b1.λ - 1/2)
-    Op = FixedGridOPEvaluationOperator(b2.pts,a,b)
+    Op = OPEvaluationOperator(b2.pts,a,b)
     ConcreteOperator(b1,b2,Op)
 end
 

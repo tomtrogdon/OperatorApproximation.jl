@@ -19,3 +19,8 @@ function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: Interval}
     end
     ConcreteOperator(b1,B.range,Op)
 end
+
+function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: DiscreteDomain}
+    Op = PoleResCauchyEvaluationOperator(B.range.GD.grid,b1.GD.grid)
+    ConcreteOperator(b1,B.range,Op)
+end

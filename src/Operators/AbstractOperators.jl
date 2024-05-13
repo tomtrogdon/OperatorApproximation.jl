@@ -167,6 +167,17 @@ function *(D::BlockDiagonalAbstractOperator,B::BlockAbstractOperator)
     end
     BlockAbstractOperator(Ops)
 end
+
+function *(D::BlockAbstractOperator,B::BlockAbstractOperator)
+    BlockAbstractOperator(convert(Matrix{OperatorApproximation.AbstractOperator},D.Ops*B.Ops))
+end
+
+function *(D::AbstractOperator,B::BlockAbstractOperator)
+    if size(B.Ops,1) != 1
+        @error "wrong block size"
+    end
+    BlockAbstractOperator([D*op for op in B.Ops])
+end
 ####
 struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
@@ -219,13 +230,27 @@ end
 
 struct AbstractZeroOperator <: AbstractOperator end
 AbstractZeroOperator(n::Int64,m::Int64) = n == m && n == 1 ? AbstractZeroOperator() : BlockAbstractOperator(fill(AbstractZeroOperator(),n,m))
+zero(::Type{AbstractOperator}) = AbstractZeroOperator()
+zero(::AbstractOperator) = AbstractZeroOperator()
 
 function *(Op::AbstractZeroOperator,Op2::AbstractOperator)
     Op
 end
 
+function +(Op::AbstractZeroOperator,Op2::AbstractOperator)
+    Op2
+end
+
 function *(Op::AbstractOperator,Op2::AbstractZeroOperator)
     Op2
+end
+
+function +(Op::AbstractOperator,Op2::AbstractZeroOperator)
+    Op
+end
+
+function +(Op::AbstractZeroOperator,Op2::AbstractZeroOperator)
+    Op
 end
 
 struct Derivative <: AbstractOperator
