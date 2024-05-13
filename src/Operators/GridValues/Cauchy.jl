@@ -5,7 +5,11 @@ function *(C::CauchyTransform,domain::FixedGridValues)
 end
 
 function poleres_cauchy(ps,z::Number)
-    sv = 1.0./(ps .- z)
+    sv = (ps .- z)
+    flag = abs.(sv) .< 1e-14
+    sv[flag] .= ones(sum(flag))
+    sv = 1.0./sv
+    sv[flag] .= zeros(sum(flag))
     1/(2im*pi)*sv
 end
 
