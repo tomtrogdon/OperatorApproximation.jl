@@ -141,14 +141,9 @@ end
 struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator # even though it is sparse...
     # it is simpler to treat grid multiplication as dense
     f::Union{Function,Vector}
-    grid::Function
+    grid::Union{Function,Vector}
 end
 GridMultiplication(f,grid) = GridMultiplication{𝔼,𝔼}(f,grid)
-
-struct FixedGridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
-    fvals::Vector
-end
-FixedGridMultiplication(fvals) = FixedGridMultiplication{𝔼,𝔼}(fvals)
 
 function Matrix(Op::OPEvaluationOperator,n,m)
     if typeof(Op.grid) <: Function
@@ -206,7 +201,11 @@ function Matrix(Op::OPEvaluationOperator,m)  # only one dim for Functional
 end
 
 function Matrix(Op::OPCauchyEvaluationOperator,n,m)
-    cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid(n))*2
+    if typeof(Op.grid) <: Function
+        return cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid(n))*2
+    else
+        return return cauchy(Op.a,Op.b,Op.seed,m-1,Op.grid)*2
+    end
 end
 
 function Matrix(Op::PoleResCauchyEvaluationOperator,n,m)

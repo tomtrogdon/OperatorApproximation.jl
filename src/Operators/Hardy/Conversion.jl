@@ -17,7 +17,23 @@ function conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: In
     ConcreteOperator(b1,b2,Op)
 end
 
+function conversion(b1::Hardy{T,S},b2::FixedGridValues) where {T <: Exterior, S <: Interval}
+    basegrid = b2.GD.grid
+    # We need to do this:
+    mapgrid = b1.GD.D.imap(b2.GD.D.map(basegrid))
+    α = b1.GD.GD.α
+    β = b1.GD.GD.β
+    a, b = Jacobi_ab(α,β)
+    Op = OPCauchyEvaluationOperator(mapgrid, a, b, JacobiSeed(α,β))
+    ConcreteOperator(b1,b2,Op)
+end
+
 function conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: DiscreteDomain}
+    Op = PoleResCauchyEvaluationOperator(b2.GD.grid,b1.GD.grid)
+    ConcreteOperator(b1,b2,Op)
+end
+
+function conversion(b1::Hardy{T,S},b2::FixedGridValues) where {T <: Exterior, S <: DiscreteDomain}
     Op = PoleResCauchyEvaluationOperator(b2.GD.grid,b1.GD.grid)
     ConcreteOperator(b1,b2,Op)
 end
