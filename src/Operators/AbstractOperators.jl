@@ -263,7 +263,7 @@ struct FloquetDerivative <: AbstractOperator
 end
 
 struct Multiplication <: AbstractOperator
-    f::Union{Function,BasisExpansion}
+    f::Union{Function,BasisExpansion,Vector}
 end
 
 ### SEMI ABSTRACT OPERATORS ###

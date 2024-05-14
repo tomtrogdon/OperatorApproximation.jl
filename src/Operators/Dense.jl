@@ -148,7 +148,7 @@ GridMultiplication(f,grid) = GridMultiplication{𝔼,𝔼}(f,grid)
 struct FixedGridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
     fvals::Vector
 end
-FixedGridMultiplication(f,grid) = FixedGridMultiplication{𝔼,𝔼}(f,grid)
+FixedGridMultiplication(fvals) = FixedGridMultiplication{𝔼,𝔼}(fvals)
 
 function Matrix(Op::OPEvaluationOperator,n,m)
     if typeof(Op.grid) <: Function

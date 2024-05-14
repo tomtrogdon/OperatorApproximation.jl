@@ -4,8 +4,13 @@ function *(M::Multiplication,sp::GridValues)
 end
 
 function *(M::Multiplication,sp::FixedGridValues)
-    Op = FixedGridMultiplication(M.f(sp.GD.D.map(sp.pts)))
-    ConcreteOperator(sp,sp,Op)
+    if typeof(M.f) <: Function || typeof(M.f) <: BasisExpansion
+        Op = FixedGridMultiplication(M.f(sp.GD.D.map(sp.pts)))
+        return ConcreteOperator(sp,sp,Op)
+    else
+        Op = FixedGridMultiplication(M.f)
+        return ConcreteOperator(sp,sp,Op)
+    end
 end
 
 function Matrix(GM::GridMultiplication,n,m)
