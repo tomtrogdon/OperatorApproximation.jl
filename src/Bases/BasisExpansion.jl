@@ -78,7 +78,7 @@ function BasisExpansion(f::Function,basis::Basis)
         g = Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),n)
     end
     if n >= Nmax
-        @warn "Max DOF reached"
+        @warn "Max DOF reached.  Tolerance met: "*string(norm(g.c[end-4:end]))
     end
     return g
 end
