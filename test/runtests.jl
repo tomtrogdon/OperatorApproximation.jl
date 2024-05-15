@@ -1,4 +1,4 @@
-using OperatorApproximation, SpecialFunctions, LinearAlgebra
+using OperatorApproximation, SpecialFunctions, LinearAlgebra, Memoize
 using Test
 
 @testset "OperatorApproximation.jl: Basic tests" begin
@@ -258,3 +258,59 @@ end
     @test abs(truth - approx) < 1e-10
 end
 
+@testset "OperatorApproximation.jl: Schrödinger scattering" begin
+    V = x -> -exp(-x^2)
+    @memoize function Sc(k,V)
+        L = 20.0
+        gdL = UltraMappedInterval(-L,0,0.0)
+        gdR = UltraMappedInterval(0,L,0.0)
+        spL = Ultraspherical(0.0,gdL)
+        spR = Ultraspherical(0.0,gdR)
+        D = Derivative()
+        M = Multiplication(V)
+        EL = Conversion(gdL |> GridValues)
+        ER = Conversion(gdR |> GridValues)
+        OpL = EL*D^2 - (2im*k)*(EL*D) + M*EL
+        OmL = EL*D^2 + (2im*k)*(EL*D) + M*EL
+        OpR = ER*D^2 - (2im*k)*(ER*D) + M*ER
+        OmR = ER*D^2 + (2im*k)*(ER*D) + M*ER
+        BL = Conversion(FixedGridValues([-L],gdL))
+        BR = Conversion(FixedGridValues([L],gdR))
+    
+        OpL = (BL ⊘ (BL*D) ⊘ OpL)*spL
+        JpL = OpL\([[0.0], [0.0], x -> -V(x)])
+        dJpL = D*JpL
+        OmL = (BL ⊘ (BL*D) ⊘ OmL)*spL
+        JmL = OmL\([[0.0], [0.0], x -> -V(x)])
+        dJmL = D*JmL
+    
+        OpR = (BR ⊘ (BR*D) ⊘ OpR)*spR
+        JpR = OpR\([[0.0], [0.0], x -> -V(x)])
+        dJpR = D*JpR
+        OmR = (BR ⊘ (BR*D) ⊘ OmR)*spR
+        JmR = OmR\([[0.0], [0.0], x -> -V(x)])
+        dJmR = D*JmR
+    
+        A = [JpL(0.0)+1  JmL(0.0)+1;
+            dJpL(0.0)-im*k*(JpL(0.0)+1) dJmL(0.0)+im*k*(JmL(0.0)+1)]
+        B = [JpR(0.0)+1  JmR(0.0)+1;
+            dJpR(0.0)-im*k*(JpR(0.0)+1) dJmR(0.0)+im*k*(JmR(0.0)+1)]
+        B\A
+    end
+    ρ(k,V) = Sc(k,V)[2,1]/Sc(k,V)[1,1]
+    p = x -> ( abs(x) < 1e-12 ? -1.0 + 0.0im : ρ(x,V) )
+    p̄ = x -> -conj(p(conj(x)))
+    τ = x -> 1 + p(x)*p̄(x)
+    JJ = [τ p̄; p x->1]
+    
+    # Without poles
+    Γ = [-10.0 0; 0 10.0]
+    J = [JJ, JJ]
+    rhp = RHP(Γ,J)
+    rhsolver = RHSolver(rhp);
+    sol = rhsolver([1 1], 300)
+    U = CauchyTransform()*sol
+    β = moment(sol[1],1)*1im/(2pi)
+    α = moment(sol[1],0)*1im/(2pi)
+    @test abs(-2(2β - α^2) - V(0.0)) < 1e-9
+end

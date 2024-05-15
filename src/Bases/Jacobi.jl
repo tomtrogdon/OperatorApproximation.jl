@@ -32,6 +32,13 @@ function sum(f::BasisExpansion{T}) where T <: Jacobi
     (f.basis.GD.D.b - f.basis.GD.D.a)*f.c[1]
 end
 
+function moment(f::BasisExpansion{T},k::Int64) where T <: Jacobi
+    if k == 0
+        return sum(f)
+    end
+    Multiplication(x -> x^k)*f |> sum
+end
+
 function (P::BasisExpansion{Jacobi})(X::Number) # Clenshaw's algorithm
     n = P.c |> length
     α = P.basis.α

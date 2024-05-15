@@ -17,6 +17,10 @@ function sum(f::BasisExpansion{T}) where T<:DirectSum
     sum([sum(f[i]) for i = 1:length(f)])
 end
 
+function moment(f::BasisExpansion{T},k) where T<:DirectSum
+    sum([moment(f[i],k) for i = 1:length(f)])
+end
+
 getindex(b::BasisExpansion{T},i::Int64) where T <: DirectSum = BasisExpansion(b.basis[i],b.c[i])
 getindex(b::BasisExpansion{T},i::UnitRange{Int64}) where T <: DirectSum = BasisExpansion(b.basis[i],b.c[i])
 getindex(b::BasisExpansion{T},i) where T = getindex([b],i)
@@ -71,7 +75,7 @@ function ⊕(f::BasisExpansion{T},g::BasisExpansion{S}) where {T <: DirectSum, S
 end
 
 function BasisExpansion(f::Function,basis::Basis)
-    n = 32
+    n = 4
     g = Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),n)
     while !testconv(g) && n < Nmax
         n *= 2
