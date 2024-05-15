@@ -26,3 +26,4 @@ Manifest.toml
 devtest.jl
 dev_code.jl
 /notebooks/.ipynb_checkpoints
+.vscode

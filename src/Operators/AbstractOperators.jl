@@ -73,6 +73,7 @@ end
 struct BlockDiagonalAbstractOperator{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
 end
+diagm(Op::BlockDiagonalAbstractOperator) = diagm(Op.Ops)
 
 size(B::AbstractOperator) = (1,1)
 size(B::BlockAbstractOperator) = size(B.Ops)
@@ -250,6 +251,10 @@ function +(Op::AbstractOperator,Op2::AbstractZeroOperator)
 end
 
 function +(Op::AbstractZeroOperator,Op2::AbstractZeroOperator)
+    Op
+end
+
+function +(Op::SumOfAbstractOperators{T2}, Op2::AbstractZeroOperator) where T2<:AbstractOperator
     Op
 end
 

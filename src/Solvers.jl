@@ -17,6 +17,7 @@ function _rhs_vec_gen(ns,dimflag,b,ranges)
     for i = 1:length(ns)
         if dimflag[i] # functional just push vector
             push!(rhss,b[i])
+            display(b[i])
         else
             temp = BasisExpansion(b[i],ranges[i],ns[i])
             push!(rhss,temp.c)

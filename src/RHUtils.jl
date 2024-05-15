@@ -39,7 +39,7 @@ function rhrange(D::Basis)
     GridValues(_rhrange(D))
 end
 
-function RHmult(J::Matrix) 
+function rhmult_jump(J::Matrix) 
     m = size(J,1) # m is size of RHP
     Js = Matrix{Any}(nothing,m,m)
     for i = 1:m
@@ -50,13 +50,13 @@ function RHmult(J::Matrix)
     convert(Matrix{Multiplication},Js)
 end
 
-# function RHmult(Js::Vector{T}) where T # J is a vector of scalar-valued functions
+# function rhmult(Js::Vector{T}) where T # J is a vector of scalar-valued functions
 
 # end
 
-function rhmult(J::Vector{T}) where T <: Matrix # J is a vector of matrices of scalar-valued functions
+function rhmult_jump(J::Vector{T}) where T <: Matrix # J is a vector of matrices of scalar-valued functions
     if length(J) == 1
-        return RHmult(J[1])
+        return rhmult_jump(J[1])
     end
     m = size(J[1],1) # m is size of RHP
     # length of J is # of contours
@@ -64,13 +64,26 @@ function rhmult(J::Vector{T}) where T <: Matrix # J is a vector of matrices of s
     for i = 1:m
         for j = 1:m
             g = [JJ[i,j] for JJ in J]
-            Js[j,i] = BlockDiagonalAbstractOperator(Multiplication.(g))
+            Js[j,i] = BlockDiagonalAbstractOperator(Multiplication.(g)) # transpose is here
         end
     end
     convert(Matrix{BlockDiagonalAbstractOperator},Js)
 end
 
-function rhrhs(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of scalar-valued functions
+function rhmult_res(J::Vector{T}) where T <: Matrix # J is a vector of matrices (res conds)
+    m = size(J[1],1) # m is size of RHP
+    # length of J is # of contours
+    Js = Matrix{Any}(nothing,m,m)
+    for i = 1:m
+        for j = 1:m
+            g = [JJ[i,j] for JJ in J]
+            Js[j,i] = Multiplication(g) # transpose is here
+        end
+    end
+    Js
+end
+
+function rhrhs_jump(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of scalar-valued functions
     m = size(J[1],1) # m is size of RHP
     # length of J is # of contours
     Js = Vector{Any}(nothing,m)
@@ -81,18 +94,35 @@ function rhrhs(J::Vector{T},c) where T <: Matrix # J is a vector of matrices of 
     convert(Vector{Vector},Js)
 end
 
+function rhrhs_res(J::Vector{T},c) where T <: Matrix # J is a vector of matrices (res conds)
+    m = size(J[1],1) # m is size of RHP
+    # length of J is # of contours
+    Js = Vector{Any}(nothing,m)
+    for i = 1:m
+        Js[i] = [(c*JJ)[i] for JJ in J]
+    end
+    convert(Vector{Vector},Js)
+end
+
 struct RHSolver
     S::ConcreteOperator
     jumps
+    res
 end
+RHSolver(S,jumps) = RHSolver(S,jumps,[])
 
 struct RHP
     Γ::Matrix
     J::Vector
+    P::Vector
+    R::Vector
 end
+RHP(Γ,J) = RHP(Γ,J,[],[])
 
 domainplot(rhp::RHP;kwargs...) = domainplot(rhdomain(rhp.Γ);kwargs...)
 
+### Adaptive stuff ###
+# TODO: Adapt for residues
 function truncateRHP(Jsamp,J,Γ,tol,n)
     Gsamp = copy(Jsamp)
     G = copy(J)
@@ -140,16 +170,27 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
     doms = [transpose(x) for x in doms]
     G, vcat(doms...)
 end
-
+#
 function adapt(rhp::RHP,j,ϵ::Float64)
     J, Σ = truncateRHP(j,rhp.J,rhp.Γ,ϵ,100)
     RHP(Σ,J)
 end
+########
+
+function vcat_rhs(jumps,res,c)
+    if length(res) == 0
+        return vcat(rhrhs_jump(jumps,c)...)
+    else
+        temp = rhrhs_jump(jumps,c)
+        temp2 = rhrhs_res(res,c)
+        return vcat(vcat.(map(x -> [x],temp2),temp)...)
+    end
+end
 
 function (R::RHSolver)(c,n)
-    b = vcat(rhrhs(R.jumps,c)...)
+    b = vcat_rhs(R.jumps,R.res,c)
     u = \(R.S,b,n)
-    k = length(R.jumps)
+    k = length(R.jumps) + (length(R.res) > 0 ? 1 : 0)
     m = length(c)
     if k == 1
         return [u[i] for i=1:m]
@@ -158,9 +199,9 @@ function (R::RHSolver)(c,n)
 end
 
 function (R::RHSolver)(c::Tuple,n)
-    b = map(c -> vcat(rhrhs(R.jumps,c)...), c)
+    b = map(c -> vcat_rhs(R.jumps,R.res,c), c)
     u = \(R.S,b,n)
-    k = length(R.jumps)
+    k = length(R.jumps) + (length(R.res) > 0 ? 1 : 0)
     m = length(c[1])
     q = length(c)
     out = []
@@ -179,17 +220,34 @@ function RHSolver(rhp::RHP)
     k = size(rhp.Γ,1) # number of intervals
     dom = rhdomain(rhp.Γ)
     ran = rhrange(dom)
-    ℰ⁻ = BoundaryValue(-1,ran)
+    if length(rhp.P) > 0
+        k += 1
+        resdom = FixedGridValues(Grid(rhp.P))
+        dom = resdom ⊕ dom
+    end
     ℰ⁺ = BoundaryValue(+1,ran)
+    if length(rhp.P) > 0
+        ran = resdom ⊕ ran
+    end
+    ℰ⁻ = BoundaryValue(-1,ran)
+    if length(rhp.P) > 0
+        ℰ⁺ = Residue(resdom) ⊕ ℰ⁺
+    end
     𝒞 = BlockAbstractOperator(CauchyTransform(),k,k)
     𝒞⁺ = ℰ⁺*𝒞
     𝒞⁻ = ℰ⁻*𝒞
-    ℳ = rhmult(rhp.J)
+    ℳ = rhmult_jump(rhp.J)
+    if length(rhp.P) > 0
+        ℳ = rhmult_res(rhp.R) .⊕ ℳ
+    end
     ℳ𝒞⁻ = matrix2BlockOperator(ℳ.*fill(𝒞⁻,m,m))
     𝒞⁺ = diagm(fill(𝒞⁺,m))
     dom = ⊕([dom for i = 1:m]...)
     ran = ⊕([ran for i = 1:m]...)
     S = (-ℳ𝒞⁻ + 𝒞⁺)*dom
+    if length(rhp.P) > 0
+        return RHSolver(S,rhp.J,rhp.R)
+    end
     RHSolver(S,rhp.J)
 end
 

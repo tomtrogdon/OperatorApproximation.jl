@@ -111,7 +111,7 @@ function plot(f::BasisExpansion;dx = 0.01,kwargs...)
     b = f.basis.GD.D.b
     if isreal(a) && isreal(b) && a < b
         plot(x, y |> real;kwargs...)
-        plot!(y, y |> imag;kwargs...)
+        plot!(x, y |> imag;kwargs...)
     else # plot according to arclength
         plot(abs.(x .- a), y |> real;kwargs...)
         plot!(abs.(x .- a), y |> imag;kwargs...)
