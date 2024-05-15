@@ -29,6 +29,7 @@ function conversion(b1::Hardy{T,S},b2::FixedGridValues) where {T <: Exterior, S 
 end
 
 function conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: DiscreteDomain}
+    basegrid =  n -> b2.GD.grid(n)
     gridfun = n -> b2.GD.D.map(basegrid(n))
     Op = PoleResCauchyEvaluationOperator(gridfun,b1.GD.grid)
     ConcreteOperator(b1,b2,Op)

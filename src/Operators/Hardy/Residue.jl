@@ -13,6 +13,6 @@ function *(B::Residue,b1::Hardy{T,S}) where {T <: Exterior, S <: DiscreteDomain}
     n = length(dom_pts)
     m = length(ran_pts)
     A = repeat(reshape(dom_pts,1,:),m,1) - repeat(reshape(ran_pts,:,1),1,n)
-    A = map( x -> abs(x) < 1e-14 ? 1.0 : 0.0, A) |> sparse |> dropzeros   
+    A = map( x -> abs(x) < 1e-14 ? 1.0im/(2pi) : 0.0im, A) |> sparse |> dropzeros   
     ConcreteOperator(b1,B.range,FixedMatrix{ℕ₊,ℕ₊}(A))
 end

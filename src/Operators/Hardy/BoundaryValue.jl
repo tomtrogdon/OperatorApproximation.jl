@@ -21,13 +21,13 @@ function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: Interval}
 end
 
 function *(B::BoundaryValue,b1::Hardy{T,S}) where {T <: Exterior, S <: DiscreteDomain}
-    if B.range <: FixedGridValues
+    if typeof(B.range) <: FixedGridValues # don't map
         Op = PoleResCauchyEvaluationOperator(B.range.GD.grid,b1.GD.grid)
         return ConcreteOperator(b1,B.range,Op)
     else
         basegrid =  n -> B.range.GD.grid(n)
-        gridfun = n -> B.range.GD.D.map(basegrid(n))
-        Op = PoleResCauchyEvaluationOperator(grifun,b1.GD.grid)
+        gridfun = n -> B.range.GD.D.map(basegrid(n))  # map
+        Op = PoleResCauchyEvaluationOperator(gridfun,b1.GD.grid)
         return ConcreteOperator(b1,B.range,Op)
     end
 end
