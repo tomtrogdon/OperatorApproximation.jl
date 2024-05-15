@@ -8,7 +8,7 @@ function poleres_cauchy(ps,z::Number)
     sv = (ps .- z)
     flag = abs.(sv) .< 1e-14
     sv[flag] .= ones(sum(flag))
-    sv = 1.0./sv
+    sv .= 1.0./sv
     sv[flag] .= zeros(sum(flag))
     1/(2im*pi)*sv
 end
@@ -16,7 +16,7 @@ end
 function poleres_cauchy(ps,z::Vector)  # vectorize!
     A = zeros(ComplexF64,length(z),length(ps))
     for i = 1:length(z)
-        A[i,:] = poleres_cauchy(ps,z[i])
+        A[i,:] .= poleres_cauchy(ps,z[i])
     end
     A
 end
