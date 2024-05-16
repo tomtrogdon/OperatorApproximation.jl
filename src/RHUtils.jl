@@ -343,6 +343,9 @@ function rhplot(rhp::RHP;kwargs...)
     # need to extend for larger RHPs
     dom = rhp.Γ |> rhdomain
     p0 = domainplot(dom;kwargs...)
+    if length(rhp.poles) > 0
+        scatter!(p0,real(rhp.poles),imag(rhp.poles))
+    end
     ran = rhrange(dom)
     N = 100
     plts = [p0]
