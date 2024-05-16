@@ -45,6 +45,29 @@ function chop(f::BasisExpansion{T}) where T <: DiscreteBasis
     f
 end
 ####################################
+#####  Important to implement  #####
+####################################
+function sum(f::BasisExpansion{T}) where T <: DiscreteBasis
+    sum(f.c)
+end
+
+function moment(f::BasisExpansion{T},k::Int64) where T <: GridValues
+    if k == 0
+        return sum(f)
+    end
+    n = length(f.c)
+    f.c.*(f.basis.GD.grid(n).^k) |> sum
+end
+
+function moment(f::BasisExpansion{T},k::Int64) where T <: FixedGridValues
+    if k == 0
+        return sum(f)
+    end
+    f.c.*(f.basis.pts.^k) |> sum
+end
+
+
+####################################
 ####################################
 ####################################
 

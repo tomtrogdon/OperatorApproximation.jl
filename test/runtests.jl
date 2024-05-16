@@ -259,7 +259,6 @@ end
 end
 
 @testset "OperatorApproximation.jl: Schrödinger scattering" begin
-    V = x -> -exp(-x^2)
     @memoize function Sc(k,V)
         L = 20.0
         gdL = UltraMappedInterval(-L,0,0.0)
@@ -298,18 +297,50 @@ end
         B\A
     end
     ρ(k,V) = Sc(k,V)[2,1]/Sc(k,V)[1,1]
+    
+    # Without poles
+    V = x -> -exp(-x^2)
     p = x -> ( abs(x) < 1e-12 ? -1.0 + 0.0im : ρ(x,V) )
     p̄ = x -> -conj(p(conj(x)))
     τ = x -> 1 + p(x)*p̄(x)
     JJ = [τ p̄; p x->1]
-    
-    # Without poles
     Γ = [-10.0 0; 0 10.0]
     J = [JJ, JJ]
     rhp = RHP(Γ,J)
     rhsolver = RHSolver(rhp);
     sol = rhsolver([1 1], 300)
     U = CauchyTransform()*sol
+    β = moment(sol[1],1)*1im/(2pi)
+    α = moment(sol[1],0)*1im/(2pi)
+    @test abs(-2(2β - α^2) - V(0.0)) < 1e-9
+    
+    # With pole
+    V = x -> 1.3exp(-x^2)
+    L = 23
+    gd = PeriodicMappedInterval(-L,L)
+    sp = Fourier(gd)
+    D = Derivative()
+    M = Multiplication(x -> V(x))
+    Λ = eigen((-D^2 - M)*sp,1000)
+    k = sqrt(Λ.values[1] |> real |> complex)
+    ϵ = 1e-12
+    h = x -> Sc(1im*x,V)[1,1]
+    c = imag(h(imag(k) + 1im*ϵ))/ϵ # this only works because the data is decreasing so rapidly
+    c = 1im/c
+    
+    p = x -> ( abs(x) < 1e-12 ? -1.0 + 0.0im : ρ(x,V) )
+    p̄ = x -> -conj(p(conj(x)))
+    τ = x -> 1 + p(x)*p̄(x)
+    JJ = [τ p̄; p x->1]
+    Γ = [-10.0 0; 0 10.0]
+    J = [JJ, JJ]
+    poles = [k, -k]
+    Rp = [0 0; c 0]
+    Rm = Rp' |> Matrix
+    R = [Rp, Rm]
+    rhp = RHP(Γ,J,poles,R)
+    rhsolver = RHSolver(rhp);
+    sol = rhsolver([1 1], 300)
     β = moment(sol[1],1)*1im/(2pi)
     α = moment(sol[1],0)*1im/(2pi)
     @test abs(-2(2β - α^2) - V(0.0)) < 1e-9
