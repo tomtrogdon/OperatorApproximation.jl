@@ -12,27 +12,25 @@ function toeplitz(c::Vector,N::Integer) #QUESTION: is this N even needed???
     diags2 = [fill(c[m₋+1+j],m₋+1-j+dm) for j in 1:mend]
     diags = vcat(diags1,diags2)
     inds = map( (x,y) -> x => y, range,diags)
-    T = spdiagm(inds[1:1]...)
+    A = spdiagm(inds[1:1]...)
     for i=2:length(inds)
-        T += spdiagm(inds[i:i]...)
+        A += spdiagm(inds[i:i]...)
     end
-    
-    M = T .- (c*(transpose(ones(mm)))) .- ((sum(c))*I)
+    A
 end
 
 #It seems like it is returning the elements in a toeplitz matrix??
 function toeplitz_function(c::Vector)
     function F(k,j)
         nm = N₋(length(c))
-        d = sum(c)
         # F(0,0) = c[nm+1]
         # F(j,j) = c[nm+1]
         # F(j - i, j) = c[nm + 1 - i], k = j - i, i = j - k
-        # F(k,j) = c[nm + 1 + j -k] (assuming k is row and j is column)
+        # F(k,j) = c[nm + 1 + j -k]
         if nm + 1 + j -k< 1 || nm + 1 + j -k > length(c)
-            return 0.0 - c[k] - d
+            return 0.0
         else
-            return c[nm + 1 + j - k] - c[k] - d
+            return c[nm + 1 + j - k]
         end
     end
 end
