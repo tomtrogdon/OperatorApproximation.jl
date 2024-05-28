@@ -91,6 +91,11 @@ struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain}
 end
 FourierEvaluationOperator(grid) = FourierEvaluationOperator{ℤ,𝔼}(grid)
 
+struct RationalEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Union{Function,Vector}
+end
+RationalEvaluationOperator(grid) = RationalEvaluationOperator{ℤ,𝔼}(grid)
+
 struct OPCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
     a::Function # Jacobi coefficients
@@ -189,6 +194,38 @@ function Matrix(Op::FourierEvaluationOperator,n,m)
     else
         @warn "Asked for more rows than grid points.  Returning maximum number of rows."
         return hornermat(Op.grid,m)
+    end
+end
+
+function horner_mat_rat(x,m)
+    #need to ensure that the x that's being passed in is equivalent to:
+    #     x = P.basis.GD.D.imap(k)
+    #     x = ((x.-1im)./(x.+1im))
+    A = zeros(ComplexF64,length(x),m)
+    mm = convert(Int64,floor( m/2 ))
+    A[:,1] = x^(-mm)
+    ex1 = x^(-mm)
+    for i = 2:m
+        A[:,i]  .=  copy(A[:,i-1]).*ex1
+    end
+    return A
+end
+
+function Matrix(Op::RationalEvaluationOperator,n,m,α)
+    if typeof(Op.grid) <: Function
+        k = Op.grid(n) #is this a row vector or a column vector? Because I may need to transpose this in exp term
+        x = ((k.-1im)./(k.+1im))
+        return horner_mat_rat(x,m).*exp(1im*k*α)
+    end
+    if n <= length(Op.grid)
+        k = Op.grid[1:n]
+        x = ((k.-1im)./(k.+1im))
+        return horner_mat_rat(x,m).*exp(1im*k*α)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        k = Op.grid
+        x = ((k.-1im)./(k.+1im))
+        return horner_mat_rat(x,m).*exp(1im*k*α)
     end
 end
 
