@@ -22,10 +22,10 @@ function conversion(b1::Rational,b2::GridValues)
     ConcreteOperator(b1,b2,Op)
 end
 
-#This does the same as above but for fixed values on the grid
+#This does the same as above but for fixed values on the grid #replace FixedGrid part and use other eval op
 function conversion(b1::Rational,b2::FixedGridValues)
     # See conversion remark above.
-    Op = FixedGridFourierEvaluationOperator(b2.pts) #QUESTION: Where does "FixedGridFourierEvaluationOperator" live?
+    Op = RationalEvaluationOperator(b2.pts) 
     ConcreteOperator(b1,b2,Op)
 end
 
