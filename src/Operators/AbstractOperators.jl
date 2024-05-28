@@ -292,6 +292,11 @@ end
 struct Residue <: AbstractOperator
     range::Basis
 end
+### Wrappers ###
+struct Truncation <: AbstractOperator
+    Op::AbstractOperator
+    k::Int64
+end
 ### ###
 
 struct CauchyTransform <: AbstractOperator end

@@ -364,8 +364,25 @@ function *(Ops::SumOfMatrixOperators,Op::ProductOfBandedOperators)
     SumOfMatrixOperators([op*Op for op in Ops.Ops],Ops.c)
 end
 
-# include("SemiInfinite.jl")
-# include("BiInfinite.jl")
+struct TruncatedOperator{T<:CoefficientDomain, S <: CoefficientDomain} <: MatrixOperator# where T <: DiscreteDomain
+    Op::MatrixOperator
+    k::Int64
+end
+TruncatedOperator(Op,k) = TruncatedOperator{dom(Op),ran(Op)}(Op,k)
+
+function *(Op::Truncation,sp::Basis)
+    newOp = Op.Op*sp
+    ConcreteOperator(newOp.domain,newOp.range,TruncatedOperator(newOp.L,Op.k))
+end
+
+function Matrix(L::TruncatedOperator,n,m)
+    if L.k < m
+        return hcat(Matrix(L.Op,n,L.k) |> sparse, spzeros(n,m-L.k))
+    else
+        return Matrix(L.Op,n,m)
+    end
+end
+
 include("LazyMatrix.jl")
 include("Dense.jl")
 include("GridValues/GridValues.jl")
