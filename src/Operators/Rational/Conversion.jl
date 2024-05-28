@@ -22,7 +22,7 @@ function conversion(b1::Rational,b2::GridValues)
     ConcreteOperator(b1,b2,Op)
 end
 
-#This does the same as above but for fixed values on the grid #replace FixedGrid part and use other eval op
+#This does the same as above but for fixed values on the grid
 function conversion(b1::Rational,b2::FixedGridValues)
     # See conversion remark above.
     Op = RationalEvaluationOperator(b2.pts) 
