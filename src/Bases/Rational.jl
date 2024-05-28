@@ -1,10 +1,10 @@
 #This is creating the basis itself; it only depends on the interval that you want the grid
 struct Rational <: Basis
-    GD::GridInterval
+    GD::GridAxis
 end
 
 #This defines the "domain" that the basis itself is defined on
-cfd(sp::Rational) = ℤ #QUESTION: what does cfd stand for? 
+cfd(sp::Rational) = ℤ #cfd=coefficient domain
 
 #This defines the dimension of the basis
 function dim(sp::Rational)
@@ -77,8 +77,9 @@ function midft(v)
     end
 end
 
-function (P::BasisExpansion{Rational})(k::Number) # Horner's method
-    x = P.basis.GD.D.imap(k) #!!!!!!!!!!need to check/input this to be #x = ((k-1im)/(k+1im));
+function (P::BasisExpansion{Rational})(k::Number,α::Number) # Horner's method
+    x = P.basis.GD.D.imap(k)
+    x = ((x.-1im)./(x.+1im))
     m = length(P.c)
     mm = convert(Int64,floor( m/2 )) #basically N₋(N);
     y = x^(-mm); 
@@ -87,5 +88,5 @@ function (P::BasisExpansion{Rational})(k::Number) # Horner's method
         y  =  y.*x
         sum += P.c[i]*y
     end
-    return sum
+    return exp.(1im*k*α).*sum
 end
