@@ -112,6 +112,10 @@ struct BasicBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: Singl
     A::Function
 end
 
+struct RationalMatrixOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: MatrixOperator
+    A::Function
+end
+
 struct ZeroOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator
     nm::Integer
     np::Integer
