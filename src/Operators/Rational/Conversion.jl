@@ -17,8 +17,7 @@ function conversion(b1::Rational,b2::GridValues)
     # and currently this forces the composition of the maps to
     # be the identity
     
-    #!!!!!!!!!!!!!!Need to change to some kind of RationalEvaluationOperator???
-    Op = FourierEvaluationOperator(basegrid) #QUESTION: What does "FourierEvalutationOperator" do and where defined?
+    Op = RationalEvaluationOperator(basegrid) 
     ConcreteOperator(b1,b2,Op)
 end
 
