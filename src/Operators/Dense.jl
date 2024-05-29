@@ -93,8 +93,9 @@ FourierEvaluationOperator(grid) = FourierEvaluationOperator{ℤ,𝔼}(grid)
 
 struct RationalEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
+    α::Number
 end
-RationalEvaluationOperator(grid) = RationalEvaluationOperator{ℤ,𝔼}(grid)
+RationalEvaluationOperator(grid,α) = RationalEvaluationOperator{ℤ,𝔼}(grid,α)
 
 struct OPCauchyEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
@@ -211,11 +212,12 @@ function horner_mat_rat(x,m)
     return A
 end
 
-function Matrix(Op::RationalEvaluationOperator,n,m,α)
+function Matrix(Op::RationalEvaluationOperator,n,m)
+    α = Op.α
     if typeof(Op.grid) <: Function
-        k = Op.grid(n) #is this a row vector or a column vector? Because I may need to transpose this in exp term
+        k = Op.grid(n)
         x = ((k.-1im)./(k.+1im))
-        return horner_mat_rat(x,m).*exp(1im*k*α)
+        return Diagonal(exp.(1im*k*α))*horner_mat_rat(x,m)
     end
     if n <= length(Op.grid)
         k = Op.grid[1:n]
