@@ -39,7 +39,7 @@ end
 function *(M::Multiplication,sp::Rational)
     if typeof(M.f) <: Function 
         GD = RationalRealAxis()
-        ff = BasisExpansion(M.f,Rational(GD)) |> chop
+        ff = BasisExpansion(M.f,Rational(GD,α)) |> chop
     else 
         ff = M.f
     end
