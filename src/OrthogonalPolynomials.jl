@@ -34,10 +34,16 @@ function OPMultiplication(a::Function,b::Function,α::Function,β::Function,c::V
     U = vcat(u,zeros(shape)) |> sparse # TODO: Better way to do this?
     p = U # p_0
     q = c[1]*p
+    if length(c) == 1
+        return q
+    end
     polder = p
     p = J*p - a(0)*p # compute p_1
     p /= b(0)
     q += c[2]*p
+    if length(c) == 2
+        return q
+    end
     pold = p
     for j = 3:length(c) # compute p_n
         p = J*pold - a(j-2)*pold - b(j-3)*polder
