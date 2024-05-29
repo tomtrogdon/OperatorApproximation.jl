@@ -1,6 +1,7 @@
 #This is creating the basis itself; it only depends on the interval that you want the grid
 struct Rational <: Basis
     GD::GridAxis
+    α::Number
 end
 
 #This defines the "domain" that the basis itself is defined on
