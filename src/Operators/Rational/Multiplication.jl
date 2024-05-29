@@ -37,10 +37,8 @@ end
 
 #Actually defines how to apply multiplication to the Rational space
 function *(M::Multiplication,sp::Rational)
-    if typeof(M.f) <: Function #QUESTION: What is M.f???
-        a = sp.GD.D.a
-        b = sp.GD.D.b
-        GD = PeriodicMappedInterval(a,b) #QUESTION: Is this the one we want??
+    if typeof(M.f) <: Function 
+        GD = RationalRealAxis()
         ff = BasisExpansion(M.f,Rational(GD)) |> chop
     else 
         ff = M.f
