@@ -305,9 +305,8 @@ struct RationalRealAxis <: GridAxis
     grid::Function
     function RationalRealAxis()
         Tm1 = z-> (1/1im)*((z+1)/(z-1)) #inverse mobius transform that maps unit circle onto real axis
-        L = π #will ensure that θ=shift_mgrid(n) will be [0,2π)
-        shift_mgrid = n-> (((-L .+ 2*L*(0:n-1)/n)./(2*L)).+(1/2)).*(2*π)
-        gridfun = n-> Tm1(exp(1im.*shift_mgrid(n))) #x=T^{-1}(exp(iθ))
+        rat_mgrid = n-> (((0:n-1)+(1/2))/n)*(2*π) #[0,2π) shifted by 1/2 to avoid issues at 0 and infinity
+        gridfun = n-> Tm1(exp(1im.*rat_mgrid(n))) #x=T^{-1}(exp(iθ))
         return new(RealAxis(),gridfun)
     end
 end
