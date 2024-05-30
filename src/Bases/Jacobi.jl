@@ -25,6 +25,12 @@ end
 function chop(f::BasisExpansion{T}) where T <: Jacobi
     BasisExpansion(f.basis,chop(f.c))
 end
+
+function getweight(sp::Jacobi)
+    α = sp.α
+    β = sp.β
+    x -> JacobiW(α,β,x)
+end
 ####################################
 #####  Important to implement  #####
 ####################################

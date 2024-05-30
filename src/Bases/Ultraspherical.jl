@@ -18,6 +18,11 @@ end
 function chop(f::BasisExpansion{T}) where T <: Ultraspherical  # add tolerance?
     BasisExpansion(f.basis,chop(f.c))
 end
+
+function getweight(sp::Ultraspherical)
+    λ = sp.λ
+    x -> JacobiW(λ - 0.5, λ - 0.5,x)
+end
 ####################################
 ####################################
 ####################################
