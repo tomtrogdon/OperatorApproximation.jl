@@ -56,11 +56,17 @@ function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: C
     sum
 end
 
-function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Interval}
+function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: Union{JacobiMappedInterval,JacobiInterval}, S <: Interval}
     α = P.basis.GD.GD.α
     β = P.basis.GD.GD.β
     a, b = Jacobi_ab(α,β)
     dot(cauchy(a,b,JacobiSeed(α,β),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2
+end
+
+function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+    d = P.basis.GD.GD.d
+    a, b = MP_ab(d)
+    dot(cauchy(a,b,MPSeed(d),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2
 end
 
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: DiscreteDomain}

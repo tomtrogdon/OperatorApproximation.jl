@@ -109,3 +109,5 @@ include("Laurent.jl")
 include("Hardy.jl")
 include("Hermite.jl")
 include("Erf.jl")
+include("MarchenkoPastur.jl")
+

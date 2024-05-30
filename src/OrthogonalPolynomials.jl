@@ -8,6 +8,12 @@ function Jacobi_ab(a,b) #TODO: simplify evaluation
                                                                 # to the Jacobi parameters after the fact
 end
 
+function MP_ab(d) # need to map support to [-1,1]
+   bfun = n -> 0.5# sqrt(d)
+   afun = n -> n == 0 ? -sqrt(d)/2.0 : 0.0
+   (afun,bfun)                                   
+end
+
 function Hermite_ab()
     bfun = n -> sqrt(n + 1.0)
     afun = n -> 0.0
@@ -94,6 +100,12 @@ function JacobiWconst(a,b)
     return 1/c
 end
 
+function MPW(d,x)  # not correct...
+    dp = (1 + sqrt(d))^2
+    dm = (1 - sqrt(d))^2
+    1/(2*pi*d*x)*sqrt(dp-x)*sqrt(x-dm)
+end
+
 ## from SingularIntegralEquation.jl
 normalization(n::Int,α::Real,β::Real) = 2^(α+β)*gamma(n+α+1)*gamma(n+β+1)/gamma(2n+α+β+2)
 #stieltjesjacobimoment(α::Real,β::Real,n::Int,z) =
@@ -128,6 +140,48 @@ end
 
 function legendrestieltjes_neg(z)
     return 1im/(4*pi)*(log(1+z) + 1im*pi - log(1-z))
+end
+
+function MPSeedUnmapped(d,z)
+    dp = (1 + sqrt(d))^2
+    dm = (1 - sqrt(d))^2
+    (1 - d - z + sqrt(z - dp)*sqrt(z - dm))/(4im*d*pi*z)
+end
+
+function MPSeedUnmappedPos(d,z)
+    dp = (1 + sqrt(d))^2
+    dm = (1 - sqrt(d))^2
+    ((d -1 - z) + 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
+end
+
+function MPSeedUnmappedNeg(d,z)
+    dp = (1 + sqrt(d))^2
+    dm = (1 - sqrt(d))^2
+    ((d -1 - z) - 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
+end
+
+function MPSeed(d)
+    function f(z)
+        Z = 2*sqrt(d)*z + 1 + d
+        MPSeedUnmapped(d,Z)*2*sqrt(d)
+    end
+    f
+end
+
+function MPSeedPos(d)
+    function f(z)
+        Z = 2*sqrt(d)*z + 1 + d
+        MPSeedUnmappedPos(d,Z)*2*sqrt(d)
+    end
+    f
+end
+
+function MPSeedNeg(d)
+    function f(z)
+        Z = 2*sqrt(d)*z + 1 + d
+        MPSeedUnmappedNeg(d,Z)*2*sqrt(d)
+    end
+    f
 end
 
 function JacobiSeed(α,β)
@@ -190,9 +244,60 @@ function JacobiSeedNeg(α,β)
     end
 end
 
+function dist(z,n) # check if inside Bernstein ellipse that tends to
+    # [-1,1] as n -> ∞
+    ρ = 1 + 0.5/n
+    a = (ρ+1/ρ)/2.0
+    b = (ρ-1/ρ)/2.0
+    if real(z)^2/a^2 + imag(z)^2/b^2 <= 1
+        return 1
+    else
+        return 0
+    end
+end
+
+#@memoize
+function cauchy(a,b,seed,n,z::Number)
+    if  dist(z,n) == 0   # the criterion for changing.
+        display("Resolvent")
+        m = 16;
+        err = 1
+        while err > 1e-15
+            m *= 2
+            c = fill(0.0im,m)
+            c[1] = 1.0/(2im*pi)
+            ldiv!(jacobi(a,b,m-1) - complex(z)*I,c)
+            err = maximum(abs.(c[end-3:end]))
+        end
+        if m < n + 1
+            append!(c,zeros(n + 10 - m))
+        end
+    else
+        c = fill(0.0im,n+3)
+        c[1] = seed(z);
+        Z = complex(z)
+        c[2] = Z*c[1] - a(0)*c[1] + 1/(2im*pi)
+        c[2] = c[2]/b(0)
+        for j = 1:n-1 # compute c_n
+            c[j+2] = Z*c[j+1] - a(j)*c[j+1] - b(j-1)*c[j]
+            c[j+2] /= b(j)
+        end
+    end
+    c[1:n+1] 
+end
+
+function cauchy(a,b,seed,n,z::Vector)  # vectorize!
+    A = zeros(ComplexF64,length(z),n+1)
+    for i = 1:length(z)
+        A[i,:] = cauchy(a,b,seed,n,z[i])
+    end
+    A
+    #vcat(map(zz -> cauchy(a,b,seed,n,zz) |> transpose, z)...)
+end
+
 #### General recurrence coefficients ####
 #### Note that this process is       ####
-#### inherently unstable for on      ####
+#### inherently unstable for         ####
 #### unbounded intervals             ####
 mutable struct RecCoef
     const ΛW::Function
@@ -222,3 +327,4 @@ function _b(RC::RecCoef,n)
     end
     RC.J[n+1,n+2]
 end
+

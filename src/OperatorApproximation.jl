@@ -19,7 +19,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     BlockAbstractOperator, rhmult, rhrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
     arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
     HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz, RecCoef,
-    DiscreteDomain, Grid, Residue, moment, Truncation
+    DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))

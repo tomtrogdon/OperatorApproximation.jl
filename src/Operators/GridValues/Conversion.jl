@@ -8,6 +8,11 @@ function isconvertible(b1::DiscreteBasis,b2::Jacobi)
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: JacobiMappedInterval && b1.GD.α ≈ b2.α && b1.GD.β ≈ b2.β)
 end
 
+function isconvertible(b1::DiscreteBasis,b2::MarchenkoPastur)
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturInterval && b1.GD.d ≈ b2.d) || 
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturMappedInterval && b1.GD.d ≈ b2.d)
+end
+
 function isconvertible(b1::DiscreteBasis,b2::Fourier)
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicInterval) || 
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicMappedInterval)
@@ -30,6 +35,13 @@ end
 function conversion(b1::GridValues,b2::Ultraspherical)
     λ = b2.λ
     a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
+    Op = OPEigenTransform(a,b)
+    ConcreteOperator(b1,b2,Op)
+end
+
+function conversion(b1::GridValues,b2::MarchenkoPastur)
+    d= b2.d
+    a,b = MP_ab(d)
     Op = OPEigenTransform(a,b)
     ConcreteOperator(b1,b2,Op)
 end
