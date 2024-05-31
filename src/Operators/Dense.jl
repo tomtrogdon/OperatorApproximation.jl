@@ -330,3 +330,7 @@ end
 function Matrix(Op::DiscreteFourierTransform,n,m)
     Op.T(Matrix(I,n,m)) # Not the right way to do this...
 end
+
+function Matrix(Op::DiscreteFourierTransformII,n,m)
+    Op.T(Matrix(I,n,m)) # Not the right way to do this...
+end
