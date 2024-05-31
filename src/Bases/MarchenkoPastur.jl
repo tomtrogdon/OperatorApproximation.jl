@@ -19,6 +19,11 @@ end
 function chop(f::BasisExpansion{T}) where T <: MarchenkoPastur
     BasisExpansion(f.basis,chop(f.c))
 end
+
+function getweight(sp::MarchenkoPastur)
+    d = sp.d
+    x -> 2/(pi*(2*sqrt(d)*x + 1 + d))*sqrt(1-x)*sqrt(1 + x)
+end
 ####################################
 #####  Important to implement  #####
 ####################################

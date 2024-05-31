@@ -137,6 +137,44 @@ function plot!(f::BasisExpansion;dx = 0.01,kwargs...)
     end
 end
 
+function weightplot(f::BasisExpansion;dx = 0.01,kwargs...)
+    X = -1:dx:1
+    x = f.basis.GD.D.map.(X)
+    y = f.(x)
+    w = getweight(f.basis)
+    W = w.(X)
+    y = W.*y
+    a = f.basis.GD.D.a
+    b = f.basis.GD.D.b
+    y *= 2
+    if isreal(a) && isreal(b) && a < b
+        plot(x, y |> real;kwargs...)
+        plot!(x, y |> imag;kwargs...)
+    else # plot according to arclength
+        plot(abs.(x .- a), y |> real;kwargs...)
+        plot!(abs.(x .- a), y |> imag;kwargs...)
+    end
+end
+
+function weightplot!(f::BasisExpansion;dx = 0.01,kwargs...)
+    X = -1:dx:1
+    x = f.basis.GD.D.map.(X)
+    y = f.(x)
+    w = getweight(f.basis)
+    W = w.(X)
+    y = W.*y
+    a = f.basis.GD.D.a
+    b = f.basis.GD.D.b
+    y *= 2
+    if isreal(a) && isreal(b) && a < b
+        plot!(x, y |> real;kwargs...)
+        plot!(x, y |> imag;kwargs...)
+    else # plot according to arclength
+        plot!(abs.(x .- a), y |> real;kwargs...)
+        plot!(abs.(x .- a), y |> imag;kwargs...)
+    end
+end
+
 function pad(v::Vector,n::Int64)
     if length(v) == n
         return v
