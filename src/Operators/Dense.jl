@@ -144,6 +144,18 @@ function *(D::DiscreteFourierTransform,f::Vector)
     D.T(f)
 end
 
+struct DiscreteFourierTransformII{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
+    T::Function
+    function DiscreteFourierTransformII{𝔼,ℤ}()
+        return new(kdft)
+    end
+end
+DiscreteFourierTransformII() = DiscreteFourierTransformII{𝔼,ℤ}()
+
+function *(D::DiscreteFourierTransformII,f::Vector)
+    D.T(f)
+end
+
 struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator # even though it is sparse...
     # it is simpler to treat grid multiplication as dense
     f::Union{Function,Vector}
