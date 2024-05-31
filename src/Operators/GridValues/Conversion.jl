@@ -32,7 +32,7 @@ function conversion(b1::GridValues,b2::Fourier)
 end
 
 function conversion(b1::GridValues,b2::Rational)
-    Op = DiscreteFourierTransform()
+    Op = DiscreteFourierTransformII()
     ConcreteOperator(b1,b2,Op)
 end
 
