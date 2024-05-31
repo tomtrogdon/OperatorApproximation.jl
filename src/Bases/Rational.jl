@@ -36,14 +36,18 @@ mifft = x -> mfftshift(ifft(mfftshift(x),1))
 mgrid = (n,L) -> -L .+ 2*L*(0:n-1)/n
 shift_mgrid = (n,L) -> (((-L .+ 2*L*(0:n-1)/n)./(2*L)).+(1/2)).*(2*π)
 Pgrid = n -> 2*(0:n-1)/n .- 1
+rat_mgrid = n-> (((0:n-1).+(1/2))./n).*(2*π) #[0,2π) shifted by 1/2 to avoid issues at 0 and infinity
 
 N₋ = N -> convert(Int64,floor(N/2))
 N₊ = N -> convert(Int64,floor((N-1)/2))
 
-#discrete Fourier transform
-function mdft(v)
-    if iseven(length(v))
-        return mfft(v)/length(v)
+#discrete Fourier transform *Kaitlynn's version*
+function kdft(v)
+    m = length(v)
+    k = -N₋(m):N₊(m)
+    if iseven(m)
+        mdft = mfft(v)/m
+        return mdft.*exp.((k.*(m-1)./m).*π.*1im)
     else # all this work for odd...
         m = length(v)
         mm = m ÷ 2
@@ -55,14 +59,18 @@ function mdft(v)
             w[i] *= rot
             rot /= σ
         end
-        return w/m
+        mdft = w/m
+        return mdft.*exp.((k.*(m-1)./m).*π.*1im)
     end
 end
 
-#inverse discrete Fourier transform
-function midft(v)
-    if iseven(length(v))
-        return mifft(v*length(v))
+#inverse discrete Fourier transform *Kaitlynn's version*
+function kidft(v)
+    m = length(v)
+    k = float(-N₋(m):N₊(m))
+    v = v.*exp.(-(k.*(m-1)./m).*π.*1im)
+    if iseven(m)
+        return mifft(v*m)
     else
         w = copy(v)
         m = length(v)
