@@ -256,8 +256,7 @@ function dist(z,n) # check if inside Bernstein ellipse that tends to
     end
 end
 
-#@memoize
-function cauchy(a,b,seed,n,z::Number)
+@memoize function cauchy(a,b,seed,n,z::Number)
     if  dist(z,n) == 0   # the criterion for changing.
         display("Resolvent")
         m = 16;
