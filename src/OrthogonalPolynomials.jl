@@ -258,7 +258,6 @@ end
 
 @memoize function cauchy(a,b,seed,n,z::Number)
     if  dist(z,n) == 0   # the criterion for changing.
-        display("Resolvent")
         m = 16;
         err = 1
         while err > 1e-15
