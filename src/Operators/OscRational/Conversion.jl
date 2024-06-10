@@ -1,15 +1,15 @@
 #I think this just says we can go from a Rational to a DiscreteBasis
-function isconvertible(b1::Rational,b2::DiscreteBasis)  # probably can be simplified
+function isconvertible(b1::OscRational,b2::DiscreteBasis)  # probably can be simplified
     iscompatible(b1.GD,b2.GD)
 end
 
 #I think this just says we can go from a Rational basis to another Rational basis
-function isconvertible(b1::Rational,b2::Rational)
+function isconvertible(b1::OscRational,b2::OscRational)
     iscompatible(b1.GD,b2.GD)
 end
 
 #This converts the Rational basis to values on the grid; note that GridValues is a DiscreteBasis
-function conversion(b1::Rational,b2::GridValues)
+function conversion(b1::OscRational,b2::GridValues)
     basegrid =  n -> b2.GD.grid(n)
     # In principle, we need to do this:
     # gridfun = n -> b1.GD.D.imap(b2.GD.D.map(basegrid(n)))
@@ -22,14 +22,14 @@ function conversion(b1::Rational,b2::GridValues)
 end
 
 #This does the same as above but for fixed values on the grid
-function conversion(b1::Rational,b2::FixedGridValues)
+function conversion(b1::OscRational,b2::FixedGridValues)
     # See conversion remark above.
     Op = RationalEvaluationOperator(b2.pts) 
     ConcreteOperator(b1,b2,Op)
 end
 
 #This converts the Fourier basis to itself
-function conversion(b1::Rational,b2::Rational)
+function conversion(b1::OscRational,b2::OscRational)
     # TODO:  identity operator
     ConcreteOperator(b1,b2,IdentityOperator())
 end

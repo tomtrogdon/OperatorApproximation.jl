@@ -36,15 +36,15 @@ function toeplitz_function(c::Vector)
 end
 
 #Actually defines how to apply multiplication to the Rational space
-function *(M::Multiplication,sp::Rational)
+function *(M::Multiplication,sp::OscRational)
     if typeof(M.f) <: Function 
         GD = RationalRealAxis()
-        ff = BasisExpansion(M.f,Rational(GD,α)) |> chop
+        ff = BasisExpansion(M.f,OscRational(GD)) |> chop
     else 
         ff = M.f
     end
     
-    if typeof(ff.basis) <: Rational && isconvertible(ff.basis,sp)
+    if typeof(ff.basis) <: OscRational && isconvertible(ff.basis,sp)
         np = N₋(length(ff.c)); nm = length(ff.c) - np + 1 #why even define nm??
         Op = BasicBandedOperator{ℤ,ℤ}(np,np,toeplitz_function(ff.c)) #creates Toeplitz operator
     else 

@@ -9,7 +9,7 @@ function DerivMatrix(i,j,α)
 end
 
 #This builds the derivative operator and applies it appropriately
-function *(D::Derivative,domain::Rational)
+function *(D::Derivative,domain::OscRational)
     if D.order == 1
         range = domain
         ConcreteOperator(domain,range,BasicBandedOperator{ℤ,ℤ}(1,1,DerivMatrix(i,j,α)))

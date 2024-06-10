@@ -1,24 +1,23 @@
 #This is creating the basis itself; it only depends on the interval that you want the grid
-struct Rational <: Basis
+struct OscRational <: Basis
     GD::GridAxis
-    α::Number
 end
 
 #This defines the "domain" that the basis itself is defined on
-cfd(sp::Rational) = ℤ #cfd=coefficient domain
+cfd(sp::OscRational) = ℤ #cfd=coefficient domain
 
 #This defines the dimension of the basis
-function dim(sp::Rational)
+function dim(sp::OscRational)
     Inf
 end
 
-function testconv(f::BasisExpansion{T}) where T <: Rational
+function testconv(f::BasisExpansion{T}) where T <: OscRational
     nm = N₋(length(f.c))
     testconv(f.c[1:nm] |> reverse) && testconv(f.c[nm+1:end])
 end
 
 #Chops off coefficients less than 1e-15 and expands in Rational basis with those coeffs
-function chop(f::BasisExpansion{T}) where T <: Rational
+function chop(f::BasisExpansion{T}) where T <: OscRational
     nm = N₋(length(f.c)) #Int(floor(N/2))
     vm = chop(copy(f.c[1:nm]) |> reverse) |> reverse; #negative coeffs (chopping terms smaller than 1e-15)
     vp = chop(copy(f.c[nm+1:end])); #positive coeffs (chopping terms smaller than 1e-15)
@@ -86,7 +85,7 @@ function kidft(v)
     end
 end
 
-function (P::BasisExpansion{Rational})(k::Number,α::Number) # Horner's method
+function (P::BasisExpansion{OscRational})(k::Number,α::Number) # Horner's method
     x = P.basis.GD.D.imap(k)
     x = ((x.-1im)./(x.+1im))
     m = length(P.c)
