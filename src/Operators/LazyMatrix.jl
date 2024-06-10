@@ -14,7 +14,7 @@ for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
 
         function *(Op::$op{T,S},c::Vector) where {T, S}
             n = length(c)
-            m = max(Op.nm + n,1)
+            m = max(rowgrowth(Op) + n,1)
             Matrix(Op,m,n)*c
         end
     end
