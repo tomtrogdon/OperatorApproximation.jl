@@ -1,5 +1,4 @@
-function DerivMatrix(i,j)
-    α = 2; #WE NEED TO FIND A WORKAROUND TO HARD CODING THIS!!!!!!!!!
+function DerivMatrix(i,j,α)
     if (i == (j - 1)) || (i == (j + 1))
         return -1im*j/2
     elseif (i == j)
@@ -11,9 +10,10 @@ end
 
 #This builds the derivative operator and applies it appropriately
 function *(D::Derivative,domain::OscRational)
+    α = domain.α
     if D.order == 1
         range = domain
-        ConcreteOperator(domain,range,BasicBandedOperator{ℤ,ℤ}(1,1,DerivMatrix))
+        ConcreteOperator(domain,range,BasicBandedOperator{ℤ,ℤ}(1,1,(i,j) -> DerivMatrix(i,j,α)))
     else
         Derivative(D.order-1)*(Derivative(1)*domain)
     end
