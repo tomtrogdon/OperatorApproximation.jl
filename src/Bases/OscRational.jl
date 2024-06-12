@@ -86,7 +86,8 @@ function kidft(v)
     end
 end
 
-function (P::BasisExpansion{OscRational})(k::Number,α::Number) # Horner's method
+function (P::BasisExpansion{OscRational})(k::Number) # Horner's method
+    α = P.basis.α
     x = P.basis.GD.D.imap(k)
     x = ((x.-1im)./(x.+1im))
     m = length(P.c)
