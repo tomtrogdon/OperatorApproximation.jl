@@ -16,7 +16,6 @@ function conversion(b1::OscRational,b2::GridValues)
     # but we are checking that the two grid domains are compatible
     # and currently this forces the composition of the maps to
     # be the identity
-    
     Op = RationalEvaluationOperator(basegrid,α) 
     ConcreteOperator(b1,b2,Op)
 end
