@@ -43,7 +43,11 @@ N₊ = N -> convert(Int64,floor((N-1)/2))
 
 #discrete Fourier transform *Kaitlynn's version*
 function kdft(v)
-    m = length(v)
+    if isa(v, AbstractMatrix)
+        m = size(v)[2]
+    else isa(v, AbstractVector)
+        m = length(v)
+    end
     k = -N₋(m):N₊(m)
     if iseven(m)
         mdft = mfft(v)/m
@@ -66,7 +70,11 @@ end
 
 #inverse discrete Fourier transform *Kaitlynn's version*
 function kidft(v)
-    m = length(v)
+    if isa(v, AbstractMatrix)
+        m = size(v)[2]
+    else isa(v, AbstractVector)
+        m = length(v)
+    end
     k = float(-N₋(m):N₊(m))
     v = v.*exp.(-(k.*(m-1)./m).*π.*1im)
     if iseven(m)
