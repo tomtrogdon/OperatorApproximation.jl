@@ -17,14 +17,14 @@ function conversion(b1::OscRational,b2::GridValues)
     # and currently this forces the composition of the maps to
     # be the identity
     
-    Op = RationalEvaluationOperator(basegrid) 
+    Op = RationalEvaluationOperator(basegrid,α) 
     ConcreteOperator(b1,b2,Op)
 end
 
 #This does the same as above but for fixed values on the grid
 function conversion(b1::OscRational,b2::FixedGridValues)
     # See conversion remark above.
-    Op = RationalEvaluationOperator(b2.pts) 
+    Op = RationalEvaluationOperator(b2.pts,α) 
     ConcreteOperator(b1,b2,Op)
 end
 
