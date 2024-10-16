@@ -54,6 +54,11 @@ function Matrix(Op::DenseTimesDense,n,m)
     Matrix(Op.denseL,n,n)*B
 end
 
+function Matrix(Op::DenseTimesDense,n)
+    B = Matrix(Op.denseR,n,n)
+    Matrix(Op.denseL,n,n)*B
+end
+
 function *(CC::Conversion,dom::Basis)
     if isconvertible(dom,CC.range)
         conversion(dom,CC.range) # convert from dom to CC.range
@@ -85,6 +90,11 @@ struct WeightedOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDoma
     W::Function
 end
 WeightedOPEvaluationOperator(grid,a,b) = WeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
+
+struct GenericEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    M::Function
+end
+GenericEvaluationOperator(M) = GenericEvaluationOperator{ℕ₊,𝔼}(M)
 
 struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
@@ -185,6 +195,14 @@ function Matrix(Op::WeightedOPEvaluationOperator,n,m)
         @warn "Asked for more rows than grid points.  Returning maximum number of rows."
         return Diagonal(Op.W.(Op.grid))*poly(Op.a,Op.b,m,Op.grid)
     end
+end
+
+function Matrix(Op::GenericEvaluationOperator,n,m)
+    return Op.M(n,m)
+end
+
+function Matrix(Op::GenericEvaluationOperator,n)
+    return Op.M(n,n)
 end
 
 function horner_mat(x,m)
