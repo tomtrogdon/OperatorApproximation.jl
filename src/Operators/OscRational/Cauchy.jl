@@ -128,8 +128,15 @@ end
 
 function BuildOperatorBlock(n,m,α,gridPts)
     A = complex(zeros(n,m))
-    mm = N₋(m) 
-    A[:,1:mm] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2)
+    mm = N₋(m)
+    # mm = N₊(m)
+    if α > 0
+        A[:,1:mm] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2) #works for α > 0 and α < 0 when N is even using N_-(mm)
+    else
+        A[:,mm+2:end] = CauchyPNO(n,mm,α,gridPts)
+    end
+    # A[:,1:mm] = CauchyPNO(n,mm,α,gridPts) 
+    # A[:,mm+2:end] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2)
     return A
 end
 
@@ -143,18 +150,17 @@ function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ w
             # return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j && i >= 0 ? complex(1.0) : 0.0im ))
             return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMat(i,j)))
         else
-            Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
+            if α > 0
+                Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
+            else
+                Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(0.0) : 0.0im ))
+            end
             # Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMat(i,j)))
             Op2 = ConcreteOperator(domain,range,GenericEvaluationOperator{ℤ,𝔼}((n,m) -> BuildOperatorBlock(n,m,α,gridPts)))
             Op3 = Conversion(OscRational(gd,0.))
-            if α < 0.
-                return Op3*Op2
-            else
-                return (Op1)⊘(Op3*Op2)
-                # display("Op2:")
-                # display(Matrix(Op2,5))
-                # return Op2
-            end
+            # display("Op2:")
+            # display(Matrix(Op2,199))
+            return (Op1)⊘(Op3*Op2)
         end
     elseif C.o == -1.0
         if domain.α == 0. #if basis is not rational, just copy what Laurent Cauchy operator does
