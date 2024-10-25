@@ -350,5 +350,9 @@ function Matrix(Op::DiscreteFourierTransform,n,m)
 end
 
 function Matrix(Op::DiscreteFourierTransformII,n,m)
-    Op.T(Matrix(I,n,m)) # Not the right way to do this...
+    A = complex(1.0)*Matrix(I,n,m)
+    for j = 1:m
+        A[:,j] = Op.T(A[:,j])
+    end
+    A
 end
