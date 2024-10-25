@@ -67,38 +67,148 @@ abs(df(x_test) - h(x_test))
 ##########################################################################################################################
 #Cauchy tests
 
-#Nonoscillatory test (Working properly)
-N = 200;
+###########################################
+#C^+ tests
+
+#Computes the "true" C+ integral using quadrature so that we don't have to keep comparing with Mathematica
+function CPquad(f,a,z)
+    R = 20
+    ff = x -> f(x)*exp(1im*x*a)/(2im*pi)
+    F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
+    endpts = [-R, z-1, z-1im, z+1, R]
+    s = 0
+    for i = 1:4
+        gd = JacobiMappedInterval(endpts[i],endpts[i+1],0,0)
+        sp = Jacobi(0,0,gd)
+        ff = BasisExpansion(F,sp)
+        s = s + sum(ff)
+    end
+    s
+end
+
+#Nonoscillatory tests
 α = 0;
 gd = RationalRealAxis()
 sp = OscRational(gd,α);
 f = x -> exp(-x^2)
-ff = BasisExpansion(f,sp,N)
 C_plus = CauchyOperator(1)
-test1 = C_plus*ff
-test1(0.145)
+x_test = 0.145;
+
+##Even number of coefficients
+N = 200;
+ff = BasisExpansion(f,sp,N)
+(C_plus*ff)(x_test) - CPquad(f,α,x_test)
+
+##Odd number of coefficients
+N = 201;
+ff = BasisExpansion(f,sp,N)
+(C_plus*ff)(x_test) - CPquad(f,α,x_test)
 
 #Oscillatory test (α > 0)
-N = 200;
 α = 2;
 gd = RationalRealAxis()
 sp = OscRational(gd,α);
 f = x -> exp(-x^2)
-ff = BasisExpansion(f,sp,N)
 C_plus = CauchyOperator(1)
-test2 = C_plus*ff
-test2(0.145)
-test2(0.145) + ff(0.145)
-test2(2)
+x_test = 0.145;
+
+##Even number of coefficients
+N = 200;
+ff = BasisExpansion(f,sp,N)
+(C_plus*ff)(x_test) - CPquad(f,α,x_test)
+
+##Odd number of coefficients
+N = 201;
+ff = BasisExpansion(f,sp,N)
+(C_plus*ff)(x_test) - CPquad(f,α,x_test)
 
 #Oscillatory test (α < 0)
-N = 201;
 α = -2;
 gd = RationalRealAxis()
 sp = OscRational(gd,α);
 f = x -> exp(-x^2)
-ff = BasisExpansion(f,sp,N)
 C_plus = CauchyOperator(1)
-test3 = C_plus*ff
-test3(0.145)
-test3(2)
+x_test = 0.145;
+
+##Even number of coefficients
+N = 200;
+ff = BasisExpansion(f,sp,N)
+(C_plus*ff)(x_test) - CPquad(f,α,x_test)
+
+##Odd number of coefficients
+N = 201;
+ff = BasisExpansion(f,sp,N)
+(C_plus*ff)(x_test) - CPquad(f,α,x_test)
+
+###########################################
+#C^- tests
+
+#Computes the "true" C+ integral using quadrature so that we don't have to keep comparing with Mathematica
+function CMquad(f,a,z)
+    R = 20
+    ff = x -> f(x)*exp(1im*x*a)/(2im*pi)
+    F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
+    endpts = [-R, z-1, z+1im, z+1, R]
+    s = 0
+    for i = 1:4
+        gd = JacobiMappedInterval(endpts[i],endpts[i+1],0,0)
+        sp = Jacobi(0,0,gd)
+        ff = BasisExpansion(F,sp)
+        s = s + sum(ff)
+    end
+    s
+end
+
+#Nonoscillatory tests
+α = 0;
+gd = RationalRealAxis()
+sp = OscRational(gd,α);
+f = x -> exp(-x^2)
+C_minus = CauchyOperator(-1)
+x_test = 0.145;
+
+##Even number of coefficients
+N = 200;
+ff = BasisExpansion(f,sp,N)
+(C_minus*ff)(x_test) - CPquad(f,α,x_test) #need to use CPquad to test here b/c that is what is used for α>=0
+
+##Odd number of coefficients
+N = 201;
+ff = BasisExpansion(f,sp,N)
+(C_minus*ff)(x_test) - CPquad(f,α,x_test) #need to use CPquad to test here b/c that is what is used for α>=0
+
+#Oscillatory test (α > 0)
+α = 2;
+gd = RationalRealAxis()
+sp = OscRational(gd,α);
+f = x -> exp(-x^2)
+C_minus = CauchyOperator(-1)
+x_test = 0.145;
+
+##Even number of coefficients
+N = 200;
+ff = BasisExpansion(f,sp,N)
+(C_minus*ff)(x_test) - CMquad(f,α,x_test)
+
+##Odd number of coefficients
+N = 201;
+ff = BasisExpansion(f,sp,N)
+(C_minus*ff)(x_test) - CMquad(f,α,x_test)
+
+#Oscillatory test (α < 0)
+α = -2;
+gd = RationalRealAxis()
+sp = OscRational(gd,α);
+f = x -> exp(-x^2)
+C_minus = CauchyOperator(-1)
+x_test = 0.145;
+
+##Even number of coefficients
+N = 200;
+ff = BasisExpansion(f,sp,N)
+(C_minus*ff)(x_test) - CMquad(f,α,x_test)
+
+##Odd number of coefficients
+N = 201;
+ff = BasisExpansion(f,sp,N)
+(C_minus*ff)(x_test) - CMquad(f,α,x_test)
