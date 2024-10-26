@@ -110,4 +110,6 @@ include("Hardy.jl")
 include("Hermite.jl")
 include("Erf.jl")
 include("MarchenkoPastur.jl")
+include("OscRational.jl")
+
 

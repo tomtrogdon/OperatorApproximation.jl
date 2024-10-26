@@ -54,6 +54,11 @@ function Matrix(Op::DenseTimesDense,n,m)
     Matrix(Op.denseL,n,n)*B
 end
 
+function Matrix(Op::DenseTimesDense,n)
+    B = Matrix(Op.denseR,n,n)
+    Matrix(Op.denseL,n,n)*B
+end
+
 function *(CC::Conversion,dom::Basis)
     if isconvertible(dom,CC.range)
         conversion(dom,CC.range) # convert from dom to CC.range
@@ -85,6 +90,11 @@ struct WeightedOPEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDoma
     W::Function
 end
 WeightedOPEvaluationOperator(grid,a,b) = WeightedOPEvaluationOperator{ℕ₊,𝔼}(grid,a,b)
+
+struct GenericEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    M::Function
+end
+GenericEvaluationOperator(M) = GenericEvaluationOperator{ℕ₊,𝔼}(M)
 
 struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
@@ -138,6 +148,14 @@ function *(D::DiscreteFourierTransform,f::Vector)
     D.T(f)
 end
 
+struct DiscreteFourierTransformII{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
+    T::Function
+    function DiscreteFourierTransformII{𝔼,ℤ}()
+        return new(kdft)
+    end
+end
+DiscreteFourierTransformII() = DiscreteFourierTransformII{𝔼,ℤ}()
+
 struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator # even though it is sparse...
     # it is simpler to treat grid multiplication as dense
     f::Union{Function,Vector}
@@ -167,6 +185,14 @@ function Matrix(Op::WeightedOPEvaluationOperator,n,m)
         @warn "Asked for more rows than grid points.  Returning maximum number of rows."
         return Diagonal(Op.W.(Op.grid))*poly(Op.a,Op.b,m,Op.grid)
     end
+end
+
+function Matrix(Op::GenericEvaluationOperator,n,m)
+    return Op.M(n,m)
+end
+
+function Matrix(Op::GenericEvaluationOperator,n)
+    return Op.M(n,n)
 end
 
 function hornermat(x,m)
@@ -278,4 +304,13 @@ end
 
 function Matrix(Op::DiscreteFourierTransform,n,m)
     Op.T(Matrix(I,n,m)) # Not the right way to do this...
+end
+
+function Matrix(Op::DiscreteFourierTransformII,n,m)
+    A = complex(1.0)*Matrix(I,n,m)
+    for j = 1:m
+        A[:,j] = Op.T(A[:,j])
+    end
+    #Op.T(Matrix(I,n,m)) # Not the right way to do this...
+    A
 end
