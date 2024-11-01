@@ -366,6 +366,11 @@ function *(Op::AbstractZeroOperator,b::DirectSum)
     B*b
 end
 
+function *(Op::AbstractOperator,b::DirectSum)
+    B = BlockDiagonalAbstractOperator([Op for bb in b.bases]) |> diagm
+    B*b
+end
+
 function *(Op::BlockAbstractOperator,sp::Basis)
     if size(Op.Ops)[2] > 1
         @error "Incorrect block size."

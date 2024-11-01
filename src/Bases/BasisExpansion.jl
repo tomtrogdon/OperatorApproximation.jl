@@ -227,7 +227,8 @@ function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S, T}
         n = max(length(f.c), length(g.c))
         BasisExpansion(f.basis, pad(tp,f.c,n) + pad(tp,g.c,n))
     else
-        @error "Basis not compatible"
+        @warn "Basis not compatible, using direct sum"
+        f ⊕ g
     end
 end
 
