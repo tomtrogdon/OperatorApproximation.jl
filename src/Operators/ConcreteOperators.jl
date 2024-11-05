@@ -132,6 +132,7 @@ struct ProductOfBandedOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: B
 end
 ProductOfBandedOperators(V) = ProductOfBandedOperators{dom(V[end]),ran(V[1])}(V)
 
+# Could have this be a subtype instead if we want diagonal operators, etc.
 struct BlockMatrixOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: MatrixOperator
     Ops::Matrix{MatrixOperator}
 end
@@ -382,6 +383,69 @@ function Matrix(L::TruncatedOperator,n,m)
         return Matrix(L.Op,n,m)
     end
 end
+
+# momtm = matrix of matrices to matrix
+# will go recursive
+function op_momtm(Ms::T) where T <: MatrixOperator
+    fill(Ms,1,1)
+end
+
+function op_momtm(Ms::Matrix{T}) where T <: Union{Matrix,AbstractMatrix,Any}
+    A = hcat(op_momtm.(Ms[1,:])...)
+    for i = 2:size(Ms,1)
+        A = vcat(A,hcat(op_momtm.(Ms[i,:])...))
+    end
+    A
+end
+
+function grabOps(L::BlockMatrixOperator)
+    L.Ops
+end
+
+function grabOps(L::MatrixOperator)
+    L
+end
+
+function *(Op::BlockAbstractOperator,sp::DirectSum)
+    if size(Op.Ops)[2] != length(sp.bases)
+        @error "Incorrect block size."
+        return
+    end
+    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1])
+    COps = Op.Ops.*sps
+    range = [op.range for op in COps[:,1]];
+    for i = 2:size(Op.Ops)[2]
+        test_range = [op.range for op in COps[:,i]]
+        if range != test_range
+            @error "Range issue"
+            return
+        end
+        range = _basisintersection(range,test_range)
+    end
+    range = DirectSum(range)
+    ## Needs to account for the fact that 
+    ## individual ops might have direct sum output
+    ## At this stage, we only expand ZeroOperators()
+    ## to account for this
+    Ls =  map(x -> grabOps(x.L), COps)
+    for i = 1:size(Ls,1)
+        mx = 0
+        for j = 1:size(Ls,2)
+            if typeof(Ls[i,j]) <: Matrix && size(Ls[i,j],1) > mx
+                mx = size(Ls[i,j],1)
+            end
+        end
+        for j = 1:size(Ls,2)
+            if typeof(Ls[i,j]) <: ZeroOperator && mx > 1
+                Ls[i,j] = fill(ZeroOperator(),mx,1)
+            end
+        end
+    end
+    Ls = op_momtm(Ls)
+    BlockMatrixOperator(Ls)
+    return ConcreteOperator(sp,range,BlockMatrixOperator(Ls))
+end
+
 
 include("LazyMatrix.jl")
 include("Dense.jl")
