@@ -1,3 +1,73 @@
+using OperatorApproximation
+gd = RationalRealAxis();
+sp = OscRational(gd,0.0)
+ff = BasisExpansion(x -> exp(-x^2), sp)
+spα = OscRational(gd,1.0)
+ffα = BasisExpansion(x -> exp(-x^2), spα)
+fadd = ff + ffα;
+Cop = CauchyOperator(1)*fadd.basis;
+out = Cop*fadd
+
+out.basis[3]
+
+
+Cop.L.Ops
+
+OperatorApproximation.op_momtm(Cop)
+
+OperatorApproximation.grabOps(ZeroOperator())
+
+
+Cop[1,:][2]
+
+
+OperatorApproximation.grabOps.(Cop)
+
+typeof(Cop[1,1])
+
+OperatorApproximation.grabOps(Cop[2,2])
+
+Cop[2,2]
+
+Cop.L.Ops[2,2].Ops
+
+
+
+bb = DirectSum([fadd.basis, fadd.basis]);
+bb.bases
+
+
+CauchyOperator(1)*ffα.basis;
+
+ffα.basis
+
+Cop.range[2]
+
+dC = CauchyOperator(1) ⊘ CauchyOperator(1)
+dC*ffα.basis
+
+dC.Ops
+
+(AbstractZeroOperator()*ff.basis).range
+
+
+b = DirectSum([OperatorApproximation.AnyBasis(), fadd.basis])
+
+typeof(OperatorApproximation.AnyBasis()) <: OperatorApproximation.AnyBasis
+typeof(fadd.basis) <: OperatorApproximation.AnyBasis
+
+OperatorApproximation.AnyBasis() != ff.basis
+
+b.bases
+
+Cop2 = dC*fadd.basis
+Cop2[2,2].range
+
+Cop[2,2].L
+
+
+
+
 function CPquad(f,a,z)
     R = 20
     ff = x -> f(x)*exp(1im*x*a)/(2im*pi)

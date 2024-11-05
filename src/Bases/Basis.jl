@@ -12,6 +12,10 @@ domainplot(b::Basis;kwargs...) = domainplot(b.GD.D;kwargs...)
 domainplot!(b::Basis;kwargs...) = domainplot!(b.GD.D;kwargs...)
 domainplot(V::Vector{T};kwargs...) where T <: Basis = domainplot([b.GD.D for b in V];kwargs...)
 
+function _isAnyBasis(b::Basis)
+    typeof(b) <: AnyBasis
+end
+
 function ==(b1::AnyBasis,b2::Basis)
     true
 end
@@ -34,10 +38,43 @@ struct DirectSum <: Basis
         elseif length(b) == 1
             return b[1]
         else
-            new(b)
+            c = Vector{Basis}(undef,0)
+            for bb in b
+                if typeof(bb) <: DirectSum
+                    push!(c,bb.bases...)
+                else
+                    push!(c,bb)
+                end
+            end
+            new(c)
         end
     end
 end
+
+function _basisintersection(b::Vector{Basis},c::Vector{Basis})
+    d = copy(b)
+    if size(b) != size(c)
+        @error "Incorrect number of bases.  Cannot intersect."
+        return
+    end
+    for i = 1:length(b)
+        if b[i] != c[i]
+            @error "Null intersection."
+            return
+        elseif _isAnyBasis(b[i])
+            d[i] = c[i]
+        else
+            d[i] = b[i]
+        end
+    end
+    return d
+end
+
+# Could lead to problems...
+# function intersect(b::DirectSum,c::DirectSum)
+#     DirectSum(_basisintersection(b.bases,c.bases))
+# end
+
 domainplot(b::DirectSum) = domainplot(b.bases)
 
 getindex(b::DirectSum,i::Int64) = b.bases[i] |> DirectSum

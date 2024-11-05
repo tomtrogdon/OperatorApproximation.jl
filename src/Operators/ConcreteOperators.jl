@@ -132,6 +132,7 @@ struct ProductOfBandedOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: B
 end
 ProductOfBandedOperators(V) = ProductOfBandedOperators{dom(V[end]),ran(V[1])}(V)
 
+# Could have this be a subtype instead if we want diagonal operators, etc.
 struct BlockMatrixOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: MatrixOperator
     Ops::Matrix{MatrixOperator}
 end

@@ -367,7 +367,7 @@ function *(Op::AbstractZeroOperator,b::DirectSum)
 end
 
 function *(Op::AbstractOperator,b::DirectSum)
-    B = BlockDiagonalAbstractOperator([Op for bb in b.bases]) |> diagm
+    B = [Op for bb in b.bases] |> diagm
     B*b
 end
 
@@ -382,6 +382,29 @@ function *(Op::BlockAbstractOperator,sp::Basis)
     ConcreteOperator(sp,DirectSum(sps),BlockMatrixOperator(Ls))
 end
 
+
+# momtm = matrix of matrices to matrix
+# will go recursive
+function op_momtm(Ms::T) where T <: MatrixOperator
+    Ms
+end
+
+function op_momtm(Ms::Matrix{T}) where T <: Union{Matrix,AbstractMatrix,Any}
+    A = hcat(op_momtm.(Ms[1,:])...)
+    for i = 2:size(Ms,1)
+        A = vcat(A,hcat(op_momtm.(Ms[i,:])...))
+    end
+    A
+end
+
+function grabOps(L::BlockMatrixOperator)
+    L.Ops
+end
+
+function grabOps(L::MatrixOperator)
+    L
+end
+
 function *(Op::BlockAbstractOperator,sp::DirectSum)
     if size(Op.Ops)[2] != length(sp.bases)
         @error "Incorrect block size."
@@ -389,14 +412,36 @@ function *(Op::BlockAbstractOperator,sp::DirectSum)
     end
     sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1])
     COps = Op.Ops.*sps
-    range = DirectSum([op.range for op in COps[:,1]]);
+    range = [op.range for op in COps[:,1]];
     for i = 2:size(Op.Ops)[2]
-        if range != DirectSum([op.range for op in COps[:,i]])
+        test_range = [op.range for op in COps[:,i]]
+        if range != test_range
             @error "Range issue"
             return
         end
+        range = _basisintersection(range,test_range)
     end
-    Ls = map(x -> x.L, COps)
+    range = DirectSum(range)
+    ## Needs to account for the fact that 
+    ## individual ops might have direct sum output
+    ## At this stage, we only expand ZeroOperators()
+    ## to account for this
+    Ls =  map(x -> grabOps(x.L), COps)
+    for i = 1:size(Ls,1)
+        mx = 0
+        for j = 1:size(Ls,2)
+            if typeof(Ls[i,j]) <: Matrix && size(Ls[i,j],1) > mx
+                mx = size(Ls[i,j],1)
+            end
+        end
+        for j = 1:size(Ls,2)
+            if typeof(Ls[i,j]) <: ZeroOperator
+                Ls[i,j] = fill(ZeroOperator(),mx,1)
+            end
+        end
+    end
+    Ls = op_momtm(Ls)
+    return Ls
     BlockMatrixOperator(Ls)
     return ConcreteOperator(sp,range,BlockMatrixOperator(Ls))
 end

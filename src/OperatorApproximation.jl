@@ -4,7 +4,7 @@ using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunc
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex, show, getindex, size, axes,
-    real, imag, abs, sum, zero
+    real, imag, abs, sum, zero, intersect
 import LinearAlgebra: I, Matrix, norm, eigen, diagm, transpose
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
