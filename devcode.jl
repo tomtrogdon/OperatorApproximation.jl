@@ -8,6 +8,8 @@ fadd = ff + ffα;
 Cop = CauchyOperator(1)*fadd.basis;
 out = Cop*fadd
 
+out(3)
+
 out.basis[3]
 
 

@@ -386,7 +386,7 @@ end
 # momtm = matrix of matrices to matrix
 # will go recursive
 function op_momtm(Ms::T) where T <: MatrixOperator
-    Ms
+    fill(Ms,1,1)
 end
 
 function op_momtm(Ms::Matrix{T}) where T <: Union{Matrix,AbstractMatrix,Any}
@@ -435,13 +435,12 @@ function *(Op::BlockAbstractOperator,sp::DirectSum)
             end
         end
         for j = 1:size(Ls,2)
-            if typeof(Ls[i,j]) <: ZeroOperator
+            if typeof(Ls[i,j]) <: ZeroOperator && mx > 1
                 Ls[i,j] = fill(ZeroOperator(),mx,1)
             end
         end
     end
     Ls = op_momtm(Ls)
-    return Ls
     BlockMatrixOperator(Ls)
     return ConcreteOperator(sp,range,BlockMatrixOperator(Ls))
 end
