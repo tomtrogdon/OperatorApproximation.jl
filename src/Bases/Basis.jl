@@ -51,7 +51,7 @@ struct DirectSum <: Basis
     end
 end
 
-function _basisintersection(b::Vector{Basis},c::Vector{Basis})
+function _basisintersection(b::Vector{T},c::Vector{S}) where {S <: Basis, T <: Basis}
     d = copy(b)
     if size(b) != size(c)
         @error "Incorrect number of bases.  Cannot intersect."
