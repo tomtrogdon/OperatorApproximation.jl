@@ -1,16 +1,38 @@
 using OperatorApproximation
 gd = RationalRealAxis();
 sp = OscRational(gd,0.0)
-ff = BasisExpansion(x -> exp(-x^2), sp)
+ff = BasisExpansion(x -> exp(-x^2), sp, 300)
 spα = OscRational(gd,1.0)
-ffα = BasisExpansion(x -> exp(-x^2), spα)
+ffα = BasisExpansion(x -> exp(-x^2), spα, 300)
 fadd = ff + ffα;
 Cop = CauchyOperator(1)*fadd.basis;
 out = Cop*fadd
 
+function CPquad(f,a,z)
+    R = 10
+    ff = x -> f(x)*exp(1im*x*a)/(2im*pi)
+    F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
+    endpts = [-R, z-1, z-1im, z+1, R]
+    s = 0
+    for i = 1:4
+        gd = JacobiMappedInterval(endpts[i],endpts[i+1],0,0)
+        sp = Jacobi(0,0,gd)
+        ff = BasisExpansion(F,sp)
+        s = s + sum(ff)
+    end
+    s
+end
+
+CPquad(x -> exp(-x^2),1,3) + CPquad(x -> exp(-x^2),0,3) - out(3)
+
+
+
+
 out(3)
 
 out.basis[3]
+
+  \\
 
 
 Cop.L.Ops
