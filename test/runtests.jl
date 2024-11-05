@@ -400,7 +400,7 @@ end
     #Cauchy tests
 
     function CPquad(f,a,z)
-        R = 20
+        R = 10
         fff = x -> f(x)*exp(1im*x*a)/(2im*pi)
         F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
         endpts = [-R, z-1, z-1im, z+1, R]
@@ -415,7 +415,7 @@ end
     end
 
     function CMquad(f,a,z)
-        R = 20
+        R = 10
         fff = x -> f(x)*exp(1im*x*a)/(2im*pi)
         F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
         endpts = [-R, z-1, z+1im, z+1, R]
@@ -468,4 +468,16 @@ end
     @test abs(test1(0.145) - CPquad(f,α,0.145)) < 1e-10
     test1 = Cm*ff
     @test abs(test1(0.145) - CMquad(f,α,0.145)) < 1e-10  
+
+
+    gd = RationalRealAxis();
+    sp = OscRational(gd,0.0)
+    ff = BasisExpansion(x -> exp(-x^2), sp, 300)
+    spα = OscRational(gd,1.0)
+    ffα = BasisExpansion(x -> exp(-x^2), spα, 300)
+    fadd = ff + ffα;
+    Cop = CauchyOperator(1)*fadd.basis;
+    out = Cop*fadd
+
+    @test abs(CPquad(x -> exp(-x^2),1,3) + CPquad(x -> exp(-x^2),0,3) - out(3)) < 1e-10
 end
