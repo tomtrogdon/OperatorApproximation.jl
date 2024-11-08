@@ -22,8 +22,6 @@ function LagSeries(j::Int64,z::Float64,x::AbstractVector{T}) where T # need to i
     return out
 end
 
-print(LagSeries(3,1.0,[2]))
-
 function LagSeries(z::Complex{Float64},x::Vector{Complex{Float64}},cfs::Vector{Complex{Float64}}) # need to investigate stability
     j = length(cfs)
     c0 = 0.
@@ -76,7 +74,7 @@ function CauchyPNO(n,m,α,z)
     end
 end
 
-function CauchyConstantMat(i,j)
+function CauchyConstantMatP(i,j)
     if i == j
         if j <= 0
             return 0
@@ -90,11 +88,15 @@ function CauchyConstantMat(i,j)
     end
 end
 
+function CauchyConstantMatM(i,j)
+    (i == j ? -1 : 0) + CauchyConstantMatP(i,j) #C- = C+ - I
+end
+
 function BuildOperatorBlock(n,m,α,gridPts)
     A = complex(zeros(n,m))
     if α > 0
         mm = N₋(m)
-        A[:,1:mm] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2) #works for α > 0 and α < 0 when N is even using N_-(mm)
+        A[:,1:mm] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2)
     else
         mm = N₊(m)
         A[:,end-mm+1:end] = CauchyPNO(n,mm,α,gridPts)
@@ -110,7 +112,7 @@ function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ w
     #working
     if C.o == 1.0
         if α == 0.
-            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMat(i,j))) #Need a better way to do this...
+            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatP(i,j))) #Need a better way to do this...
         else
             if α > 0
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
@@ -123,18 +125,53 @@ function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ w
         end
     elseif C.o == -1.0
         if domain.α == 0.
-            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMat(i,j))) #Need a better way to do this...
+            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatM(i,j))) #Need a better way to do this...
         else
-            #Not quite working yet; Need to think about how to subtract I cleverly
-            # C+ - C- = I => C- = C+ - I
+            # C+ - C- = I => C- = C+ - I (only affects oscillatory piece)
             if α > 0
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(0.0) : 0.0im )) #subtracted I from what is in C+ above
             else
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(-1.0) : 0.0im )) #subtract I from what is in C+ above
             end
-            Op2 = ConcreteOperator(domain,range,GenericEvaluationOperator{ℤ,𝔼}((n,m) -> BuildOperatorBlock(n,m,α,gridPts) - I)) #subtract I from what is done in C+ above
+            Op2 = ConcreteOperator(domain,range,GenericEvaluationOperator{ℤ,𝔼}((n,m) -> BuildOperatorBlock(n,m,α,gridPts))) #nonoscillatory piece is not affected so stays the same
             Op3 = Conversion(OscRational(gd,0.))
             return (Op1)⊘(Op3*Op2)
         end
     end
+end
+
+function Base.sum(f::BasisExpansion{OscRational}) #name change
+    α = convert(Float64,f.basis.α)
+    Laguerre = Lag(N₋(length(f.c)),2*abs(α))
+    j_vals = -N₋(length(f.c)):N₊(length(f.c)) #determine j's
+    sum = 0 #initialize integral
+    for i=1:length(f.c)
+         j = j_vals[i]
+         #determine R_hat_j(α)
+         if α == 0
+             R_hat_j = -2*π*abs(j)
+         elseif sign(j) == sign(α) #typo in AKNS (or at least discrepancy between AKNS and ref [26])
+             R_hat_j = 0
+         else
+            R_hat_j = -4*π*Laguerre[abs(j) - 1 + 2] #exp(-abs(α)) already in Lag function so taking it out here
+         end
+         sum += f.c[i]*R_hat_j #add to integral value
+    end
+    return sum
+end
+
+function Base.conj(f::BasisExpansion{OscRational})
+    α = -1*(f.basis.α)
+    sp = OscRational(f.basis.GD,α)
+    if isodd(length(f.c))
+        coeffs = reverse(Base.conj(f.c))
+    else
+        coeffs = complex(zeros(length(f.c)+1))
+        coeffs[2:end] = reverse(Base.conj(f.c))
+    end
+    return BasisExpansion(sp,coeffs)
+end
+
+function dot(f::BasisExpansion{OscRational},g::BasisExpansion{OscRational})
+    return Base.sum(Multiplication(f)*Base.conj(g))
 end

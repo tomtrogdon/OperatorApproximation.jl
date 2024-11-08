@@ -37,11 +37,13 @@ end
 
 #Actually defines how to apply multiplication to the Rational space
 function *(M::Multiplication,sp::OscRational)
-    if typeof(M.f) <: Function 
+    if typeof(M.f) <: Function
         GD = RationalRealAxis()
-        ff = BasisExpansion(M.f,OscRational(GD)) |> chop
+        α = 0.0 
+        ff = BasisExpansion(M.f,OscRational(GD,α)) |> chop
     else 
         ff = M.f
+        α = ff.basis.α
     end
     
     if typeof(ff.basis) <: OscRational && isconvertible(ff.basis,sp)
@@ -50,5 +52,7 @@ function *(M::Multiplication,sp::OscRational)
     else 
         1 + 1 #TODO: just evaluate and expand, need transform #I am assumping this will just use toeplitz()
     end
-    ConcreteOperator(sp,sp,Op) #operator in practice for multiplication
+
+    sp2 = OscRational(RationalRealAxis(),α + sp.α)
+    ConcreteOperator(sp,sp2,Op) #operator in practice for multiplication
 end
