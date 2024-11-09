@@ -26,6 +26,16 @@ end
 ####################################
 ###### FUNCTION OVERLOADING ########
 ####################################
+function sum(f::BasisExpansion{T}) where T <: Ultraspherical
+    (f.basis.GD.D.b - f.basis.GD.D.a)*f.c[1]
+end
+
+function moment(f::BasisExpansion{T},k::Int64) where T <: Ultraspherical
+    if k == 0
+        return sum(f)
+    end
+    Multiplication(x -> x^k)*f |> sum
+end
 
 function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
     n = P.c |> length
