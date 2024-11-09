@@ -35,6 +35,12 @@ struct DenseTimesDense{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseO
 end
 DenseTimesDense(denseL,denseR) = DenseTimesDense{ran(denseL),dom(denseR)}(denseL,denseR)
 
+struct BandedTimesDense{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
+    banded::SS where SS <: BandedOperator
+    dense::TT where TT <: DenseOperator
+end
+BandedTimesDense(banded,dense) = BandedTimesDense{ran(banded),dom(dense)}(banded,dense)
+
 struct InverseBasicBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: DenseOperator
     Op::BasicBandedOperator
 end
@@ -67,8 +73,20 @@ function *(Op::DenseTimesDense,f::Vector)
     Op.denseL*(Op.denseR*f)
 end
 
+function *(Op::BandedTimesDense,f::Vector)
+    Op.banded*(Op.dense*f)
+end
+
+function *(Op::DenseTimesBanded,f::Vector)
+    Op.dense*(Op.banded*f)
+end
+
 function *(dense::DenseOperator,banded::BandedOperator)
     DenseTimesBanded(dense,banded)
+end
+
+function *(banded::BandedOperator,dense::DenseOperator)
+    BandedTimesDense(banded,dense)
 end
 
 function *(denseL::DenseOperator,denseR::DenseOperator)
@@ -79,6 +97,10 @@ function Matrix(Op::DenseTimesBanded,n,m)
     nn = max(m + rowgrowth(Op.banded),0) # could be optimized
     B = Matrix(Op.banded,nn,m) #Could be optimized for InverseBasicBandedOperator
     Matrix(Op.dense,n,nn)*B
+end
+
+function Matrix(Op::BandedTimesDense,n,m)
+    Matrix(Op.banded,n,m)*Matrix(Op.dense,m,m)
 end
 
 function Matrix(Op::DenseTimesDense,n,m)

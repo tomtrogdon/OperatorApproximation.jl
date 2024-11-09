@@ -38,16 +38,14 @@ end
 
 function conversion(b1::GridValues,b2::Ultraspherical)
     λ = b1.GD.λ
-    A = b1.GD.a
-    B = b1.GD.b
     a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
     Op = OPEigenTransform(a,b)
-    b3 = UltraMappedInterval(A,B,λ)
+    b3 = Ultraspherical(λ,b1.GD)
     Conversion(b2)*ConcreteOperator(b1,b3,Op)
 end
 
 function conversion(b1::GridValues,b2::MarchenkoPastur)
-    d= b2.d
+    d = b2.d
     a,b = MP_ab(d)
     Op = OPEigenTransform(a,b)
     ConcreteOperator(b1,b2,Op)
