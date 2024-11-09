@@ -8,6 +8,11 @@ function isconvertible(b1::DiscreteBasis,b2::Jacobi)
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: JacobiMappedInterval && b1.GD.α ≈ b2.α && b1.GD.β ≈ b2.β)
 end
 
+function isconvertible(b1::DiscreteBasis,b2::MarchenkoPastur)
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturInterval && b1.GD.d ≈ b2.d) || 
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturMappedInterval && b1.GD.d ≈ b2.d)
+end
+
 function isconvertible(b1::DiscreteBasis,b2::Fourier)
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicInterval) || 
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicMappedInterval)
@@ -23,6 +28,10 @@ function isconvertible(b1::DiscreteBasis,b2::Laurent)
 end
 
 function isconvertible(b1::DiscreteBasis,b2::Hermite)
+    iscompatible(b1.GD,b2.GD)
+end
+
+function isconvertible(b1::DiscreteBasis,b2::OscRational)
     iscompatible(b1.GD,b2.GD)
 end
 
@@ -43,6 +52,13 @@ function conversion(b1::GridValues,b2::Ultraspherical)
     ConcreteOperator(b1,b2,Op)
 end
 
+function conversion(b1::GridValues,b2::MarchenkoPastur)
+    d= b2.d
+    a,b = MP_ab(d)
+    Op = OPEigenTransform(a,b)
+    ConcreteOperator(b1,b2,Op)
+end
+
 function conversion(b1::GridValues,b2::HermitePoly)
     a,b = Hermite_ab()
     Op = OPEigenTransform(a,b)
@@ -52,6 +68,11 @@ end
 function conversion(b1::GridValues,b2::HermiteFun)
     a,b = Hermite_ab()
     Op = OPWeightedEigenTransform(a,b,x -> (2*pi)^(.25)*exp.(x.^2/4))
+    ConcreteOperator(b1,b2,Op)
+end
+
+function conversion(b1::GridValues,b2::OscRational)
+    Op = DiscreteFourierTransformII()
     ConcreteOperator(b1,b2,Op)
 end
 

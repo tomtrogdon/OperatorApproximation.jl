@@ -292,6 +292,11 @@ end
 struct Residue <: AbstractOperator
     range::Basis
 end
+### Wrappers ###
+struct Truncation <: AbstractOperator
+    Op::AbstractOperator
+    k::Int64
+end
 ### ###
 
 struct CauchyTransform <: AbstractOperator end
@@ -361,6 +366,11 @@ function *(Op::AbstractZeroOperator,b::DirectSum)
     B*b
 end
 
+function *(Op::AbstractOperator,b::DirectSum)
+    B = [Op for bb in b.bases] |> diagm
+    B*b
+end
+
 function *(Op::BlockAbstractOperator,sp::Basis)
     if size(Op.Ops)[2] > 1
         @error "Incorrect block size."
@@ -370,23 +380,4 @@ function *(Op::BlockAbstractOperator,sp::Basis)
     sps = [op.range for op in COps][:,1]
     Ls = [op.L for op in COps]
     ConcreteOperator(sp,DirectSum(sps),BlockMatrixOperator(Ls))
-end
-
-function *(Op::BlockAbstractOperator,sp::DirectSum)
-    if size(Op.Ops)[2] != length(sp.bases)
-        @error "Incorrect block size."
-        return
-    end
-    sps = repeat(reshape(sp.bases,1,:), size(Op.Ops)[1])
-    COps = Op.Ops.*sps
-    range = DirectSum([op.range for op in COps[:,1]]);
-    for i = 2:size(Op.Ops)[2]
-        if range != DirectSum([op.range for op in COps[:,i]])
-            @error "Range issue"
-            return
-        end
-    end
-    Ls = map(x -> x.L, COps)
-    BlockMatrixOperator(Ls)
-    return ConcreteOperator(sp,range,BlockMatrixOperator(Ls))
 end

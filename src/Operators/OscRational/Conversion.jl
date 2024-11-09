@@ -27,7 +27,7 @@ function conversion(b1::OscRational,b2::FixedGridValues)
     ConcreteOperator(b1,b2,Op)
 end
 
-#This converts the Fourier basis to itself
+#This converts the basis to itself
 function conversion(b1::OscRational,b2::OscRational)
     # TODO:  identity operator
     ConcreteOperator(b1,b2,IdentityOperator())

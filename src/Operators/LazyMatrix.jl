@@ -2,7 +2,7 @@ function Matrix(Op::ZeroOperator,n,m)
     spzeros(n,m)
 end
 
-for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
+for op in (:BasicBandedOperator,:SemiLazyBandedOperator,:ZeroOperator) # reference supertype?
     @eval begin 
         rowgrowth(Op::$op{T, S}) where  {T <: ℕ₊, S <: ℕ₊} = Op.nm
         rowgrowth(Op::$op{T, S}) where  {T <: ℕ₋, S <: ℕ₋} = Op.np
@@ -11,6 +11,7 @@ for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
         rowgrowth(Op::$op{T, S}) where  {T <: ℤ, S <: ℕ₋} = Op.np
         rowgrowth(Op::$op{T, S}) where  {T <: ℕ₋, S <: ℤ} = 2*Op.np
         rowgrowth(Op::$op{T, S}) where  {T <: ℕ₊, S <: ℤ} = 2*Op.nm
+        rowgrowth(Op::$op{T, S}) where  {T <: 𝕏, S <: 𝕏} = 0
 
         function *(Op::$op{T,S},c::Vector) where {T, S}
             n = length(c)
@@ -19,6 +20,12 @@ for op in (:BasicBandedOperator,:SemiLazyBandedOperator)
         end
     end
 end
+
+# function *(Op::BlockMatrixOperator,c::Vector)
+#     n = length(c)
+#     m = max(rowgrowth(Op) + n,1)
+#     Matrix(Op,m,n)*c
+# end
 
 function rowgrowth(Op::ProductOfBandedOperators)
     [rowgrowth(op) for op in Op.V] |> sum

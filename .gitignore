@@ -24,6 +24,7 @@ docs/site/
 Manifest.toml
 
 devtest.jl
+devcode.jl
 dev_code.jl
 /notebooks/.ipynb_checkpoints
 .vscode

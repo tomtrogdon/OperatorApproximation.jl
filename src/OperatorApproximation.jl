@@ -4,7 +4,7 @@ using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunc
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex, show, getindex, size, axes,
-    real, imag, abs, sum, zero, conj
+    real, imag, abs, sum, zero, intersect, conj
 import LinearAlgebra: I, Matrix, norm, eigen, diagm, transpose, dot
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
@@ -19,8 +19,8 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     BlockAbstractOperator, rhmult, rhrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
     arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
     HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz, RecCoef,
-    DiscreteDomain, Grid, Residue, moment, 
-    OscRational, RationalRealAxis, dot
+    DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval,
+    weightplot, weightplot!, RationalRealAxis, OscRational, dot
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))

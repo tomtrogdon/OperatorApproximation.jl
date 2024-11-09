@@ -32,3 +32,5 @@ The structure of the code is as follows:
 * The core of the code is the Domain and Bases.   The Bases directory contains one file for each basis that is implemented.  This has the specific functions for performing all the core tasks for a given basis.  
 * The implementation of operators occurs in two steps.  The first is the definition of an AbstractOperator that is then turned to a ConcreteOperator of an appropriate type when it acts on a Basis.
 * The details of this conversion should be implemented for each AbstractOperator in a file in the subdirectory of the Operators directory corresponding to the basis under consideration.  When implementing a new operator, it should be categorized by basis on which it acts.
+
+Contains contributions from: Kaitlynn Lilly

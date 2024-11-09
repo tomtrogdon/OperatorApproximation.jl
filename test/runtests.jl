@@ -345,3 +345,139 @@ end
     α = moment(sol[1],0)*1im/(2pi)
     @test abs(-2(2β - α^2) - V(0.0)) < 1e-9
 end
+
+@testset "OperatorApproximation.jl: OscRational testing" begin
+    #Function interpolation
+    N = 200;
+    α = 0;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp,N)
+    x_test = 0.1
+    @test abs(f(x_test) - ff(x_test)) < 1e-10
+
+    #Multplication
+    M = Multiplication(ff)
+    g = M*M*ff
+    @test abs(g(x_test)-ff(x_test)^3) < 1e-10
+
+    #Derivative
+    D = Derivative()
+    h = D*ff
+    df = x-> -2*x*exp(-x^2)
+    @test abs(df(x_test) - h(x_test)) < 1e-10
+
+    #Alternative way to test derivative
+    Op  = D*ff.basis
+    dc = Matrix(Op,N+2,N)*ff.c
+    test = BasisExpansion(ff.basis, dc)
+    @test abs(test(x_test)-df(x_test)) < 1e-10
+
+    #Oscillatory tests
+
+    #Function interpolation
+    N = 201;
+    α = 2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp,N)
+    x_test = 0.1
+    @test abs(f(x_test)*exp(1im*α*x_test) - ff(x_test)) < 1e-10
+
+    #Multplication
+    M = Multiplication(ff)
+    g = M*M*ff
+    @test abs(g(x_test)*exp(1im*α*x_test)^2-ff(x_test)^3) < 1e-10
+
+    #Derivative
+    D = Derivative()
+    h = D*ff
+    df = x-> -2*x*exp(-x^2)*exp(1im*α*x) + exp(-x^2)*1im*α*exp(1im*α*x)
+    @test abs(df(x_test) - h(x_test)) < 1e-10
+
+    #Cauchy tests
+
+    function CPquad(f,a,z)
+        R = 10
+        fff = x -> f(x)*exp(1im*x*a)/(2im*pi)
+        F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
+        endpts = [-R, z-1, z-1im, z+1, R]
+        s = 0
+        for i = 1:4
+            gd = JacobiMappedInterval(endpts[i],endpts[i+1],0,0)
+            sp = Jacobi(0,0,gd)
+            fff = BasisExpansion(F,sp)
+            s = s + sum(fff)
+        end
+        s
+    end
+
+    function CMquad(f,a,z)
+        R = 10
+        fff = x -> f(x)*exp(1im*x*a)/(2im*pi)
+        F = x -> f(x)*exp(1im*x*a)/(2im*pi)*1/(x-z)
+        endpts = [-R, z-1, z+1im, z+1, R]
+        s = 0
+        for i = 1:4
+            gd = JacobiMappedInterval(endpts[i],endpts[i+1],0,0)
+            sp = Jacobi(0,0,gd)
+            fff = BasisExpansion(F,sp)
+            s = s + sum(fff)
+        end
+        s
+    end
+
+    #Nonoscillatory test (Working properly)
+    N = 200;
+    α = 0;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp,N)
+    Cp = CauchyOperator(1)
+    Cm = CauchyOperator(-1)
+    test1 = Cp*ff
+    @test abs(test1(0.145) - CPquad(f,α,0.145)) < 1e-10
+    test1 = Cm*ff
+    @test abs(test1(0.145) - CMquad(f,α,0.145)) < 1e-10
+
+    #Oscillatory test (α > 0)
+    α = 2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp,N)
+    Cp = CauchyOperator(1)
+    Cm = CauchyOperator(-1)
+    test1 = Cp*ff
+    @test abs(test1(0.145) - CPquad(f,α,0.145)) < 1e-10
+    test1 = Cm*ff
+    @test abs(test1(0.145) - CMquad(f,α,0.145)) < 1e-10
+
+    #Oscillatory test (α > 0)
+    α = -2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp,N)
+    Cp = CauchyOperator(1)
+    Cm = CauchyOperator(-1)
+    test1 = Cp*ff
+    @test abs(test1(0.145) - CPquad(f,α,0.145)) < 1e-10
+    test1 = Cm*ff
+    @test abs(test1(0.145) - CMquad(f,α,0.145)) < 1e-10  
+
+
+    gd = RationalRealAxis();
+    sp = OscRational(gd,0.0)
+    ff = BasisExpansion(x -> exp(-x^2), sp, 300)
+    spα = OscRational(gd,1.0)
+    ffα = BasisExpansion(x -> exp(-x^2), spα, 300)
+    fadd = ff + ffα;
+    Cop = CauchyOperator(1)*fadd.basis;
+    out = Cop*fadd
+
+    @test abs(CPquad(x -> exp(-x^2),1,3) + CPquad(x -> exp(-x^2),0,3) - out(3)) < 1e-10
+end

@@ -290,6 +290,17 @@ struct PeriodicCircle <: GridCircle
     end
 end
 
+struct RationalRealAxis <: GridAxis
+    D::Axis
+    grid::Function
+    function RationalRealAxis()
+        Tm1 = z-> (1/1im)*((z.+1)./(z.-1)) #inverse mobius transform that maps unit circle onto real axis
+        rat_mgrid = n-> (((0:n-1).+(1/2))./n).*(2*π) #[0,2π) shifted by 1/2 to avoid issues at 0 and infinity
+        gridfun = n-> Tm1(exp.(1im.*rat_mgrid(n))) #x=T^{-1}(exp(iθ))
+        return new(RealAxis(),gridfun)
+    end
+end
+
 struct HermiteRealAxis <: GridAxis
     D::Axis
     grid::Function
@@ -323,7 +334,18 @@ struct JacobiInterval <: GridInterval
     function JacobiInterval(α,β)
         a, b = Jacobi_ab(α,β)
         gridfun = n -> Gauss_quad(a,b,n-1)[1]
-        return new(UnitInterval(),α,β, gridfun)
+        return new(UnitInterval(), α, β, gridfun)
+    end
+end
+
+struct MarchenkoPasturInterval <: GridInterval
+    D::Interval
+    d::Number
+    grid::Function
+    function MarchenkoPasturInterval(d)
+        a, b = MP_ab(d)
+        gridfun = n -> Gauss_quad(a,b,n-1)[1]
+        return new(MappedInterval((1 - sqrt(d))^2, (1 + sqrt(d))^2), d, gridfun)
     end
 end
 
@@ -332,6 +354,10 @@ Base.show(io::IO, ::MIME"text/plain", z::JacobiInterval)  =
 
 function ==(J1::JacobiInterval,J2::JacobiInterval)
     J1.D == J2.D && J1.α == J2.α && J1.β == J2.β
+end
+
+function ==(J1::MarchenkoPasturInterval,J2::MarchenkoPasturInterval)
+    J1.D == J2.D && J1.d == J2.d
 end
 
 struct UltraInterval <: GridInterval
@@ -439,6 +465,20 @@ struct JacobiMappedInterval <: GridInterval
         gridfun = n -> Gauss_quad(A,B,n-1)[1]
         return new(MappedInterval(a,b), α, β, gridfun)
     end
+end
+
+struct MarchenkoPasturMappedInterval <: GridInterval
+    D::Interval
+    d::Float64
+    grid::Function
+    function MarchenkoPasturMappedInterval(a,b,d)
+        A, B = MP_ab(d)
+        gridfun = n -> Gauss_quad(A,B,n-1)[1]
+        return new(MappedInterval(a,b), d, gridfun)
+    end
+end
+function ==(J1::MarchenkoPasturMappedInterval,J2::MarchenkoPasturMappedInterval)
+    J1.D == J2.D && J1.d == J2.d
 end
 
 struct UltraMappedInterval <: GridInterval

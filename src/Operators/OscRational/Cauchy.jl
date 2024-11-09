@@ -104,12 +104,11 @@ function BuildOperatorBlock(n,m,α,gridPts)
     return A
 end
 
-function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ without a BasisExpansion to call CauchyP...
+function *(C::CauchyOperator,domain::OscRational) 
     α = domain.α
     gd = domain.GD
     range = GridValues(gd)
     gridPts = gd.grid
-    #working
     if C.o == 1.0
         if α == 0.
             return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatP(i,j))) #Need a better way to do this...
@@ -124,16 +123,16 @@ function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ w
             return (Op1)⊘(Op3*Op2)
         end
     elseif C.o == -1.0
-        if domain.α == 0.
-            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatM(i,j))) #Need a better way to do this...
+        if α == 0.
+            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatM(i,j)))
         else
             # C+ - C- = I => C- = C+ - I (only affects oscillatory piece)
-            if α > 0
-                Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(0.0) : 0.0im )) #subtracted I from what is in C+ above
+            if α < 0 ## use IdentityOperator() and ZeroOperator()?
+                Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(-1.0) : 0.0im ))
             else
-                Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(-1.0) : 0.0im )) #subtract I from what is in C+ above
+                Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(0.0) : 0.0im ))
             end
-            Op2 = ConcreteOperator(domain,range,GenericEvaluationOperator{ℤ,𝔼}((n,m) -> BuildOperatorBlock(n,m,α,gridPts))) #nonoscillatory piece is not affected so stays the same
+            Op2 = ConcreteOperator(domain,range,GenericEvaluationOperator{ℤ,𝔼}((n,m) -> BuildOperatorBlock(n,m,α,gridPts)))
             Op3 = Conversion(OscRational(gd,0.))
             return (Op1)⊘(Op3*Op2)
         end
