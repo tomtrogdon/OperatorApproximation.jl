@@ -3,7 +3,7 @@ function isconvertible(b1::Ultraspherical,b2::DiscreteBasis)
 end
 
 function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
-    iscompatible(b1.GD,b2.GD) && b2.λ >= b1.λ && mod(b1.λ - b2.λ,1) ≈ 0
+    iscompatible(b1.GD,b2.GD) && mod(b1.λ - b2.λ,1) ≈ 0
 end
 
 function conversion(b1::Ultraspherical,b2::GridValues)
@@ -49,25 +49,27 @@ function _conv_ultra(λ)
 end
 
 function conversion(b1::Ultraspherical,b2::Ultraspherical)
-    # λ0 = b1.λ
-    # sp0 = Ultraspherical(λ0 + 1, b2.GD)
-    # L0 = ConcreteOperator(b1,sp0,BasicBandedOperator(0,2,(i,j) -> _conv_ultra(i,j,λ0)))
-    # λ0 += 1
-    # while λ0 - b2.λ !≈ 0
-    #     L0 = ConcreteOperator(b1,sp0,BasicBandedOperator(0,2,(i,j) -> _conv_ultra(i,j,λ0)))*L0
-    #     λ0 += 1
-    # end
-    # L0
     if b1.λ ≈ b2.λ
          return ConcreteOperator(b1,b2,BasicBandedOperator{ℕ₊,ℕ₊}(0,0,(i,j) -> Float64(i == j)))
     end
 
-    λ0 = b1.λ
-    L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0))
-    λ0 += 1
-    while !(λ0 - b2.λ ≈ 0)
-        L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0))*L0
+    if b2.λ > b1.λ
+        λ0 = b1.λ
+        L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0)) # converts λ0 to λ0 + 1
         λ0 += 1
+        while !(λ0 - b2.λ ≈ 0)
+            L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0))*L0
+            λ0 += 1
+        end
+        return ConcreteOperator(b1,b2,L0)
+    else
+        λ0 = b1.λ
+        L0 = BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0-1)) |> InverseBasicBandedOperator # converts λ0 to λ0 -1
+        λ0 -= 1
+        while !(λ0 - b2.λ ≈ 0)
+            L0 = InverseBasicBandedOperator(BasicBandedOperator{ℕ₊,ℕ₊}(0,2,_conv_ultra(λ0-1)))*L0
+            λ0 -= 1
+        end
+        return ConcreteOperator(b1,b2,L0)
     end
-    ConcreteOperator(b1,b2,L0)
 end
