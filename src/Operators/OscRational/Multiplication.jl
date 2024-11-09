@@ -5,7 +5,9 @@ function *(M::Multiplication,sp::OscRational)
         ff = BasisExpansion(M.f,OscRational(GD,α)) |> chop
     else 
         ff = M.f
+        α = ff.basis.α
     end
+    
     if typeof(ff.basis) <: OscRational && isconvertible(ff.basis,sp)
         np = N₋(length(ff.c)); nm = length(ff.c) - np + 1 #why even define nm??
         Op = BasicBandedOperator{ℤ,ℤ}(np,np,toeplitz_function(ff.c)) #creates Toeplitz operator
