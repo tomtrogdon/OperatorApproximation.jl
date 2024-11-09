@@ -28,18 +28,9 @@ function chop(f::BasisExpansion{T}) where T <: OscRational
     BasisExpansion(f.basis,vcat(vm,vp)) #expand in Rational basis using truncated coeffs with 1e-15 cutoff
 end
 
-#stealing code from Tom's 586 FFT tutorial
-mfftshift = x -> circshift(fftshift(x), isodd(length(x)) ? 1 : 0)
-mfft = x -> fftshift(fft(fftshift(x),1)) # fft(x,1) is used so that
-# when we operate on matrices below, the behavior is as desired.
-mifft = x -> mfftshift(ifft(mfftshift(x),1))
 mgrid = (n,L) -> -L .+ 2*L*(0:n-1)/n
 shift_mgrid = (n,L) -> (((-L .+ 2*L*(0:n-1)/n)./(2*L)).+(1/2)).*(2*π)
-Pgrid = n -> 2*(0:n-1)/n .- 1
 rat_mgrid = n-> (((0:n-1).+(1/2))./n).*(2*π) #[0,2π) shifted by 1/2 to avoid issues at 0 and infinity
-
-N₋ = N -> convert(Int64,floor(N/2))
-N₊ = N -> convert(Int64,floor((N-1)/2))
 
 #discrete Fourier transform *Kaitlynn's version*
 function kdft(v)
