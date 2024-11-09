@@ -48,6 +48,8 @@ function Matrix(Op::ConcreteOperator,m)
     Matrix(Op.L,m)
 end
 
+## See Dense.jl for
+# *(Op::ConcreteOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T <: SumOfMatrixOperators,S}
 function *(Op::ConcreteOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T,S}
     BasisExpansion(Op.range,Op.L*f.c)
 end
@@ -97,6 +99,15 @@ function Matrix(Op::SumOfMatrixOperators,n,m)
         A += Op.c[i]*Matrix(Op.Ops[i],n,m)
     end
     A
+end
+
+# Helps with the fact that output vectors can be of differing dimensions
+function *(Op::ConcreteOperator{D,R,T},f::BasisExpansion{S}) where {D,R,T <: SumOfMatrixOperators,S}
+    out = BasisExpansion(Op.range,Op.L.c[1]*(Op.L.Ops[1]*f.c))
+    for i = 2:length(Op.L.c)
+        out += BasisExpansion(Op.range,Op.L.c[i]*(Op.L.Ops[i]*f.c))
+    end
+    out
 end
 
 mutable struct SemiLazyBandedOperator{T<:CoefficientDomain, S<: CoefficientDomain} <: SingleBandedOperator# where T <: DiscreteDomain
@@ -157,7 +168,7 @@ for op in (:+,:-)
         end
 
         function $op(L1::SumOfMatrixOperators,L2::SumOfMatrixOperators)
-            SumOfLazyOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
+            SumOfMatrixOperators(vcat(L1.Ops,L2.Ops),vcat(L1.c,$op(L2.c)))
         end
 
         function $op(L1::SumOfMatrixOperators,L2::MatrixOperator)

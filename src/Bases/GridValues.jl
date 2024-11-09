@@ -71,9 +71,6 @@ end
 ####################################
 ####################################
 
-
-
-
 function (GV::GridValues)(N::Integer)
     GV.GD.D.map(GV.GD.grid(N))
     FixedGridValues(GV.GD.D.map(GV.GD.grid(N)),GV.GD)
@@ -86,4 +83,13 @@ end
 function BasisExpansion(f::Function,basis::GridValues,N::Integer)
     grid = basis.GD.D.map(basis.GD.grid(N))
     BasisExpansion(basis,f.(grid))
+end
+
+#### FUNCTION OVERLOADING ####
+function ^(f::BasisExpansion{T},a::Number) where T <: GridValues
+    BasisExpansion(f.basis,(f.c).^a)
+end
+
+function ⊙(g::Function,f::BasisExpansion{T}) where T <: GridValues
+    BasisExpansion(f.basis,g.(f.c))
 end

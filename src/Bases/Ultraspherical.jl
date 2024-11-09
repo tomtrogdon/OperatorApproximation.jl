@@ -24,7 +24,7 @@ function getweight(sp::Ultraspherical)
     x -> JacobiW(λ - 0.5, λ - 0.5,x)
 end
 ####################################
-####################################
+###### FUNCTION OVERLOADING ########
 ####################################
 
 function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
@@ -33,4 +33,24 @@ function (P::BasisExpansion{Ultraspherical})(X::Number) # Clenshaw's algorithm
     x = P.basis.GD.D.imap(X)
     a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
+end
+
+function ^(f::BasisExpansion{T},x::Number) where T <: Ultraspherical
+    # Should be done adaptively by padding if output coefs are not small
+    a = f.basis.GD.D.a
+    b = f.basis.GD.D.b
+    gd = UltraMappedInterval(a,b,f.basis.λ)
+    Conversion(f.basis)*((Conversion(GridValues(gd))*f)^x)
+end
+
+function ⊙(g::Function,f::BasisExpansion{T}) where T <: Ultraspherical
+    # Should be done adaptively by padding if output coefs are not small
+    a = f.basis.GD.D.a
+    b = f.basis.GD.D.b
+    gd = UltraMappedInterval(a,b,f.basis.λ)
+    Conversion(f.basis)*(g ⊙ (Conversion(GridValues(gd))*f))
+end
+
+function norm(f::BasisExpansion{T}) where T <: Ultraspherical
+    return norm(f.c)
 end

@@ -220,8 +220,8 @@ end
 
 function Matrix(Op::OPEvaluationOperator,m)  # only one dim for Functional
     if typeof(Op.grid) <: Function
-        @error "Need another dimension"
-        return
+        #@warn "Output dimension determined by input dimension"
+        return poly(Op.a,Op.b,m,Op.grid(m))
     end
     return poly(Op.a,Op.b,m,Op.grid)
 end
