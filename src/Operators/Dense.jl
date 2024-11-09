@@ -205,7 +205,7 @@ function Matrix(Op::GenericEvaluationOperator,n)
     return Op.M(n,n)
 end
 
-function horner_mat(x,m)
+function hornermat(x,m)
     A = zeros(ComplexF64,length(x),m)
     mm = convert(Int64,floor( m/2 ))
     A[:,1] = exp.(-1im*pi*mm*x)
