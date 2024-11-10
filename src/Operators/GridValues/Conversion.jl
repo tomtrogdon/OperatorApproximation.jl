@@ -38,14 +38,15 @@ end
 
 function conversion(b1::GridValues,b2::Ultraspherical)
     λ = b1.GD.λ
-    if λ ≈ 0.0
-        Op = DiscreteCosineTransform()
-        ConcreteOperator(b1,b2,Op)
-    end
-    a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
-    Op = OPEigenTransform(a,b)
     b3 = Ultraspherical(λ,b1.GD)
-    Conversion(b2)*ConcreteOperator(b1,b3,Op)
+    if λ ≈ 0.0 
+        COp = ConcreteOperator(b1,b3,DiscreteCosineTransform())
+    else
+        a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
+        Op = OPEigenTransform(a,b)
+        COp = ConcreteOperator(b1,b3,Op)
+    end
+    Conversion(b2)*COp
 end
 
 function conversion(b1::GridValues,b2::MarchenkoPastur)

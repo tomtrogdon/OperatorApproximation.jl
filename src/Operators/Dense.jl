@@ -51,13 +51,13 @@ for op1 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
     for op2 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
         @eval function Matrix(Op::InverseBasicBandedOperator{T,S},n,m) where {T <: $op1, S <: $op2}
             mm = max(n,m)
-            A = inv(Matrix(Op.Op,mm,mm))
-            B = zeros{eltype(A)}(mm,m)
+            A = inv(Matrix(Op.Op,mm,mm) |> Matrix)
+            B = zeros(eltype(A),n,mm)
             for j = 1:mm
                 B[:,j] = pad($op2,A[:,j],n)
             end
-            A = zeros{eltype(A)}(n,m)
-            for i = 1:m
+            A = zeros(eltype(A),n,m)
+            for i = 1:n
                 A[i,:] = pad($op1,B[i,:],m)
             end
             A
@@ -66,6 +66,7 @@ for op1 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
 end
 # Only guaranteed to be exact for upper triangular
 function *(Op::InverseBasicBandedOperator,f::Vector) 
+    display("Good")
     Matrix(Op.Op,length(f),length(f))\f
 end
 
@@ -220,11 +221,13 @@ function *(D::DiscreteFourierTransformII,f::Vector)
     D.T(f)
 end
 
-
 function FirstKindT(x)
-    y = FFTW.r2r(x,FFTW.REDFT10)/(sqrt(2)*length(x))
-    y[1] /= -sqrt(2)
-    y
+    # y = FFTW.r2r(x,FFTW.REDFT10)/(sqrt(2)*length(x))
+    # y[1] /= -sqrt(2)
+    # y
+    y = dct(x)/sqrt(length(x))
+    y[1] *= -1
+    -y
 end
 struct DiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
     T::Function
@@ -234,6 +237,25 @@ struct DiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <
 end
 DiscreteCosineTransform() = DiscreteCosineTransform{𝔼,ℕ₊}()
 function *(D::DiscreteCosineTransform,f::Vector)
+    D.T(f)
+end
+
+function IFirstKindT(x)
+    # y = FFTW.r2r(x,FFTW.REDFT10)/(sqrt(2)*length(x))
+    # y[1] /= -sqrt(2)
+    # y
+    y = copy(x)
+    y[1] *= -1
+    idct(y)*sqrt(length(y))
+end
+struct IDiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
+    T::Function
+    function IDiscreteCosineTransform{ℕ₊,𝔼}()
+        return new(IFirstKindT)
+    end
+end
+IDiscreteCosineTransform() = IDiscreteCosineTransform{ℕ₊,𝔼}()
+function *(D::IDiscreteCosineTransform,f::Vector)
     D.T(f)
 end
 
@@ -418,6 +440,15 @@ end
 
 function Matrix(Op::DiscreteFourierTransform,n,m)
     Op.T(Matrix(I,n,m)) # Not the right way to do this...
+end
+
+function Matrix(Op::DiscreteCosineTransform,n,m)
+    Op.T(1.0*Matrix(I,n,m)) # Not the right way to do this...
+end
+
+
+function Matrix(Op::IDiscreteCosineTransform,n,m)
+    Op.T(1.0*Matrix(I,n,m)) # Not the right way to do this...
 end
 
 function Matrix(Op::DiscreteFourierTransformII,n,m)
