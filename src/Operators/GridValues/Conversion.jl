@@ -1,6 +1,6 @@
 function isconvertible(b1::DiscreteBasis,b2::Ultraspherical)
-    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: UltraInterval && b1.GD.λ ≈ b2.λ) || 
-    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: UltraMappedInterval && b1.GD.λ ≈ b2.λ)
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: UltraInterval && mod(b1.GD.λ - b2.λ,1) ≈ 0) || 
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: UltraMappedInterval && mod(b1.GD.λ - b2.λ,1) ≈ 0)
 end
 
 function isconvertible(b1::DiscreteBasis,b2::Jacobi)
@@ -31,29 +31,25 @@ function isconvertible(b1::DiscreteBasis,b2::Hermite)
     iscompatible(b1.GD,b2.GD)
 end
 
-function isconvertible(b1::DiscreteBasis,b2::OscRational)
-    iscompatible(b1.GD,b2.GD)
-end
-
 function conversion(b1::GridValues,b2::Fourier)
     Op = DiscreteFourierTransform()
     ConcreteOperator(b1,b2,Op)
 end
 
-function conversion(b1::GridValues,b2::OscRational)
-    Op = DiscreteFourierTransformII()
-    ConcreteOperator(b1,b2,Op)
-end
-
 function conversion(b1::GridValues,b2::Ultraspherical)
-    λ = b2.λ
+    λ = b1.GD.λ
+    if λ ≈ 0.0
+        Op = DiscreteCosineTransform()
+        ConcreteOperator(b1,b2,Op)
+    end
     a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
     Op = OPEigenTransform(a,b)
-    ConcreteOperator(b1,b2,Op)
+    b3 = Ultraspherical(λ,b1.GD)
+    Conversion(b2)*ConcreteOperator(b1,b3,Op)
 end
 
 function conversion(b1::GridValues,b2::MarchenkoPastur)
-    d= b2.d
+    d = b2.d
     a,b = MP_ab(d)
     Op = OPEigenTransform(a,b)
     ConcreteOperator(b1,b2,Op)
