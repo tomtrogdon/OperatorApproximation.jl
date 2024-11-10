@@ -220,6 +220,23 @@ function *(D::DiscreteFourierTransformII,f::Vector)
     D.T(f)
 end
 
+
+function FirstKindT(x)
+    y = FFTW.r2r(x,FFTW.REDFT10)/(sqrt(2)*length(x))
+    y[1] /= -sqrt(2)
+    y
+end
+struct DiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
+    T::Function
+    function DiscreteCosineTransform{𝔼,ℕ₊}()
+        return new(FirstKindT)
+    end
+end
+DiscreteCosineTransform() = DiscreteCosineTransform{𝔼,ℕ₊}()
+function *(D::DiscreteCosineTransform,f::Vector)
+    D.T(f)
+end
+
 struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator # even though it is sparse...
     # it is simpler to treat grid multiplication as dense
     f::Union{Function,Vector}
