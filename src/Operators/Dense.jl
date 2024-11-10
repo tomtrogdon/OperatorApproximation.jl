@@ -66,7 +66,6 @@ for op1 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
 end
 # Only guaranteed to be exact for upper triangular
 function *(Op::InverseBasicBandedOperator,f::Vector) 
-    display("Good")
     Matrix(Op.Op,length(f),length(f))\f
 end
 
@@ -442,16 +441,23 @@ function Matrix(Op::DiscreteFourierTransform,n,m)
     Op.T(Matrix(I,n,m)) # Not the right way to do this...
 end
 
-function Matrix(Op::DiscreteCosineTransform,n,m)
-    Op.T(1.0*Matrix(I,n,m)) # Not the right way to do this...
+function Matrix(Op::DiscreteCosineTransform,n,m) # Not the right way to do this...
+    A = complex(1.0)*Matrix(I,n,m)
+    for j = 1:m
+        A[:,j] = Op.T(A[:,j])
+    end
+    A
 end
 
-
-function Matrix(Op::IDiscreteCosineTransform,n,m)
-    Op.T(1.0*Matrix(I,n,m)) # Not the right way to do this...
+function Matrix(Op::IDiscreteCosineTransform,n,m) # Not the right way to do this...
+    A = complex(1.0)*Matrix(I,n,m)
+    for j = 1:m
+        A[:,j] = Op.T(A[:,j])
+    end
+    A
 end
 
-function Matrix(Op::DiscreteFourierTransformII,n,m)
+function Matrix(Op::DiscreteFourierTransformII,n,m) # Not the right way to do this...
     A = complex(1.0)*Matrix(I,n,m)
     for j = 1:m
         A[:,j] = Op.T(A[:,j])
