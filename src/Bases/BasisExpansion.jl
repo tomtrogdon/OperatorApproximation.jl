@@ -233,7 +233,7 @@ function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S, T}
 end
 
 function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S <: DirectSum, T <: DirectSum}
-    if f.basis == g.basis
+    if length(f.basis) == length(g.basis) && f.basis == g.basis
         out = []
         for i = 1:length(f.c)
             n = max(length(f.c[i]), length(g.c[i]))
