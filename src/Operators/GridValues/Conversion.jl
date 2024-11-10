@@ -18,6 +18,10 @@ function isconvertible(b1::DiscreteBasis,b2::Fourier)
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicMappedInterval)
 end
 
+function isconvertible(b1::DiscreteBasis,b2::OscRational)
+    iscompatible(b1.GD,b2.GD)
+end
+
 function isconvertible(b1::DiscreteBasis,b2::Laurent)
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicCircle) || 
     (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: PeriodicMappedCircle)
@@ -33,6 +37,11 @@ end
 
 function conversion(b1::GridValues,b2::Fourier)
     Op = DiscreteFourierTransform()
+    ConcreteOperator(b1,b2,Op)
+end
+
+function conversion(b1::GridValues,b2::OscRational)
+    Op = DiscreteFourierTransformII()
     ConcreteOperator(b1,b2,Op)
 end
 

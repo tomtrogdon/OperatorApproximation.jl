@@ -52,3 +52,11 @@ function lancz(N,x,w)
     end
     SymTridiagonal(p0[1:N], sqrt.(p1[2:N]))
 end
+
+function dot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
+    inner_prod = 0
+    for i=1:length(f)
+        inner_prod += Base.sum(Multiplication(f[i])*Base.conj(g[i]))
+    end
+    return inner_prod
+end

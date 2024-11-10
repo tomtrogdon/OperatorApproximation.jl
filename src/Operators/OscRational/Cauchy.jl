@@ -47,34 +47,26 @@ end
 
 function Res(j::Int64,α::Float64,z::Vector{Complex{Float64}})
     x = (-2im*sign(j))./(z.+1im*sign(j))
-    # y = -2*sign(j)*α*β
     y = 2*abs(α)
-    # return -LagSeries(abs(j),y,x)
     return -LagSeries(abs(j),y,x)
 end
 
 #CauchyPNO calls this one
 function Res(j::Int64,α::Int64,z::GridValues)
     x = (-2im*sign(j))./(z.+1im*sign(j))
-    # y = -2*sign(j)*α*β
     y = 2*abs(α)
-    # return -LagSeries(abs(j),y,x)
     return -LagSeries(abs(j),y,x)
 end
   
 function Res(j::Integer,α::Complex{Float64},z::Vector{Float64},cfs::Vector{Complex{Float64}})
     x = (-2im*sign(j))./(z.+1im*sign(j))
-    # y = -2*sign(j)*α*β
     y = 2*abs(α)
-    # return -LagSeries(y,x,cfs)
     return -LagSeries(y,x,cfs)
 end
 
 #effectively returns -M_{+1}(k) in α<0 case and M_{-1}(k) in α>0 case from AKNS paper
 function CauchyPNO(n,m,α,z)
     α = convert(Float64,α)
-    # display("GridPts(n):")
-    # print(z(n))
     if α < 0.
         return -Res(m,α,z(n))
     else
@@ -97,15 +89,14 @@ function CauchyConstantMatP(i,j)
 end
 
 function CauchyConstantMatM(i,j)
-    ( i == j ? -1 : 0) + CauchyConstantMatP(i,j)
+    (i == j ? -1 : 0) + CauchyConstantMatP(i,j) #C- = C+ - I
 end
 
 function BuildOperatorBlock(n,m,α,gridPts)
     A = complex(zeros(n,m))
-    mm = N₋(m)
     if α > 0
         mm = N₋(m)
-        A[:,1:mm] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2) #works for α > 0 and α < 0 when N is even using N_-(mm)
+        A[:,1:mm] = reverse(CauchyPNO(n,mm,α,gridPts),dims=2)
     else
         mm = N₊(m)
         A[:,end-mm+1:end] = CauchyPNO(n,mm,α,gridPts)
@@ -113,16 +104,16 @@ function BuildOperatorBlock(n,m,α,gridPts)
     return A
 end
 
-function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ without a BasisExpansion to call CauchyP...
+function *(C::CauchyOperator,domain::OscRational) 
     α = domain.α
     gd = domain.GD
     range = GridValues(gd)
     gridPts = gd.grid
     if C.o == 1.0
-        if α == 0. #if basis is not rational, just copy what Laurent Cauchy operator does
-            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatP(i,j)))
+        if α == 0.
+            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatP(i,j))) #Need a better way to do this...
         else
-            if α > 0 ## use IdentityOperator() and ZeroOperator()?
+            if α > 0
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
             else
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(0.0) : 0.0im ))
@@ -132,9 +123,10 @@ function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ w
             return (Op1)⊘(Op3*Op2)
         end
     elseif C.o == -1.0
-        if α == 0. #if basis is not rational, just copy what Laurent Cauchy operator does
+        if α == 0.
             return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatM(i,j)))
         else
+            # C+ - C- = I => C- = C+ - I (only affects oscillatory piece)
             if α < 0 ## use IdentityOperator() and ZeroOperator()?
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(-1.0) : 0.0im ))
             else
@@ -145,4 +137,40 @@ function *(C::CauchyOperator,domain::OscRational) #confused about how to do C+ w
             return (Op1)⊘(Op3*Op2)
         end
     end
+end
+
+function Base.sum(f::BasisExpansion{OscRational}) #name change
+    α = convert(Float64,f.basis.α)
+    Laguerre = Lag(N₋(length(f.c)),2*abs(α))
+    j_vals = -N₋(length(f.c)):N₊(length(f.c)) #determine j's
+    sum = 0 #initialize integral
+    for i=1:length(f.c)
+         j = j_vals[i]
+         #determine R_hat_j(α)
+         if α == 0
+             R_hat_j = -2*π*abs(j)
+         elseif sign(j) == sign(α) #typo in AKNS (or at least discrepancy between AKNS and ref [26])
+             R_hat_j = 0
+         else
+            R_hat_j = -4*π*Laguerre[abs(j) - 1 + 2] #exp(-abs(α)) already in Lag function so taking it out here
+         end
+         sum += f.c[i]*R_hat_j #add to integral value
+    end
+    return sum
+end
+
+function Base.conj(f::BasisExpansion{OscRational})
+    α = -1*(f.basis.α)
+    sp = OscRational(f.basis.GD,α)
+    if isodd(length(f.c))
+        coeffs = reverse(Base.conj(f.c))
+    else
+        coeffs = complex(zeros(length(f.c)+1))
+        coeffs[2:end] = reverse(Base.conj(f.c))
+    end
+    return BasisExpansion(sp,coeffs)
+end
+
+function dot(f::BasisExpansion{OscRational},g::BasisExpansion{OscRational})
+    return Base.sum(Multiplication(f)*Base.conj(g))
 end
