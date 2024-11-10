@@ -174,7 +174,7 @@ end
 function eigen(L::ConcreteOperator{D,R,T},M::ConcreteOperator{D,R,T},ns::Vector{Int64},ms::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     E =  eigen(Matrix(L,ns,ms) |> Matrix, Matrix(M,ns,ms) |> Matrix)
     domains = bases(L.domain)
-    vs = [part_vec(E.vectors[:,i],ns) for i in 1:size(E.vectors,2)]
+    vs = [part_vec(E.vectors[:,i],ms) for i in 1:size(E.vectors,2)]
     vs = [BasisExpansion.(domains, vsp) for vsp in vs]
     ContinuousEigen(makeinf.(E.values),vs)
 end
