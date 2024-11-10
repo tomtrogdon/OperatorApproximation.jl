@@ -242,7 +242,8 @@ function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S <: DirectSum, T <
         end
         BasisExpansion(f.basis,out)
     else
-        @error "Basis not compatible"
+        @warn "Basis not compatible, using direct sum"
+        f ⊕ g
     end
 end
 
