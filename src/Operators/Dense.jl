@@ -47,23 +47,23 @@ end
 function InverseBasicBandedOperator(Op::BasicBandedOperator{T,S}) where {T, S}
     InverseBasicBandedOperator{S,T}(Op)
 end
-for op1 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
-    for op2 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
-        @eval function Matrix(Op::InverseBasicBandedOperator{T,S},n,m) where {T <: $op1, S <: $op2}
-            mm = max(n,m)
-            A = inv(Matrix(Op.Op,mm,mm) |> Matrix)
-            B = zeros(eltype(A),n,mm)
-            for j = 1:mm
-                B[:,j] = pad($op2,A[:,j],n)
-            end
-            A = zeros(eltype(A),n,m)
-            for i = 1:n
-                A[i,:] = pad($op1,B[i,:],m)
-            end
-            A
-        end
-    end
-end
+# for op1 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
+#     for op2 in (:ℤ,:ℕ₊,:ℕ₋,:𝔼,:𝕏)
+#         @eval function Matrix(Op::InverseBasicBandedOperator{T,S},n,m) where {T <: $op1, S <: $op2}
+#             mm = max(n,m)
+#             A = inv(Matrix(Op.Op,mm,mm) |> Matrix)
+#             B = zeros(eltype(A),n,mm)
+#             for j = 1:mm
+#                 B[:,j] = pad($op2,A[:,j],n)
+#             end
+#             A = zeros(eltype(A),n,m)
+#             for i = 1:n
+#                 A[i,:] = pad($op1,B[i,:],m)
+#             end
+#             A
+#         end
+#     end
+# end
 # Only guaranteed to be exact for upper triangular
 function *(Op::InverseBasicBandedOperator,f::Vector) 
     Matrix(Op.Op,length(f),length(f))\f
@@ -245,7 +245,7 @@ function IFirstKindT(x)
     # y
     y = copy(x)
     y[1] *= -1
-    idct(y)*sqrt(length(y))
+    idct(-y)*sqrt(length(y))
 end
 struct IDiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
     T::Function
@@ -437,30 +437,39 @@ function *(Op::FastTransform,v::Vector)
     Op.T(v)
 end
 
-function Matrix(Op::DiscreteFourierTransform,n,m)
-    Op.T(Matrix(I,n,m)) # Not the right way to do this...
-end
-
-function Matrix(Op::DiscreteCosineTransform,n,m) # Not the right way to do this...
+function Matrix(Op::MatrixOperator,n,m) # Not the right way to do this... 
+    # Will error if output dimensions do not match input
     A = complex(1.0)*Matrix(I,n,m)
     for j = 1:m
-        A[:,j] = Op.T(A[:,j])
+        A[:,j] = Op*A[:,j]
     end
     A
 end
 
-function Matrix(Op::IDiscreteCosineTransform,n,m) # Not the right way to do this...
-    A = complex(1.0)*Matrix(I,n,m)
-    for j = 1:m
-        A[:,j] = Op.T(A[:,j])
-    end
-    A
-end
+# function Matrix(Op::DiscreteFourierTransform,n,m)
+#     Op.T(Matrix(I,n,m)) # Not the right way to do this...
+# end
 
-function Matrix(Op::DiscreteFourierTransformII,n,m) # Not the right way to do this...
-    A = complex(1.0)*Matrix(I,n,m)
-    for j = 1:m
-        A[:,j] = Op.T(A[:,j])
-    end
-    A
-end
+# function Matrix(Op::DiscreteCosineTransform,n,m) # Not the right way to do this...
+#     A = complex(1.0)*Matrix(I,n,m)
+#     for j = 1:m
+#         A[:,j] = Op.T(A[:,j])
+#     end
+#     A
+# end
+
+# function Matrix(Op::IDiscreteCosineTransform,n,m) # Not the right way to do this...
+#     A = complex(1.0)*Matrix(I,n,m)
+#     for j = 1:m
+#         A[:,j] = Op.T(A[:,j])
+#     end
+#     A
+# end
+
+# function Matrix(Op::DiscreteFourierTransformII,n,m) # Not the right way to do this...
+#     A = complex(1.0)*Matrix(I,n,m)
+#     for j = 1:m
+#         A[:,j] = Op.T(A[:,j])
+#     end
+#     A
+# end

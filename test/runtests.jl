@@ -297,10 +297,11 @@ end
         B\A
     end
     ρ(k,V) = Sc(k,V)[2,1]/Sc(k,V)[1,1]
-    
     # Without poles
     V = x -> -exp(-x^2)
     p = x -> ( abs(x) < 1e-12 ? -1.0 + 0.0im : ρ(x,V) )
+    display("Test")
+    display(Sc(.0001,V) |> det)
     p̄ = x -> -conj(p(conj(x)))
     τ = x -> 1 + p(x)*p̄(x)
     JJ = [τ p̄; p x->1]
