@@ -1,7 +1,7 @@
 abstract type DiscreteBasis <: Basis end # maybe change this name...
 
-struct GridValues <: DiscreteBasis
-    GD::T where T <: GridDomain
+struct GridValues{T <: GridDomain} <: DiscreteBasis
+    GD::T
 end
 
 struct FixedGridValues <: DiscreteBasis

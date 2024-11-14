@@ -269,7 +269,7 @@ function divide_DOF(b::Basis,n::Integer)
         end
     end
     N -= sum(ns)
-    if N < 1
+    if N < 1  ### TODO: BUG HERE!!!
         @error "n, m not large enough to capture functionals"
         return
     end
