@@ -6,11 +6,15 @@ function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
     iscompatible(b1.GD,b2.GD) && mod(b1.λ - b2.λ,1) ≈ 0
 end
 
+function hasfastconversion(b1::Ultraspherical,b2::DiscreteBasis)
+    isconvertible(b1,b2) &&  1 == 1
+end
+
 ### TODO:  THIS IS NOT WORKING ###
 ### NOTE:  Need to get it to work and then find a way
 ### to separate matrix generation and matrix application
 #
-function conversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraInterval,UltraMappedInterval}
+function fastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraMappedInterval,UltraInterval}
     λ = b2.GD.λ
     b3 = Ultraspherical(λ,b2.GD)
     if λ ≈ 0.0 && -1 > 0
