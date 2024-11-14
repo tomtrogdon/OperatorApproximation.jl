@@ -14,7 +14,7 @@ end
 ### NOTE:  Need to get it to work and then find a way
 ### to separate matrix generation and matrix application
 #
-function fastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraInterval,UltraMappedInterval}
+function fastconversion(b1::Ultraspherical,b2::GridValues)
     λ = b2.GD.λ
     b3 = Ultraspherical(λ,b2.GD)
     if λ ≈ 0.0 && -1 > 0
@@ -33,7 +33,7 @@ function fastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{U
     end
 end
 
-function conversion(b1::Ultraspherical,b2::GridValues{T}) where T
+function conversion(b1::Ultraspherical,b2::GridValues)
     basegrid =  n -> b2.GD.grid(n)
     # In principle, we need to do this:
     # gridfun = n -> b1.GD.D.imap(b2.GD.D.map(basegrid(n)))
