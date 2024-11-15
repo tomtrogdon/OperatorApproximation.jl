@@ -76,7 +76,7 @@ function sumdot(v1::Vector{T},v2::Vector{T}) where T <: BasisExpansion{DirectSum
     inner_prod = 0
     for i=1:length(v1)
         for j=1:length(v2)
-            inner_prod += SumDot(v1[i],v2[j])
+            inner_prod += sumdot(v1[i],v2[j])
         end
     end
     return inner_prod
