@@ -6,7 +6,34 @@ function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
     iscompatible(b1.GD,b2.GD) && mod(b1.λ - b2.λ,1) ≈ 0
 end
 
-function conversion(b1::Ultraspherical,b2::GridValues)
+function hasfastconversion(b1::Ultraspherical,b2::DiscreteBasis)
+    isconvertible(b1,b2) &&  1 == 1
+end
+
+### TODO:  THIS IS NOT WORKING ###
+### NOTE:  Need to get it to work and then find a way
+### to separate matrix generation and matrix application
+#
+function fastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraMappedInterval,UltraInterval}
+    λ = b2.GD.λ
+    b3 = Ultraspherical(λ,b2.GD)
+    if λ ≈ 0.0 && -1 > 0
+        COp = ConcreteOperator(b3,b2,IDiscreteCosineTransform())
+        return COp*(Conversion(b3)*b1)
+    else
+        basegrid =  n -> b2.GD.grid(n)
+        # In principle, we need to do this:
+        # gridfun = n -> b1.GD.D.imap(b2.GD.D.map(basegrid(n)))
+        # but we are checking that the two grid domains are compatible
+        # and currently this forces the composition of the maps to
+        # be the identity
+        a, b = Jacobi_ab(b1.λ - 1/2, b1.λ - 1/2)
+        Op = OPEvaluationOperator(basegrid,a,b)
+        return ConcreteOperator(b1,b2,Op)
+    end
+end
+
+function conversion(b1::Ultraspherical,b2::GridValues{T}) where T
     basegrid =  n -> b2.GD.grid(n)
     # In principle, we need to do this:
     # gridfun = n -> b1.GD.D.imap(b2.GD.D.map(basegrid(n)))
