@@ -430,7 +430,7 @@ end
         s
     end
 
-    #Nonoscillatory test (Working properly)
+    #Nonoscillatory test
     N = 200;
     α = 0;
     gd = RationalRealAxis()
@@ -481,4 +481,95 @@ end
     out = Cop*fadd
 
     @test abs(CPquad(x -> exp(-x^2),1,3) + CPquad(x -> exp(-x^2),0,3) - out(3)) < 1e-10
+
+    #Integral test
+    α = -2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2);
+    ff = BasisExpansion(f,sp)
+    int_test = Base.sum(ff)
+    int_true = sqrt(π)*exp(-(abs(α)^2)/4)
+    @test abs(int_test-int_true) < 1e-10
+
+    #Testing Multiplication with two different α values for basis
+    α = 0;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp)
+    M = Multiplication(ff)
+
+    α2 = 1;
+    sp2 = OscRational(gd,α2)
+    gg = BasisExpansion(f,sp2)
+
+    x_test = 0.356
+    h = M*gg
+    @test abs(h(x_test)-ff(x_test)*gg(x_test)) < 1e-10
+
+    #Testing conjugate of a basis expansion
+    α = 0;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α);
+    f = x -> x/(x+1im)
+    ff = BasisExpansion(f,sp)
+    x_test = 5.67
+    ff2 = Base.conj(ff)
+    conj_f = x -> x/(x-1im)
+    @test abs(ff2(x_test) - conj_f(x_test)) < 1e-10
+
+    #Testing dot product of BasisExpansion{OscRational}
+    α = 2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α)
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp)
+
+    α = -3;
+    sp = OscRational(gd,α)
+    g = x -> exp(-2x^2)
+    gg = BasisExpansion(g,sp)
+
+    @test abs(dot(ff,gg) - sqrt(pi/3)*exp(-25/12)) < 1e-10
+
+    #Testing dot product of BasisExpansion{DirectSum}
+    α = 2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α)
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp)
+    
+    α = -3;
+    sp = OscRational(gd,α)
+    g = x -> exp(-2x^2)
+    gg = BasisExpansion(g,sp)
+    
+    h1 = ff ⊕ gg
+    h2 = gg ⊕ ff
+    
+    @test abs(dot(h1,h2) - 2*sqrt(pi/3)*exp(-25/12)) < 1e-10
+
+    #Test sumdot version of dot product of BasisExpansion{DirectSum}
+    α = 2;
+    gd = RationalRealAxis()
+    sp = OscRational(gd,α)
+    f = x -> exp(-x^2)
+    ff = BasisExpansion(f,sp)
+
+    α2 = -3;
+    sp2 = OscRational(gd,α2)
+    g = x -> exp(-2x^2)
+    gg = BasisExpansion(g,sp2)
+
+    h1 = ff ⊕ gg
+    h2 = gg ⊕ ff
+
+    true_val = 2*sqrt(pi/3)*exp(-25/12) + sqrt(pi/2) + sqrt(pi)/2
+    @test abs(sumdot(h1,h2) - true_val) < 1e-10
+
+    #Test vector version of sumdot
+    v1 = [h1,h2]
+    v2 = [h1,h2]
+    @test abs(sumdot(v1,v2)-true_val*4) < 1e-10
 end
