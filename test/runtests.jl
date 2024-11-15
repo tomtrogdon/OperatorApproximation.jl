@@ -549,7 +549,7 @@ end
     
     @test abs(dot(h1,h2) - 2*sqrt(pi/3)*exp(-25/12)) < 1e-10
 
-    #Test SumDot version of dot product of BasisExpansion{DirectSum}
+    #Test sumdot version of dot product of BasisExpansion{DirectSum}
     α = 2;
     gd = RationalRealAxis()
     sp = OscRational(gd,α)
@@ -565,10 +565,10 @@ end
     h2 = gg ⊕ ff
 
     true_val = 2*sqrt(pi/3)*exp(-25/12) + sqrt(pi/2) + sqrt(pi)/2
-    @test abs(SumDot(h1,h2) - true_val) < 1e-10
+    @test abs(sumdot(h1,h2) - true_val) < 1e-10
 
-    #Test vector version of SumDot
+    #Test vector version of sumdot
     v1 = [h1,h2]
     v2 = [h1,h2]
-    @test abs(SumDot(v1,v2)-true_val*4) < 1e-10
+    @test abs(sumdot(v1,v2)-true_val*4) < 1e-10
 end

@@ -62,7 +62,7 @@ function dot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
 end
 
 #if f=[a,b], g=[c,d], this does <a,c> + <a,d> + <b,c> + <b,d>
-function SumDot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
+function sumdot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
     inner_prod = 0
     for i=1:length(f)
         for j=1:length(g)
@@ -72,7 +72,7 @@ function SumDot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
     return inner_prod
 end
 
-function SumDot(v1::Vector{T},v2::Vector{T}) where T <: BasisExpansion{DirectSum}
+function sumdot(v1::Vector{T},v2::Vector{T}) where T <: BasisExpansion{DirectSum}
     inner_prod = 0
     for i=1:length(v1)
         for j=1:length(v2)
