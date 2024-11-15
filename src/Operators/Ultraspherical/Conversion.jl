@@ -7,30 +7,19 @@ function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
 end
 
 function hasfastconversion(b1::Ultraspherical,b2::DiscreteBasis)
-    isconvertible(b1,b2) &&  1 == 1
+    false
 end
 
-### TODO:  THIS IS NOT WORKING ###
-### NOTE:  Need to get it to work and then find a way
-### to separate matrix generation and matrix application
-#
+function hasfastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraMappedInterval,UltraInterval}
+    isconvertible(b1,b2) && b2.GD.λ ≈ 0
+end
+
+### Fast methods that are not designed to generate matrices
 function fastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraMappedInterval,UltraInterval}
-    λ = b2.GD.λ
+    # note that b2.GD.λ = 0 is enforced by hasfastconversion
     b3 = Ultraspherical(λ,b2.GD)
-    if λ ≈ 0.0 && -1 > 0
-        COp = ConcreteOperator(b3,b2,IDiscreteCosineTransform())
-        return COp*(Conversion(b3)*b1)
-    else
-        basegrid =  n -> b2.GD.grid(n)
-        # In principle, we need to do this:
-        # gridfun = n -> b1.GD.D.imap(b2.GD.D.map(basegrid(n)))
-        # but we are checking that the two grid domains are compatible
-        # and currently this forces the composition of the maps to
-        # be the identity
-        a, b = Jacobi_ab(b1.λ - 1/2, b1.λ - 1/2)
-        Op = OPEvaluationOperator(basegrid,a,b)
-        return ConcreteOperator(b1,b2,Op)
-    end
+    COp = ConcreteOperator(b3,b2,IDiscreteCosineTransform())
+    return COp*(Conversion(b3)*b1)
 end
 
 function conversion(b1::Ultraspherical,b2::GridValues{T}) where T
