@@ -7,7 +7,7 @@ function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
 end
 
 function hasfastconversion(b1::Ultraspherical,b2::DiscreteBasis)
-    isconvertible(b1,b2) &&  1 == 1
+    isconvertible(b1,b2) &&  mod(b1.λ - b2.GD.λ,1) ≈ 0
 end
 
 ### TODO:  THIS IS NOT WORKING ###
