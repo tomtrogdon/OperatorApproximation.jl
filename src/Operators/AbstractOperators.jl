@@ -276,6 +276,10 @@ struct Conversion <: AbstractOperator
     range::Basis
 end
 
+struct FastConversion <: AbstractOperator
+    range::Basis
+end
+
 struct CoefConversion <: AbstractOperator
     range::Basis
 end

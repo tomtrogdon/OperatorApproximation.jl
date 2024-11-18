@@ -113,14 +113,6 @@ function Matrix(Op::DenseTimesDense,n)
     Matrix(Op.denseL,n,n)*B
 end
 
-function *(CC::Conversion,dom::Basis)
-    if isconvertible(dom,CC.range)
-        conversion(dom,CC.range) # convert from dom to CC.range
-    else
-        @error "Bases are not convertible."
-    end
-end
-
 function *(CC::CoefConversion,dom::Basis)
     if cfd(dom) == cfd(CC.range)
         ConcreteOperator(dom,CC.range,BasicBandedOperator{cfd(dom),cfd(dom)}(0,0,(i,j) ->  i == j ? 1.0 : 0.0))

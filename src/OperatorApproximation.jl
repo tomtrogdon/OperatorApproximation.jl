@@ -8,7 +8,7 @@ import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
 import LinearAlgebra: I, Matrix, norm, eigen, diagm, transpose, dot
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
-     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication,
+     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, FastConversion,
     ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval,
     MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
@@ -20,7 +20,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
     HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz, RecCoef,
     DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval,
-    weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙
+    weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
