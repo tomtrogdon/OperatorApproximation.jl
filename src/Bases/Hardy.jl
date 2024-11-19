@@ -76,8 +76,6 @@ end
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Axis}
     x = P.basis.GD.D.imap(X)
     x = ((x.-1im)./(x.+1im))
-    display("|x| = ")
-    display(abs(x))
     n_partial_horner(P.c,x) - sum(P.c)*(abs(x) <= 1 ? 0.0 : 1.0)
 end
 

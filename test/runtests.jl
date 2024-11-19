@@ -571,3 +571,12 @@ end
     v2 = [h1,h2]
     @test abs(sumdot(v1,v2)-true_val*4) < 1e-10
 end
+
+@testset "OperatorApproximation.jl: erfc" begin
+    gd = RationalMappedAxis(3.0,0.0,pi/2)
+    sp = OscRational(gd,0.0)
+    f = BasisExpansion(x -> 2exp(x^2),sp)
+    Cf = CauchyTransform()*f
+    merfc = z -> (real(z) > 0 ? - exp(-z^2)*Cf(z) : 2 - exp(-z^2)*Cf(z))
+    @test abs(erfc(.3) - merfc(.3)) < 1e-12
+end
