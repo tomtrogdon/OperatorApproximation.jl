@@ -8,7 +8,7 @@ import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
 import LinearAlgebra: I, Matrix, norm, eigen, diagm, transpose, dot
 
 export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
-     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication,
+     GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, FastConversion,
     ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval,
     MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
     UltraMappedInterval, JacobiMappedInterval, PeriodicInterval, PeriodicMappedInterval,
