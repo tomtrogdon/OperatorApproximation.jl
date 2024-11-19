@@ -20,7 +20,8 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
     HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz, RecCoef,
     DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval,
-    weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot
+    weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot,
+    MappedAxis, RationalMappedAxis
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
