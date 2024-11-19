@@ -58,6 +58,27 @@ function *(CC::Conversion,f::BasisExpansion)
     (CC*f.basis)*f
 end
 
+function *(CC::Conversion,dom::Basis)
+    if isconvertible(dom,CC.range)
+        conversion(dom,CC.range) # convert from dom to CC.range
+    else
+        @error "Bases are not convertible."
+    end
+end
+
+function *(CC::FastConversion,f::BasisExpansion)
+    (CC*f.basis)*f
+end
+
+function *(CC::FastConversion,dom::Basis)
+    if hasfastconversion(dom,CC.range)
+        fastconversion(dom,CC.range) # convert from dom to CC.range
+    else
+        @warn "No fast conversion available, trying Conversion"
+        return Conversion()*dom
+    end
+end
+
 function rank(OP::ConcreteOperator)
     dim(OP.range)
 end
