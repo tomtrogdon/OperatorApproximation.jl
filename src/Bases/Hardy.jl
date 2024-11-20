@@ -10,6 +10,10 @@ cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: Circle} = ℕ₋
 cfd(sp::Hardy{T,S})  where {T <: Interior, S <: Circle} = ℕ₊
 cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: DiscreteDomain} = ℕ₊
 cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: Interval} = ℕ₊
+cfd(sp::Hardy{T,S})  where {T <: Exterior, S <: Axis} = ℕ₋
+cfd(sp::Hardy{T,S})  where {T <: Interior, S <: Axis} = ℕ₊
+
+
 
 function dim(sp::Hardy)
     Inf
@@ -26,34 +30,58 @@ end
 ####################################
 ####################################
 
-function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Circle}
-    n = P.c |> length
-    x = 1.0./P.basis.GD.D.imap(X)
-    if abs(x) > 1
-        return 0.0im
-    end
-    p = x
-    sum = P.c[end]*p
-    for i = n-1:1:1
-        p *= x
-        sum += P.c[i]*p        
-    end
-    sum
-end
-
-function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: Circle}
-    n = P.c |> length
-    x = P.basis.GD.D.imap(X)
+function p_partial_horner(c,x)
+    n = length(c)
     if abs(x) > 1
         return 0.0im
     end
     p = 1.0
-    sum = P.c[1]
+    sum = c[1]
     for i = 2:n
         p *= x
-        sum += P.c[i]*p        
+        sum += c[i]*p        
     end
     sum
+end
+
+function n_partial_horner(c,x)
+    n = length(c)
+    if abs(x) >= 1
+        return 0.0im
+    end
+    p = x
+    sum = c[end]*p
+    for i = n-1:-1:1
+        p *= x
+        sum += c[i]*p        
+    end
+    sum
+end
+
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Circle}
+    n_partial_horner(P.c,1.0./P.basis.GD.D.imap(X))
+end
+
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: Circle}
+    p_partial_horner(P.c,P.basis.GD.D.imap(X))
+end
+
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: Axis}
+    x = P.basis.GD.D.imap(X)
+    if imag(x) < 0
+        return 0.0im
+    end
+    x = ((x.-1im)./(x.+1im))
+    p_partial_horner(P.c,x)*x - sum(P.c)*(abs(x) <= 1 ? 1.0 : 0)
+end
+
+function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Axis}
+    x = P.basis.GD.D.imap(X)
+    if imag(x) >= 0
+        return 0.0im
+    end
+    x = ((x.+1im)./(x.-1im))
+    n_partial_horner(P.c,x) - sum(P.c)*(abs(x) >= 1 ? 0.0 : 1.0)
 end
 
 function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: Union{JacobiMappedInterval,JacobiInterval}, S <: Interval}

@@ -17,7 +17,7 @@ end
 ### Fast methods that are not designed to generate matrices
 function fastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraMappedInterval,UltraInterval}
     # note that b2.GD.λ = 0 is enforced by hasfastconversion
-    b3 = Ultraspherical(λ,b2.GD)
+    b3 = Ultraspherical(0.0,b2.GD)
     COp = ConcreteOperator(b3,b2,IDiscreteCosineTransform())
     return COp*(Conversion(b3)*b1)
 end

@@ -300,8 +300,6 @@ end
     # Without poles
     V = x -> -exp(-x^2)
     p = x -> ( abs(x) < 1e-12 ? -1.0 + 0.0im : ρ(x,V) )
-    display("Test")
-    display(Sc(.0001,V) |> det)
     p̄ = x -> -conj(p(conj(x)))
     τ = x -> 1 + p(x)*p̄(x)
     JJ = [τ p̄; p x->1]
@@ -572,4 +570,14 @@ end
     v1 = [h1,h2]
     v2 = [h1,h2]
     @test abs(sumdot(v1,v2)-true_val*4) < 1e-10
+end
+
+@testset "OperatorApproximation.jl: erfc" begin
+    gd = RationalMappedAxis(3.0,0.0,pi/2)
+    sp = OscRational(gd,0.0)
+    f = BasisExpansion(x -> 2exp(x^2),sp)
+    Cf = CauchyTransform()*f
+    merfc = z -> (real(z) > 0 ? - exp(-z^2)*Cf(z) : 2 - exp(-z^2)*Cf(z))
+    @test abs(erfc(.3) - merfc(.3)) < 1e-12
+    @test abs(erfc(-.3) - merfc(-.3)) < 1e-12
 end

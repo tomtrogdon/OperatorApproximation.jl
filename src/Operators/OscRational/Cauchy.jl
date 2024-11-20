@@ -174,3 +174,17 @@ end
 function dot(f::BasisExpansion{OscRational},g::BasisExpansion{OscRational})
     return Base.sum(Multiplication(f)*Base.conj(g))
 end
+
+# Projects onto the Hardy spaces.  Might not satisfy C^+ - C^- = I unless the
+# decay at infinity is sufficiently resolved.
+function *(C::CauchyTransform,domain::OscRational)
+    if abs(domain.α) > 0.0
+        @error "CauchTransform not implemented for α ≠ 0"
+        return
+    end
+    range = Hardy(Interior(domain.GD))
+    Cp = ConcreteOperator(domain,range,BasicBandedOperator{ℤ,ℕ₊}(0,1, (i,j) -> i + 1 == j && j > 0 ? complex(1.0) : 0.0im ))
+    range = Hardy(Exterior(domain.GD))
+    Cm = ConcreteOperator(domain,range,BasicBandedOperator{ℤ,ℕ₋}(0,0, (i,j) -> i == j && i < 0 ? complex(-1.0) : 0.0im ))
+    Cp ⊘ Cm
+end
