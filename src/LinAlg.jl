@@ -53,10 +53,12 @@ function lancz(N,x,w)
     SymTridiagonal(p0[1:N], sqrt.(p1[2:N]))
 end
 
+dot(f::BasisExpansion,g::BasisExpansion) = Base.sum(Multiplication(f)*Base.conj(g))
+
 function dot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
     inner_prod = 0
     for i=1:length(f)
-        inner_prod += Base.sum(Multiplication(f[i])*Base.conj(g[i]))
+        inner_prod += dot(f[i],g[i])
     end
     return inner_prod
 end
@@ -66,18 +68,32 @@ function sumdot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
     inner_prod = 0
     for i=1:length(f)
         for j=1:length(g)
-            inner_prod += Base.sum(Multiplication(f[i])*Base.conj(g[j]))
+            inner_prod += dot(f[i],g[j])
         end
     end
     return inner_prod
 end
 
-function sumdot(v1::Vector{T},v2::Vector{T}) where T <: BasisExpansion{DirectSum}
+function sumdot(f::BasisExpansion,g::BasisExpansion{T}) where T <: DirectSum
     inner_prod = 0
-    for i=1:length(v1)
-        for j=1:length(v2)
-            inner_prod += sumdot(v1[i],v2[j])
-        end
+    for j=1:length(g)
+        inner_prod += dot(f,g[j])
+    end
+    return inner_prod
+end
+
+function sumdot(f::BasisExpansion{T},g::BasisExpansion) where T <: DirectSum
+    inner_prod = 0
+    for i=1:length(f)
+        inner_prod += dot(f[i],g)
+    end
+    return inner_prod
+end
+
+function sumdot(v1::Vector{T},v2::Vector{T}) where T <: BasisExpansion
+    inner_prod = 0
+    for j=1:length(v2)
+        inner_prod += sumdot(v1[j],v2[j])
     end
     return inner_prod
 end
