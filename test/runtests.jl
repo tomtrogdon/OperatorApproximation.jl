@@ -579,4 +579,5 @@ end
     Cf = CauchyTransform()*f
     merfc = z -> (real(z) > 0 ? - exp(-z^2)*Cf(z) : 2 - exp(-z^2)*Cf(z))
     @test abs(erfc(.3) - merfc(.3)) < 1e-12
+    @test abs(erfc(-.3) - merfc(-.3)) < 1e-12
 end
