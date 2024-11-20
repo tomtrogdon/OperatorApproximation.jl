@@ -8,7 +8,7 @@ function *(M::Multiplication,sp::OscRational)
         α = ff.basis.α
     end
 
-    if typeof(ff.basis) <: OscRational && isconvertible(ff.basis,sp)
+    if typeof(ff.basis) <: OscRational && iscompatible(ff.basis.GD,sp.GD)
         np = N₋(length(ff.c)); nm = length(ff.c) - np + 1 #why even define nm??
         Op = BasicBandedOperator{ℤ,ℤ}(np,np,toeplitz_function(ff.c)) #creates Toeplitz operator
     else 

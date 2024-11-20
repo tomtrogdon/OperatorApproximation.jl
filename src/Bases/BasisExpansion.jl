@@ -210,7 +210,7 @@ function pad(f::BasisExpansion,N::Int64)
     BasisExpansion(f.basis,pad(cfd(f.basis),f.c,N))
 end
 
-function chop(c::Vector)
+function Base.chop(c::Vector)
     ind = length(c)
     for i = length(c):-1:1
         if norm(c[i:end]) > 1e-15
@@ -219,6 +219,177 @@ function chop(c::Vector)
         end
     end
     c[1:ind]
+end
+
+function Base.chop(f::BasisExpansion{T}) where T
+    if cfd(f.basis) == ℤ
+        nm = N₋(length(f.c))
+        vm = Base.chop(copy(f.c[1:nm]) |> reverse) |> reverse;
+        vp = Base.chop(copy(f.c[nm+1:end]));
+        k = max(length(vm),length(vp))
+        vm = pad(vm |> reverse,k) |> reverse
+        vp = pad(vp,k)
+        return BasisExpansion(f.basis,vcat(vm,vp))
+    elseif cfd(f.basis) == ℕ₊
+        coeffs = Base.chop(copy(f.c));
+        return BasisExpansion(f.basis,coeffs)
+    elseif cdf(f.basis) == ℕ₋
+        coeffs = Base.chop(copy(f.c) |> reverse) |> reverse;
+        return BasisExpansion(f.basis,coeffs)
+    else
+        @warn "chop() hasn't been implemented for this coefficient domain yet"
+    end
+end
+
+function Base.chop(f::BasisExpansion{T}) where T <: DirectSum
+    dummy = Base.chop(f[1]) ⊕ Base.chop(f[2])
+    if length(f) == 2
+        return dummy 
+    else
+        for i=3:length(f)
+            dummy = dummy ⊕ Base.chop(f[i])
+        end
+        return dummy
+    end
+end
+
+function Base.chop(v::Vector{T}) where T <: BasisExpansion
+    for i=1:length(v)
+        v[i] = Base.chop(v[i])
+    end
+    return v
+end
+
+function combinebasexp(f::Vector{T}) where T <: BasisExpansion
+    j = 0
+    @inbounds while j < length(f)
+        j += 1
+        if maximum(abs.(f[j].c)) < 1e-15
+            deleteat!(f,j)
+            j -= 1
+        end
+    end
+    i = 0
+    @inbounds while i < length(f)
+        i += 1
+        j = i
+        while j < length(f)
+            j += 1
+            if isconvertible(f[i].basis,f[j].basis)
+                f[i] += f[j]
+                deleteat!(f,j)
+                j -= 1
+            end
+        end
+    end
+    if length(f) == 1
+        return f[1]
+    else
+        return f
+    end
+end
+
+function combine(f::Vector{T}) where T <: BasisExpansion
+    count = 0
+    for i=1:length(f)
+        if typeof(f[i]) == BasisExpansion{DirectSum}
+            f[i] = combine(f[i])
+            if typeof(f[i]) == BasisExpansion{DirectSum}
+                count += 1
+            end
+        end
+    end
+    testvec = Vector{Any}(undef,count)
+    testvec2 = Vector{BasisExpansion}(undef,length(f)-count)
+    ind = 1
+    ind2 = 1
+    for i=1:length(f)
+        if typeof(f[i]) == BasisExpansion{DirectSum}
+            testvec[ind] = f[i]
+        else
+            testvec2[ind2] = f[i]
+        end
+    end
+    BasExp = combinebasexp(testvec2)
+    if isempty(testvec)
+        return BasExp
+    elseif typeof(BasExp) == BasisExpansion
+        return push!(testvec,BasExp)
+    else
+        return vcat(testvec,BasExp)
+    end
+end
+
+function combine(f::BasisExpansion{T}) where T <: DirectSum
+    j = 0
+    @inbounds while j < length(f)
+        j += 1
+        if maximum(abs.(f[j].c)) < 1e-15
+            if j == 1
+                f = f[2:end]
+            elseif j == length(f)
+                f = f[1:end-1]
+            elseif j == 2
+                dummy = f[1] ⊕ f[3]
+                for k=4:length(f)
+                    dummy = dummy ⊕ f[k]
+                end
+                f = dummy
+            else
+                dummy = f[1] ⊕ f[2]
+                for k=3:length(f)
+                    if k==j
+                        continue
+                    else
+                        dummy = dummy ⊕ f[k]
+                    end
+                end
+                f = dummy  
+            end
+            j -= 1
+        end
+    end
+
+    array = collect(1:length(f))
+    testvec = Vector{Any}(undef,length(f))
+    i = 0
+    count = 0
+    @inbounds while i < length(array)
+        i += 1
+        count += 1
+        j = i 
+        testvec[count] = f[array[i]]
+        while j < length(array)
+            j += 1
+            if isconvertible(f[array[i]].basis,f[array[j]].basis)
+                testvec[count] = testvec[count] + f[array[j]]
+                deleteat!(array,j)
+                j -= 1
+            end
+        end
+    end
+    dsums = testvec[1:count]
+    if length(dsums) == 1
+        return dsums[1]
+    else
+        g = dsums[1] ⊕ dsums[2]
+        for i=3:length(dsums)
+            g = g ⊕ dsums[i]
+        end
+        return g
+    end
+end
+
+function combine(f::Vector{BasisExpansion{T}}) where T <: DirectSum
+    testvec = Vector{BasisExpansion}(undef,length(f))
+    for i=1:length(f)
+        testvec[i] = combine(f[i])
+    end
+    return testvec
+end
+
+function simp(f::Vector{T}) where T <: BasisExpansion
+    return chop(combine(chop(f)))
 end
 
 function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S, T}

@@ -5,7 +5,11 @@ end
 
 #I think this just says we can go from a Rational basis to another Rational basis
 function isconvertible(b1::OscRational,b2::OscRational)
-    iscompatible(b1.GD,b2.GD)
+    if iscompatible(b1.GD,b2.GD) == true && b1.α == b2.α
+        return true
+    else
+        return false
+    end
 end
 
 #This converts the Rational basis to values on the grid; note that GridValues is a DiscreteBasis
