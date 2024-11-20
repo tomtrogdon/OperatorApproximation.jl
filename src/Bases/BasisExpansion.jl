@@ -350,6 +350,9 @@ function combine(f::BasisExpansion{T}) where T <: DirectSum
             end
             j -= 1
         end
+        if isDirectSum(f) == true
+            return chop(f)
+        end
     end
 
     array = collect(1:length(f))
