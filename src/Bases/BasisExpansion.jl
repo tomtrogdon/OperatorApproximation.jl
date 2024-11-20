@@ -3,6 +3,8 @@ struct BasisExpansion{T<:Basis}
     c::Vector # if DirectSum then c is a vector of vectors
 end
 
+isDirectSum(f::BasisExpansion) = typeof(f.c[1]) <: Vector
+
 transpose(f::BasisExpansion{T}) where T = f
 
 function (V::Vector{T})(z) where T <: BasisExpansion
@@ -347,6 +349,9 @@ function combine(f::BasisExpansion{T}) where T <: DirectSum
                 f = dummy  
             end
             j -= 1
+        end
+        if isDirectSum(f) == true
+            return chop(f)
         end
     end
 
