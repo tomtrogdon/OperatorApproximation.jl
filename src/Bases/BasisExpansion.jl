@@ -351,7 +351,7 @@ function combine(f::BasisExpansion{T}) where T <: DirectSum
             j -= 1
         end
         if isDirectSum(f) == true
-            return chop(f)
+            return Base.chop(f)
         end
     end
 
@@ -394,7 +394,7 @@ function combine(f::Vector{BasisExpansion{T}}) where T <: DirectSum
 end
 
 function simp(f::Vector{T}) where T <: BasisExpansion
-    return chop(combine(chop(f)))
+    return Base.chop(combine(Base.chop(f)))
 end
 
 function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S, T}
