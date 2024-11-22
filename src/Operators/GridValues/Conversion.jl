@@ -39,7 +39,7 @@ end
 function conversion(b1::GridValues,b2::Ultraspherical)
     λ = b1.GD.λ
     b3 = Ultraspherical(λ,b1.GD)
-    if λ ≈ 0.0 && false #TODO FIX THIS!!!!!!!!
+    if λ ≈ 0.0 #TODO FIX THIS!!!!!!!!
         COp = ConcreteOperator(b1,b3,DiscreteCosineTransform())
     else
         a,b = Jacobi_ab(λ - 1/2, λ - 1/2)

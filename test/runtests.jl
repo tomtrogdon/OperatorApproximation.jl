@@ -2,6 +2,13 @@ using OperatorApproximation, SpecialFunctions, LinearAlgebra, Memoize
 using Test
 
 @testset "OperatorApproximation.jl: Basic tests" begin
+    gd = UltraMappedInterval(-10.0,10.0,0.0)
+    sp = Ultraspherical(0,gd)
+    gv = GridValues(gd)
+    f = x -> exp(-x^2)
+    fsp = BasisExpansion(f,sp,150)
+    @test abs(fsp(.3) - f(.3)) < 1e-10
+
     R = 30;
     sp = Ultraspherical(0.0,ChebyshevMappedInterval(-R,R));
     f = BasisExpansion(sp,[0,1])
