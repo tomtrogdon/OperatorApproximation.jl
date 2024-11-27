@@ -18,3 +18,7 @@ function *(D::Derivative,domain::OscRational)
         Derivative(D.order-1)*(Derivative(1)*domain)
     end
 end
+
+function WeightedDerivative(domain::OscRational) # really only makes sense for α = 0
+    ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,1, (i,j) -> i + 1 == j ? complex(j*1.0) : 0.0im ))
+end

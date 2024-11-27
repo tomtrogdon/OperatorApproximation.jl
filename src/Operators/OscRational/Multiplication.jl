@@ -1,6 +1,6 @@
 function *(M::Multiplication,sp::OscRational)
     if typeof(M.f) <: Function 
-        GD = RationalRealAxis()
+        GD = sp.GD
         α = 0.0
         ff = BasisExpansion(M.f,OscRational(GD,α)) |> chop
     else 
@@ -15,10 +15,10 @@ function *(M::Multiplication,sp::OscRational)
         1 + 1 #TODO: just evaluate and expand, need transform #I am assumping this will just use toeplitz()
     end
 
-    if α == sp.α
+    if α ≈ 0.0
         return ConcreteOperator(sp,sp,Op)
     else
-        sp2 = OscRational(RationalRealAxis(),α + sp.α)
+        sp2 = OscRational(sp.GD,α + sp.α)
         return ConcreteOperator(sp,sp2,Op) #operator in practice for multiplication
     end
 end
