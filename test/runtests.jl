@@ -395,7 +395,7 @@ end
     #Multplication
     M = Multiplication(ff)
     g = M*M*ff
-    @test abs(g(x_test)*exp(1im*α*x_test)^2-ff(x_test)^3) < 1e-10
+    @test abs(g(x_test)-ff(x_test)^3) < 1e-10
 
     #Derivative
     D = Derivative()
