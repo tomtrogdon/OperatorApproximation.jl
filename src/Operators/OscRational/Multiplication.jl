@@ -15,7 +15,7 @@ function *(M::Multiplication,sp::OscRational)
         1 + 1 #TODO: just evaluate and expand, need transform #I am assumping this will just use toeplitz()
     end
 
-    if α == sp.α
+    if α == 0
         return ConcreteOperator(sp,sp,Op)
     else
         sp2 = OscRational(RationalRealAxis(),α + sp.α)

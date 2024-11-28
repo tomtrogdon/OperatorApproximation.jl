@@ -262,64 +262,12 @@ function Base.chop(v::Vector{T}) where T <: BasisExpansion
     return v
 end
 
-function combinebasexp(f::Vector{T}) where T <: BasisExpansion
-    j = 0
-    @inbounds while j < length(f)
-        j += 1
-        if maximum(abs.(f[j].c)) < 1e-15
-            deleteat!(f,j)
-            j -= 1
-        end
-    end
-    i = 0
-    @inbounds while i < length(f)
-        i += 1
-        j = i
-        while j < length(f)
-            j += 1
-            if isconvertible(f[i].basis,f[j].basis)
-                f[i] += f[j]
-                deleteat!(f,j)
-                j -= 1
-            end
-        end
-    end
-    if length(f) == 1
-        return f[1]
-    else
-        return f
-    end
+function combine(f::Vector{T}) where T <: BasisExpansion
+    return combine.(f)
 end
 
-function combine(f::Vector{T}) where T <: BasisExpansion
-    count = 0
-    for i=1:length(f)
-        if typeof(f[i]) == BasisExpansion{DirectSum}
-            f[i] = combine(f[i])
-            if typeof(f[i]) == BasisExpansion{DirectSum}
-                count += 1
-            end
-        end
-    end
-    testvec = Vector{Any}(undef,count)
-    testvec2 = Vector{BasisExpansion}(undef,length(f)-count)
-    ind = 1
-    ind2 = 1
-    for i=1:length(f)
-        if typeof(f[i]) == BasisExpansion{DirectSum}
-            testvec[ind] = f[i]
-        else
-            testvec2[ind2] = f[i]
-        end
-    end
-    BasExp = combinebasexp(testvec2)
-    if isempty(testvec)
-        return BasExp
-    elseif typeof(BasExp) == BasisExpansion
-        return push!(testvec,BasExp)
-    else
-        return vcat(testvec,BasExp)
-    end
+function combine(f::BasisExpansion)
+    return f
 end
 
 function combine(f::BasisExpansion{T}) where T <: DirectSum
@@ -348,10 +296,12 @@ function combine(f::BasisExpansion{T}) where T <: DirectSum
                 end
                 f = dummy  
             end
+            if (typeof(f.c[1]) <: Vector) && length(f.c) == 1
+                f = BasisExpansion(f.basis,f.c[1])
+                return Base.chop(f)
+            end
+
             j -= 1
-        end
-        if isDirectSum(f) == true
-            return Base.chop(f)
         end
     end
 
@@ -383,14 +333,6 @@ function combine(f::BasisExpansion{T}) where T <: DirectSum
         end
         return g
     end
-end
-
-function combine(f::Vector{BasisExpansion{T}}) where T <: DirectSum
-    testvec = Vector{BasisExpansion}(undef,length(f))
-    for i=1:length(f)
-        testvec[i] = combine(f[i])
-    end
-    return testvec
 end
 
 function simp(f::Vector{T}) where T <: BasisExpansion
