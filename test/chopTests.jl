@@ -131,30 +131,30 @@ rbarfun = BasisExpansion(k -> rbar(k),sp,n) |> Base.chop
 Cosc = BasisExpansion(zai(k -> C(V,L,k,f)),sp,n) |> Base.chop
 
 #############################################################################################################
-x = -1
+# x = -1
 
-α = -2*x;
-sp = OscRational(rfun.basis.GD,α)
-ρ1 = BasisExpansion(sp,rfun.c)
+# α = -2*x;
+# sp = OscRational(rfun.basis.GD,α)
+# ρ1 = BasisExpansion(sp,rfun.c)
 
-sp = OscRational(rbarfun.basis.GD,-α)
-ρ2 = BasisExpansion(sp,rbarfun.c)
+# sp = OscRational(rbarfun.basis.GD,-α)
+# ρ2 = BasisExpansion(sp,rbarfun.c)
 
-M = Multiplication(-1*ρ1)
-h = [M*Cosc ⊕ 0*Cosc,Cosc ⊕ 0*Cosc]
-# h = [M*Cosc, Cosc]
+# M = Multiplication(-1*ρ1)
+# h = [M*Cosc ⊕ 0*Cosc,Cosc ⊕ 0*Cosc]
+# # h = [M*Cosc, Cosc]
 
 ###################################################################################################################
-maximum(abs.(h[1][2].c)) < 1e-15
+# maximum(abs.(h[1][2].c)) < 1e-15
 
-hSimp = simp(h)
-hSimp[1][1].c
-maximum(abs.(hSimp[1][2].c))
-length(hSimp[1])
+# hSimp = simp(h)
+# hSimp[1][1].c
+# maximum(abs.(hSimp[1][2].c))
+# length(hSimp[1])
 
-test1 = Base.chop(h)
-test2 = combine(test1)
-test3 = Base.chop(test2)
+# test1 = Base.chop(h)
+# test2 = combine(test1)
+# test3 = Base.chop(test2)
 ####################################################################################################################
 
 #computes f(x) for x<0
@@ -247,7 +247,7 @@ function GMRES(A,b,inner,tol,n,cond)
     return [Q,x,conv_history]
 end
 ###################################################################################################
-out = computef(-4,1e-5,rfun,rbarfun,Cosc)
+out = computef(0,1e-5,rfun,rbarfun,Cosc)
 
 ###################################################################################################
 #scalar test RHP
