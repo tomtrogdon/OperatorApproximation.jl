@@ -20,15 +20,17 @@ end
 
 function toeplitz_function(c::Vector)
     function F(k,j)
+        n = length(c)
+        np = N₊(length(c))
         nm = N₋(length(c))
         # F(0,0) = c[nm+1]
         # F(j,j) = c[nm+1]
         # F(j - i, j) = c[nm + 1 - i], k = j - i, i = j - k
         # F(k,j) = c[nm + 1 + j -k]
-        if nm + 1 + j -k< 1 || nm + 1 + j -k > length(c)
+        if np + 1 + j -k< 1 || np + 1 + j -k > length(c)
             return 0.0
         else
-            return c[nm + 1 + j - k]
+            return c[nm - j + k + 1]
         end
     end
 end

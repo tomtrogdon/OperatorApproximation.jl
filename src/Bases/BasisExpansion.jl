@@ -3,6 +3,10 @@ struct BasisExpansion{T<:Basis}
     c::Vector # if DirectSum then c is a vector of vectors
 end
 
+function copy(g::BasisExpansion)
+    BasisExpansion(g.basis,copy(g.c))
+end
+
 isDirectSum(f::BasisExpansion) = typeof(f.c[1]) <: Vector
 
 transpose(f::BasisExpansion{T}) where T = f

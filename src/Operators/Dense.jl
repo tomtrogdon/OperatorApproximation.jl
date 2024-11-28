@@ -217,8 +217,8 @@ function FirstKindT(x)
     # y[1] /= -sqrt(2)
     # y
     y = dct(x)/sqrt(length(x))
-    y[1] *= -1
-    -y
+    y .*= [(-1)^(i+1) for i = 1:length(x)]
+    y
 end
 struct DiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
     T::Function
@@ -236,8 +236,8 @@ function IFirstKindT(x)
     # y[1] /= -sqrt(2)
     # y
     y = copy(x)
-    y[1] *= -1
-    idct(-y)*sqrt(length(y))
+    y .*= [(-1)^(i+1) for i = 1:length(x)] 
+    idct(y)*sqrt(length(y))
 end
 struct IDiscreteCosineTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
     T::Function

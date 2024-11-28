@@ -215,6 +215,7 @@ function (R::RHSolver)(c::Tuple,n)
     return out
 end
 
+## TODO:  Allow empty matrix of contours.
 function RHSolver(rhp::RHP)
     m = size(rhp.J[1],1) # size of RHP
     k = size(rhp.Γ,1) # number of intervals
