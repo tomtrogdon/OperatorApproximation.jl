@@ -111,8 +111,8 @@ struct RHSolver
 end
 RHSolver(S,jumps) = RHSolver(S,jumps,[])
 
-struct RHP
-    Γ::Matrix
+struct RHP{T <: Union{Matrix,Vector}}
+    Γ::T
     J::Vector
     P::Vector
     R::Vector
@@ -180,6 +180,8 @@ end
 function vcat_rhs(jumps,res,c)
     if length(res) == 0
         return vcat(rhrhs_jump(jumps,c)...)
+    elseif length(jumps) == 0
+        return rhrhs_res(res,c)
     else
         temp = rhrhs_jump(jumps,c)
         temp2 = rhrhs_res(res,c)
@@ -215,8 +217,50 @@ function (R::RHSolver)(c::Tuple,n)
     return out
 end
 
+function RHSolver(rhp::RHP{T}) where T <: Vector
+    m = size(rhp.R[1],1) # size of RHP
+    # k = size(rhp.Γ,1) # number of intervals
+    # dom = rhdomain(rhp.Γ)
+    # ran = rhrange(dom)
+    dom = FixedGridValues(Grid(rhp.P))
+    ran = dom
+
+    # if length(rhp.P) > 0
+    #     k += 1
+    #     resdom = FixedGridValues(Grid(rhp.P))
+    #     dom = resdom ⊕ dom
+    # end
+    ℰ⁻ = BoundaryValue(-1,ran)
+    #ℰ⁺ = BoundaryValue(+1,ran)
+    ℰ⁺ = Residue(dom)
+    # if length(rhp.P) > 0
+    #     ran = resdom ⊕ ran
+    # end
+    # ℰ⁻ = BoundaryValue(-1,ran)
+    # if length(rhp.P) > 0
+    #     ℰ⁺ = Residue(resdom) ⊕ ℰ⁺
+    # end
+    𝒞 = BlockAbstractOperator(CauchyTransform(),1,1)
+    𝒞⁺ = ℰ⁺*𝒞
+    𝒞⁻ = ℰ⁻*𝒞
+    ℳ = rhmult_res(rhp.R)
+    # ℳ = rhmult_jump(rhp.J)
+    # if length(rhp.P) > 0
+    #     ℳ = rhmult_res(rhp.R) .⊕ ℳ
+    # end
+    ℳ𝒞⁻ = matrix2BlockOperator(ℳ.*fill(𝒞⁻,m,m))
+    𝒞⁺ = diagm(fill(𝒞⁺,m))
+    dom = ⊕([dom for i = 1:m]...)
+    ran = ⊕([ran for i = 1:m]...)
+    S = (-ℳ𝒞⁻ + 𝒞⁺)*dom
+    if length(rhp.P) > 0
+        return RHSolver(S,rhp.J,rhp.R)
+    end
+    RHSolver(S,rhp.J)
+end
+
 ## TODO:  Allow empty matrix of contours.
-function RHSolver(rhp::RHP)
+function RHSolver(rhp::RHP{T}) where T <: Matrix
     m = size(rhp.J[1],1) # size of RHP
     k = size(rhp.Γ,1) # number of intervals
     dom = rhdomain(rhp.Γ)
