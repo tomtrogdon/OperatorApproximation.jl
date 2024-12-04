@@ -343,6 +343,14 @@ function simp(f::Vector{T}) where T <: BasisExpansion
     return Base.chop(combine(Base.chop(f)))
 end
 
+function Base.sum(f::BasisExpansion{T}) where T <: DirectSum
+    sum_val = 0
+    for i=1:length(f)
+        sum_val += Base.sum(f[i])
+    end
+    return sum_val
+end
+
 function +(f::BasisExpansion{S},g::BasisExpansion{T}) where {S, T}
     if f.basis == g.basis
         tp = cfd(f.basis)
