@@ -39,8 +39,7 @@ function \(L::ConcreteOperator{D,R,T},b::Vector,ns::Vector{Int64},ms::Vector{Int
     #         push!(rhss,temp.c)
     #     end
     # end
-    rhss = _rhs_vec_gen(ns, dimflag, b, ranges)
-    #display(rhss)
+    rhss = _rhs_vec_gen(ns, dimflag, b, ranges)   
     sol = Op\rhss
     #sol = lu!(Op)\rhss
     parted_sol = part_vec(sol,ms)
