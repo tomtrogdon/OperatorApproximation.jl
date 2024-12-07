@@ -10,7 +10,7 @@ end
 
 function Laguerre_ab(a)
     bfun = n -> sqrt(1 + n)*sqrt(1+ n + a);
-    afun = n -> 1 + a + 2k
+    afun = n -> 1 + a + 2n
     return (afun, bfun)
 end
 

@@ -344,11 +344,11 @@ struct RationalMappedAxis <: GridAxis
     end
 end
 
-struct LaguerreAxis <: GridSemiAxis
+struct LaguerreSemiAxis <: GridSemiAxis
     D::SemiAxis
     grid::Function
     α::Float64
-    function LaguerreAxis(D,α)
+    function LaguerreSemiAxis(D,α)
         a, b = Laguerre_ab(α)
         gridfun = n -> Gauss_quad(a,b,n-1)[1]
         return new(D,gridfun,α)
@@ -368,8 +368,6 @@ end
 struct HermiteAxis <: GridAxis
     ## TODO
 end
-
-
 
 struct JacobiInterval <: GridInterval
     D::Interval
