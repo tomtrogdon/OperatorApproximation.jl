@@ -73,16 +73,16 @@ function conversion(b1::GridValues,b2::HermiteFun)
 end
 
 function conversion(b1::GridValues,b2::LaguerrePoly)
-    α = b2.basis.α
+    α = b2.α
     a,b = Laguerre_ab(α)
     Op = OPEigenTransform(a,b)
     ConcreteOperator(b1,b2,Op)
 end
 
 function conversion(b1::GridValues,b2::LaguerreFun)
-    α = b2.basis.α
+    α = b2.α
     a,b = Laguerre_ab(α)  
-    Op = OPWeightedEigenTransform(a,b,x -> exp.(-x/2))
+    Op = OPWeightedEigenTransform(a,b,x -> exp.(x/2))
     ConcreteOperator(b1,b2,Op)
 end
 
