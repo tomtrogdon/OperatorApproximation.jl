@@ -2,6 +2,7 @@ abstract type Domain end
 abstract type Interval <: Domain end
 abstract type Circle <: Domain end
 abstract type Axis <: Domain end
+abstract type SemiAxis <: Domain end
 abstract type GridDomain end
 abstract type GridRegion <: GridDomain end  # the grid is on the boundary
 
@@ -188,6 +189,26 @@ struct MappedAxis <: Axis
     end
 end
 
+struct PostiveRealAxis <: SemiAxis
+    map::Function
+    imap::Function
+    cen::Union{ComplexF64,Float64}
+    θ::Float64
+    function PostiveRealAxis()
+        return new(x -> x, x -> x, 0.0, 0.0)
+    end
+end
+
+struct MappedSemiAxis <: SemiAxis
+    map::Function
+    imap::Function
+    cen::Union{ComplexF64,Float64}
+    θ::Float64
+    function MappedSemiAxis(σ,cen,θ)
+        return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+    end
+end
+
 Base.show(io::IO, ::MIME"text/plain", z::UnitInterval)  =
            print(io, "UnitInterval(",z.a,",",z.b,")")
 
@@ -235,6 +256,7 @@ end
 
 abstract type GridInterval <: GridDomain end
 abstract type GridAxis <: GridDomain end
+abstract type GridSemiAxis <: GridDomain end
 abstract type GridCircle <: GridDomain end 
 
 arclength(gd::GridDomain) = arclength(gd.D)
@@ -322,6 +344,17 @@ struct RationalMappedAxis <: GridAxis
     end
 end
 
+struct LaguerreAxis <: GridSemiAxis
+    D::SemiAxis
+    grid::Function
+    α::Float64
+    function LaguerreAxis(D,α)
+        a, b = Laguerre_ab(α)
+        gridfun = n -> Gauss_quad(a,b,n-1)[1]
+        return new(D,gridfun,α)
+    end
+end
+
 struct HermiteRealAxis <: GridAxis
     D::Axis
     grid::Function
@@ -335,6 +368,8 @@ end
 struct HermiteAxis <: GridAxis
     ## TODO
 end
+
+
 
 struct JacobiInterval <: GridInterval
     D::Interval
