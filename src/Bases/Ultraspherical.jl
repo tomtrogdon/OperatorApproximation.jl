@@ -68,3 +68,20 @@ end
 function norm(f::BasisExpansion{T}) where T <: Ultraspherical
     return norm(f.c)
 end
+
+# Comrade matrix
+function roots(P::BasisExpansion{Ultraspherical})
+    cs = chop(P.c)
+    n = length(cs)
+    cs /= cs[end]
+    λ = P.basis.λ
+    a,b = Jacobi_ab(λ - 1/2, λ - 1/2)
+    as = [a(i) for i in 0:n-1]
+    bs = [b(i) for i in 0:n-1]  
+    T = SymTridiagonal(as, bs[1:end-1]) |> Matrix
+    T[end,1:end] -= cs*bs[end]
+    rtest = x -> (imag(x) ≈ 0) && abs(real(x)) <= 1.0 + 1e-13
+    λ = eigvals(T)
+    λ[rtest.(λ)] |> real
+    #P.basis.GD.D.map.(λ[rtest.(λ)] |> real)
+end
