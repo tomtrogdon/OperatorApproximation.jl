@@ -119,8 +119,6 @@ struct RHP{T <: Union{Matrix,Vector}}
 end
 RHP(Γ,J) = RHP(Γ,J,[],[])
 
-domainplot(rhp::RHP;kwargs...) = domainplot(rhdomain(rhp.Γ);kwargs...)
-
 ### Adaptive stuff ###
 # TODO: Adapt for residues
 function truncateRHP(Jsamp,J,Γ,tol,n)
@@ -383,30 +381,3 @@ function rhwellposed(rhp::RHP)
     out
 end
 #########
-
-function rhplot(rhp::RHP;kwargs...)
-    # need to extend for larger RHPs
-    dom = rhp.Γ |> rhdomain
-    p0 = domainplot(dom;kwargs...)
-    if length(rhp.P) > 0
-        scatter!(p0,real(rhp.P),imag(rhp.P);markercolor = :lightblue,kwargs...)
-    end
-    ran = rhrange(dom)
-    N = 100
-    plts = [p0]
-    y = 0
-    for i = 1:size(rhp.Γ,1)
-        d = dom[i]
-        x = d.GD.grid(N)
-        z = d.GD.D.map.(x)
-        y = vcat(map( x -> reshape(mofeval(rhp.J[i],x),1,:), z)...)
-        p1 = plot(x,y[:,1] |> real;legend = false, kwargs...)
-        plot!(p1,x,y[:,1] |> imag;legend = false, kwargs...)
-        for k = 2:size(y,2)
-            plot!(p1,x,y[:,k] |> real;legend = false, kwargs...)
-            plot!(p1,x,y[:,k] |> imag;legend = false, kwargs...)
-        end
-        push!(plts,p1)
-    end
-    plts
-end

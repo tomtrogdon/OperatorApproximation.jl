@@ -191,11 +191,3 @@ function eigen(L::ConcreteOperator{D,R,T},M::ConcreteOperator{D,R,T},N::Integer)
     vs = [BasisExpansion.(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
     ContinuousEigen(makeinf.(E.values),vs)
 end
-
-function ploteval(E::ContinuousEigen)
-    scatter(E.values |> real, E.values |> imag)
-end
-
-function ploteval!(E::ContinuousEigen)
-    scatter!(E.values |> real, E.values |> imag)
-end

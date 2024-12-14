@@ -23,79 +23,6 @@ Egrid = n -> cos.( (0:n-1)/(n-1) * pi ) |> reverse
 LEgrid = n -> cos.( (1:n)/(n) * pi ) |> reverse
 REgrid = n -> cos.( (0:n-1)/(n) * pi ) |> reverse
 
-domainplot_kwargs = (aspectratio = 1, arrow = true, linecolor = :dodgerblue, width = 5, legend = false)
-
-function domainplot(D::Interval;kwargs...)
-    xs = -1.0:0.001:1.0
-    zs = D.map.(xs)
-    endpts = [zs[1],zs[end]]
-    plot(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot(D::DiscreteDomain;kwargs...)
-    scatter(real(D.pts),imag(D.pts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(D::DiscreteDomain;kwargs...)
-    scatter!(real(D.pts),imag(D.pts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(D::Interval;kwargs...)
-    xs = -1.0:0.001:1.0
-    zs = D.map.(xs)
-    endpts = [zs[1],zs[end]]
-    plot!(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(p,D::Interval;kwargs...)
-    xs = -1.0:0.001:1.0
-    zs = D.map.(xs)
-    endpts = [zs[1],zs[end]]
-    plot!(p,real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(p,real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot(D::Circle;kwargs...)
-    zs = (-1.0:0.001:1.0)*pi
-    zs = exp.(1im*zs)
-    zs = D.map.(zs)
-    endpts = [zs[1],zs[end]]
-    plot(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(D::Circle;kwargs...)
-    zs = (-1.0:0.001:1.0)*pi
-    zs = exp.(1im*zs)
-    zs = D.map.(zs)
-    endpts = [zs[1],zs[end]]
-    plot!(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(p,D::Circle;kwargs...)
-    zs = (-1.0:0.001:1.0)*pi
-    zs = exp.(1im*zs)
-    zs = D.map.(zs)
-    endpts = [zs[1],zs[end]]
-    plot!(p,real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(p,real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-domainplot(GD::GridDomain;kwargs...) = domainplot(GD.D;kwargs...)
-domainplot!(GD::GridDomain;kwargs...) = domainplot!(GD.D;kwargs...)
-domainplot(V::Vector{T};kwargs...) where T <: GridDomain = domainplot([GD.D for GD in V];kwargs...)
-
-function domainplot(v::Vector{T};kwargs...) where T <: Domain
-    p = domainplot(v[1];kwargs...)
-    for i = 2:length(v)
-        domainplot!(p, v[i];kwargs...)
-    end
-    p
-end
-
 function DirectedEgrid(n)
     v = Egrid(n)
     v1 = ArgNum(v[1],1.0,0.0)
@@ -185,7 +112,11 @@ struct MappedAxis <: Axis
     cen::Union{ComplexF64,Float64}
     θ::Float64
     function MappedAxis(σ,cen,θ)
-        return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+        if θ ≈ 0.0
+            return new(x -> (σ*x .+ cen), x -> (x .- cen)/σ, cen, θ)
+        else
+            return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+        end
     end
 end
 
@@ -204,8 +135,15 @@ struct MappedSemiAxis <: SemiAxis
     imap::Function
     cen::Union{ComplexF64,Float64}
     θ::Float64
-    function MappedSemiAxis(σ,cen,θ)
-        return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+    function MappedSemiAxis(σ,cen,θ) # remove theta in favor of a complex number?
+        # or stick with these special cases?
+        if θ ≈ pi
+            new(x -> -(σ*x .+ cen), x -> (-x.-cen)/σ, cen, θ)
+        elseif θ ≈ 0.0
+            new(x -> (σ*x .+ cen), x -> (x.-cen)/σ, cen, θ)
+        else
+            return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+        end
     end
 end
 

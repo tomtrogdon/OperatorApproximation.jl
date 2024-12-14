@@ -21,6 +21,11 @@ for op in (:BasicBandedOperator,:SemiLazyBandedOperator,:ZeroOperator) # referen
     end
 end
 
+function *(Op::FiniteRankOperator,c::Vector)
+    m = max(0,maximum(Op.v)) - min(0,minimum(Op.v)) + 1
+    Matrix(Op,m,length(c))*c
+end
+
 # function *(Op::BlockMatrixOperator,c::Vector)
 #     n = length(c)
 #     m = max(rowgrowth(Op) + n,1)

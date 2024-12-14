@@ -78,7 +78,9 @@ function CauchyConstantMatP(i,j)
     if i == j
         if j <= 0
             return 0
-        else 
+        elseif j == 0
+            return 1/2 # will get doubled up by the FiniteRankOperator
+        else
             return 1
         end
     elseif (i == 0) & (j > 0)
@@ -111,7 +113,9 @@ function *(C::CauchyOperator,domain::OscRational)
     gridPts = gd.grid
     if C.o == 1.0
         if α == 0.
-            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatP(i,j))) #Need a better way to do this...
+            Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> CauchyConstantMatP(i,j)))
+            Op2 = ConcreteOperator(domain,domain,FiniteRankOperator{ℤ,ℤ}([0], (i,j) -> CauchyConstantMatP(i,j)))
+            return Op1 + Op2
         else
             if α > 0
                 Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
@@ -124,7 +128,9 @@ function *(C::CauchyOperator,domain::OscRational)
         end
     elseif C.o == -1.0
         if α == 0.
-            return ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(200,200, (i,j) -> CauchyConstantMatM(i,j)))
+            Op1 = ConcreteOperator(domain,domain,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> (i == j ? -1 : 0) + CauchyConstantMatP(i,j)))
+            Op2 = ConcreteOperator(domain,domain,FiniteRankOperator{ℤ,ℤ}([0], (i,j) -> CauchyConstantMatP(i,j)))
+            return Op1 + Op2
         else
             # C+ - C- = I => C- = C+ - I (only affects oscillatory piece)
             if α < 0 ## use IdentityOperator() and ZeroOperator()?
