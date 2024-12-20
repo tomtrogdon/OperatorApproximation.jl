@@ -42,6 +42,6 @@ function (P::BasisExpansion{HermiteFun})(X::Number) # Clenshaw's algorithm
     n = P.c |> length
     x = P.basis.GD.D.imap(X)
     a,b = Hermite_ab()
-    w = (2*pi)^(-.25)*exp(-X^2/4)
+    w = (2*pi)^(-.25)*exp(-x^2/4)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]*w
 end

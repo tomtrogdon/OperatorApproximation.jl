@@ -8,6 +8,12 @@ function Jacobi_ab(a,b) #TODO: simplify evaluation
                                                                 # to the Jacobi parameters after the fact
 end
 
+function Laguerre_ab(a)
+    bfun = n -> sqrt(1 + n)*sqrt(1+ n + a);
+    afun = n -> 1 + a + 2n
+    return (afun, bfun)
+end
+
 function MP_ab(d) # need to map support to [-1,1]
    bfun = n -> 0.5# sqrt(d)
    afun = n -> n == 0 ? -sqrt(d)/2.0 : 0.0

@@ -101,6 +101,21 @@ function *(Op1::SumOfMatrixOperators,Op2::MatrixOperator)
     SumOfMatrixOperators([l*Op2 for l in Op1.Ops],Op1.c)
 end
 
+for op in (:ℕ₊,:ℕ₋,:ℤ)
+    @eval begin
+        function *(Op::SumOfMatrixOperators{T,S},c::Vector) where {T, S <: $op}
+            v0 = Op.c[1]*(Op.Ops[1]*c)
+            n = length(v0)
+            for i=2:length(Op.Ops)
+                vnew = Op.c[i]*(Op.Ops[i]*c)
+                n = max(length(vnew),n)
+                v0 = pad($op,v0,n) + pad($op,vnew,n)
+            end
+            v0
+        end
+    end
+end
+
 function getindex(Op::ConcreteOperator{D,R,T},n) where {D,R,T <: SumOfMatrixOperators}
     ConcreteOperator(Op.domain,Op.range,Op.L.Ops[n])
 end
@@ -416,6 +431,67 @@ function Matrix(L::TruncatedOperator,n,m)
     end
 end
 
+struct FiniteRankOperator{T<:CoefficientDomain, S <: CoefficientDomain} <: MatrixOperator
+    v::Vector{Int64}
+    A::Function
+end
+
+function getFRmat(F,n,m,v)
+    mM = N₋(m)
+    nM = N₋(n)
+    A = spzeros(n,m)
+    zero_row = nM + 1
+    for i in v
+        if i + zero_row <= n
+            A[i+zero_row,:] = [F(i,j) for j in -mM:m-mM-1]
+        else
+            @warn "Rows requested not enough for FiniteRankOperator"
+        end
+    end
+    A
+end
+
+function get_lower_right_FRmat(F,n,m,v)
+    getFRmat(F,2n,2m,v)[end-n+1:end,end-m+1:end]
+end
+
+function get_upper_left_FRmat(F,n,m,v)
+    getFRmat(F,2n,2m,v)[1:n,1:m]
+end
+
+function get_upper_FRmat(F,n,m,v)
+    getmat(F,2n,m,v)[1:n,:]
+end
+
+function get_lower_FRmat(F,n,m,v)
+    getmat(F,2n,m,v)[n+1:end,:]
+end
+
+## ℤ → ℤ
+function Matrix(Op::FiniteRankOperator{T,S},n,m) where {T <: ℤ, S <: ℤ}
+    getFRmat(Op.A,n,m,Op.v)
+end
+
+## ℤ → ℕ₋
+function Matrix(Op::FiniteRankOperator{T,S},n,m) where {T <: ℤ, S <: ℕ₋}
+    get_upper_FRmat(Op.A,n,m,Op.v)
+end
+
+## ℤ → ℕ₊
+function Matrix(Op::FiniteRankOperator{T,S},n,m) where {T <: ℤ, S <: ℕ₊}
+    get_lower_FRmat(Op.A,n,m,Op.v)
+end
+
+## ℕ₊ → ℕ₊
+function Matrix(Op::FiniteRankOperator{T,S},n,m) where {T <: ℕ₊, S <: ℕ₊}
+    get_lower_right_FRmat(Op.A,n,m,Op.v)
+end
+
+## ℕ₋ → ℕ₋
+function Matrix(Op::FiniteRankOperator{T,S},n,m) where {T <: ℕ₋, S <: ℕ₋}
+    get_upper_left_FRmat(Op.A,n,m,Op.v)
+end
+
 # momtm = matrix of matrices to matrix
 # will go recursive
 function op_momtm(Ms::T) where T <: MatrixOperator
@@ -492,3 +568,4 @@ include("Hermite/Hermite.jl")
 include("Erf/Erf.jl")
 include("MarchenkoPastur/MarchenkoPastur.jl")
 include("OscRational/OscRational.jl")
+include("Laguerre/Laguerre.jl")

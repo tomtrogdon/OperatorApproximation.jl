@@ -21,7 +21,8 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz, RecCoef,
     DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval,
     weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot, combine, combinebasexp, simp,
-    RationalMappedAxis
+    RationalMappedAxis, MappedSemiAxis, LaguerreSemiAxis, LaguerrePoly, LaguerreFun, roots,
+    FourierTransform
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
@@ -74,6 +75,7 @@ include("Operators/ConcreteOperators.jl")
 include("LinAlg.jl")
 include("Solvers.jl")
 include("RHUtils.jl")
+include("Plotting.jl")
 
 
 # probably not good to have these global variables

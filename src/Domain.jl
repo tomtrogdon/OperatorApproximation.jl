@@ -2,6 +2,7 @@ abstract type Domain end
 abstract type Interval <: Domain end
 abstract type Circle <: Domain end
 abstract type Axis <: Domain end
+abstract type SemiAxis <: Domain end
 abstract type GridDomain end
 abstract type GridRegion <: GridDomain end  # the grid is on the boundary
 
@@ -21,79 +22,6 @@ Tgrid = n -> cos.( (2*(1:n) .- 1)/(2*n) * pi ) |> reverse
 Egrid = n -> cos.( (0:n-1)/(n-1) * pi ) |> reverse
 LEgrid = n -> cos.( (1:n)/(n) * pi ) |> reverse
 REgrid = n -> cos.( (0:n-1)/(n) * pi ) |> reverse
-
-domainplot_kwargs = (aspectratio = 1, arrow = true, linecolor = :dodgerblue, width = 5, legend = false)
-
-function domainplot(D::Interval;kwargs...)
-    xs = -1.0:0.001:1.0
-    zs = D.map.(xs)
-    endpts = [zs[1],zs[end]]
-    plot(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot(D::DiscreteDomain;kwargs...)
-    scatter(real(D.pts),imag(D.pts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(D::DiscreteDomain;kwargs...)
-    scatter!(real(D.pts),imag(D.pts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(D::Interval;kwargs...)
-    xs = -1.0:0.001:1.0
-    zs = D.map.(xs)
-    endpts = [zs[1],zs[end]]
-    plot!(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(p,D::Interval;kwargs...)
-    xs = -1.0:0.001:1.0
-    zs = D.map.(xs)
-    endpts = [zs[1],zs[end]]
-    plot!(p,real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(p,real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot(D::Circle;kwargs...)
-    zs = (-1.0:0.001:1.0)*pi
-    zs = exp.(1im*zs)
-    zs = D.map.(zs)
-    endpts = [zs[1],zs[end]]
-    plot(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(D::Circle;kwargs...)
-    zs = (-1.0:0.001:1.0)*pi
-    zs = exp.(1im*zs)
-    zs = D.map.(zs)
-    endpts = [zs[1],zs[end]]
-    plot!(real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-function domainplot!(p,D::Circle;kwargs...)
-    zs = (-1.0:0.001:1.0)*pi
-    zs = exp.(1im*zs)
-    zs = D.map.(zs)
-    endpts = [zs[1],zs[end]]
-    plot!(p,real(zs),imag(zs); domainplot_kwargs...,kwargs...)
-    scatter!(p,real(endpts),imag(endpts), markersize = 5, markercolor = :black; kwargs...)
-end
-
-domainplot(GD::GridDomain;kwargs...) = domainplot(GD.D;kwargs...)
-domainplot!(GD::GridDomain;kwargs...) = domainplot!(GD.D;kwargs...)
-domainplot(V::Vector{T};kwargs...) where T <: GridDomain = domainplot([GD.D for GD in V];kwargs...)
-
-function domainplot(v::Vector{T};kwargs...) where T <: Domain
-    p = domainplot(v[1];kwargs...)
-    for i = 2:length(v)
-        domainplot!(p, v[i];kwargs...)
-    end
-    p
-end
 
 function DirectedEgrid(n)
     v = Egrid(n)
@@ -184,7 +112,38 @@ struct MappedAxis <: Axis
     cen::Union{ComplexF64,Float64}
     θ::Float64
     function MappedAxis(σ,cen,θ)
-        return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+        if θ ≈ 0.0
+            return new(x -> (σ*x .+ cen), x -> (x .- cen)/σ, cen, θ)
+        else
+            return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+        end
+    end
+end
+
+struct PostiveRealAxis <: SemiAxis
+    map::Function
+    imap::Function
+    cen::Union{ComplexF64,Float64}
+    θ::Float64
+    function PostiveRealAxis()
+        return new(x -> x, x -> x, 0.0, 0.0)
+    end
+end
+
+struct MappedSemiAxis <: SemiAxis
+    map::Function
+    imap::Function
+    cen::Union{ComplexF64,Float64}
+    θ::Float64
+    function MappedSemiAxis(σ,cen,θ) # remove theta in favor of a complex number?
+        # or stick with these special cases?
+        if θ ≈ pi
+            new(x -> -(σ*x .+ cen), x -> (-x.-cen)/σ, cen, θ)
+        elseif θ ≈ 0.0
+            new(x -> (σ*x .+ cen), x -> (x.-cen)/σ, cen, θ)
+        else
+            return new(x -> (σ*x .+ cen)*exp(1im*θ), x -> (x*exp(-1im*θ).-cen)/σ, cen, θ)
+        end
     end
 end
 
@@ -235,6 +194,7 @@ end
 
 abstract type GridInterval <: GridDomain end
 abstract type GridAxis <: GridDomain end
+abstract type GridSemiAxis <: GridDomain end
 abstract type GridCircle <: GridDomain end 
 
 arclength(gd::GridDomain) = arclength(gd.D)
@@ -319,6 +279,17 @@ struct RationalMappedAxis <: GridAxis
         rat_mgrid = n-> (((0:n-1).+(1/2))./n).*(2*π) #[0,2π) shifted by 1/2 to avoid issues at 0 and infinity
         gridfun = n-> Tm1(exp.(1im.*rat_mgrid(n))) #x=T^{-1}(exp(iθ))
         return new(MappedAxis(σ,cen,θ),gridfun)
+    end
+end
+
+struct LaguerreSemiAxis <: GridSemiAxis
+    D::SemiAxis
+    grid::Function
+    α::Float64
+    function LaguerreSemiAxis(D,α)
+        a, b = Laguerre_ab(α)
+        gridfun = n -> Gauss_quad(a,b,n-1)[1]
+        return new(D,gridfun,α)
     end
 end
 

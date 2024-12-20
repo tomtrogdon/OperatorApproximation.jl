@@ -31,6 +31,10 @@ function isconvertible(b1::DiscreteBasis,b2::Hermite)
     iscompatible(b1.GD,b2.GD)
 end
 
+function isconvertible(b1::DiscreteBasis,b2::Laguerre)
+    iscompatible(b1.GD,b2.GD)
+end
+
 function conversion(b1::GridValues,b2::Fourier)
     Op = DiscreteFourierTransform()
     ConcreteOperator(b1,b2,Op)
@@ -65,6 +69,20 @@ end
 function conversion(b1::GridValues,b2::HermiteFun)
     a,b = Hermite_ab()
     Op = OPWeightedEigenTransform(a,b,x -> (2*pi)^(.25)*exp.(x.^2/4))
+    ConcreteOperator(b1,b2,Op)
+end
+
+function conversion(b1::GridValues,b2::LaguerrePoly)
+    α = b2.α
+    a,b = Laguerre_ab(α)
+    Op = OPEigenTransform(a,b)
+    ConcreteOperator(b1,b2,Op)
+end
+
+function conversion(b1::GridValues,b2::LaguerreFun)
+    α = b2.α
+    a,b = Laguerre_ab(α)  
+    Op = OPWeightedEigenTransform(a,b,x -> exp.(x/2))
     ConcreteOperator(b1,b2,Op)
 end
 

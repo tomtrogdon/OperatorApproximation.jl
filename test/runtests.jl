@@ -449,6 +449,8 @@ end
     test1 = Cm*ff
     @test abs(test1(0.145) - CMquad(f,α,0.145)) < 1e-10
 
+    
+
     #Oscillatory test (α > 0)
     α = 2;
     gd = RationalRealAxis()
@@ -461,6 +463,7 @@ end
     @test abs(test1(0.145) - CPquad(f,α,0.145)) < 1e-10
     test1 = Cm*ff
     @test abs(test1(0.145) - CMquad(f,α,0.145)) < 1e-10
+
 
     #Oscillatory test (α > 0)
     α = -2;

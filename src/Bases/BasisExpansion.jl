@@ -39,18 +39,8 @@ size(b::BasisExpansion{T}) where T <: DirectSum = size(b.basis.bases)
 size(b::BasisExpansion{T},i) where T <: DirectSum = size(b.basis.bases,i)
 lastindex(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
 length(b::BasisExpansion{T}) where T <: DirectSum = b.basis.bases |> length
-domainplot(f::BasisExpansion{T};kwargs...) where T = domainplot(f.basis.bases;kwargs...)
-coefplot(f::BasisExpansion{T};kwargs...) where T = plot(abs.(f.c) .+ eps(); yaxis = :log, kwargs...)
-coefplot!(f::BasisExpansion{T};kwargs...) where T = plot!(abs.(f.c) .+ eps(); yaxis = :log, kwargs...)
-coefplot!(p,f::BasisExpansion{T};kwargs...) where T = plot!(p,abs.(f.c) .+ eps(); yaxis = :log, kwargs...)
 
-function coefplot(f::BasisExpansion{T};kwargs...) where T <: DirectSum
-    p = coefplot(f[1];kwargs...)
-    for i = 2:length(f)
-        coefplot!(p,f[i];kwargs...)
-    end
-    p
-end
+
 
 function BasisExpansion(f::Function,basis::Basis,N::Integer)
     Conversion(basis)*BasisExpansion(f,GridValues(basis.GD),N)
@@ -112,77 +102,10 @@ function BasisExpansion(f::BasisExpansion,sp::Basis,N::Integer)
     pad(g,N)
 end
 
-### needs to be extended
-function plot(f::BasisExpansion;dx = 0.01,kwargs...)
-    x = -1:dx:1
-    x = f.basis.GD.D.map.(x)
-    y = f.(x)
-    a = f.basis.GD.D.a
-    b = f.basis.GD.D.b
-    if isreal(a) && isreal(b) && a < b
-        plot(x, y |> real;kwargs...)
-        plot!(x, y |> imag;kwargs...)
-    else # plot according to arclength
-        plot(abs.(x .- a), y |> real;kwargs...)
-        plot!(abs.(x .- a), y |> imag;kwargs...)
-    end
-end
-
-function plot!(f::BasisExpansion;dx = 0.01,kwargs...)
-    x = -1:dx:1
-    x = f.basis.GD.D.map.(x)
-    y = f.(x)
-    a = f.basis.GD.D.a
-    b = f.basis.GD.D.b
-    if isreal(a) && isreal(b) && a < b
-        plot!(x, y |> real;kwargs...)
-        plot!(y, y |> imag;kwargs...)
-    else # plot according to arclength
-        plot!(abs.(x .- a), y |> real;kwargs...)
-        plot!(abs.(x .- a), y |> imag;kwargs...)
-    end
-end
-
-function weightplot(f::BasisExpansion;dx = 0.01,kwargs...)
-    X = -1:dx:1
-    x = f.basis.GD.D.map.(X)
-    y = f.(x)
-    w = getweight(f.basis)
-    W = w.(X)
-    y = W.*y
-    a = f.basis.GD.D.a
-    b = f.basis.GD.D.b
-    y *= 2
-    if isreal(a) && isreal(b) && a < b
-        plot(x, y |> real;kwargs...)
-        plot!(x, y |> imag;kwargs...)
-    else # plot according to arclength
-        plot(abs.(x .- a), y |> real;kwargs...)
-        plot!(abs.(x .- a), y |> imag;kwargs...)
-    end
-end
-
-function weightplot!(f::BasisExpansion;dx = 0.01,kwargs...)
-    X = -1:dx:1
-    x = f.basis.GD.D.map.(X)
-    y = f.(x)
-    w = getweight(f.basis)
-    W = w.(X)
-    y = W.*y
-    a = f.basis.GD.D.a
-    b = f.basis.GD.D.b
-    y *= 2
-    if isreal(a) && isreal(b) && a < b
-        plot!(x, y |> real;kwargs...)
-        plot!(x, y |> imag;kwargs...)
-    else # plot according to arclength
-        plot!(abs.(x .- a), y |> real;kwargs...)
-        plot!(abs.(x .- a), y |> imag;kwargs...)
-    end
-end
-
 function pad(v::Vector,n::Int64)
-    if length(v) == n
+    if length(v) == 0
+        return zeros(eltype(v),n)
+    elseif length(v) == n
         return v
     elseif length(v) < n
         return vcat(v,zeros(typeof(v[1]),n-length(v)))
