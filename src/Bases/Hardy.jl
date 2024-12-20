@@ -32,7 +32,7 @@ end
 
 function p_partial_horner(c,x)
     n = length(c)
-    if abs(x) > 1
+    if abs(x) > 1 || isnan(x)
         return 0.0im
     end
     p = 1.0
@@ -46,7 +46,7 @@ end
 
 function n_partial_horner(c,x)
     n = length(c)
-    if abs(x) >= 1
+    if abs(x) >= 1 || isnan(x)
         return 0.0im
     end
     p = x
