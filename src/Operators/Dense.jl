@@ -314,14 +314,14 @@ end
 
 function horner_mat_rat(x,m)
     #need to ensure that the x that's being passed in is equivalent to:
-    #     x = P.basis.GD.D.imap(k)
-    #     x = ((x.-1im)./(x.+1im))
+    #x = P.basis.GD.D.imap(k)
+    #x = ((k.-1im)./(k.+1im))
     A = zeros(ComplexF64,length(x),m)
     mm = convert(Int64,floor( m/2 ))
-    A[:,1] = x^(-mm)
-    ex1 = x^(-mm)
+    A[:,1] = x.^(-mm)
+    #ex1 = x
     for i = 2:m
-        A[:,i]  .=  copy(A[:,i-1]).*ex1
+        A[:,i]  .=  copy(A[:,i-1]).*x
     end
     return A
 end
