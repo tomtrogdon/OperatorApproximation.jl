@@ -1,7 +1,7 @@
 name = "OperatorApproximation"
 uuid = "c7ec8986-4b84-48ba-9795-9bd526637602"
 authors = ["Tom Trogdon <trogdon@uw.edu>"]
-version = "0.1.3"
+version = "0.1.4"
 
 [deps]
 AbstractFFTs = "621f4979-c628-5d54-868e-fcf4e3e8185c"
