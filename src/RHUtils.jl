@@ -133,7 +133,7 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
         i += 1
         gd = LobattoMappedInterval(doms[i][1],doms[i][2])
         N = round(Int,n*arclength(gd)) 
-        x = gd.D.map.(gd.grid(N))
+        x = gd.D.map.(gd.grid(N+2))
         vals = abs.(Gsamp[i].(x))
         j = 1
         if vals[1] < tol
