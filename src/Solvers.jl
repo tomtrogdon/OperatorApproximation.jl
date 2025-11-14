@@ -64,6 +64,14 @@ function \(L::ConcreteOperator{D,R,T},b::Tuple,ns::Vector{Int64},ms::Vector{Int6
     out
 end
 
+function \(L::ConcreteOperator{D,R,T},b::Vector,ns::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
+    return \(L,b,ns,ns)
+end
+
+function \(L::ConcreteOperator{D,R,T},b::Tuple,ns::Vector{Int64}) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
+    return \(L,b,ns,ns)
+end
+
 function \(L::ConcreteOperator{D,R,T},b::Vector,N::Integer) where {D<:Basis,R<:Basis,T<:BlockMatrixOperator}
     ns, ms = divide_DOF(L,N,N)
     \(L,b,ns,ms)
