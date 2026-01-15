@@ -44,18 +44,56 @@ function p_partial_horner(c,x)
     sum
 end
 
+function p_partial_horner_vec(n,x)
+    if abs(x) > 1 || isnan(x)
+        return zeros(ComplexF64,1,n)
+    end
+    v = zeros(ComplexF64,1,n)
+    p = 1.0
+    v[1] = p
+    for i = 2:n
+        p *= x
+        v[i] = p
+    end
+    v
+end
+
+function p_partial_horner_mat(n,x)  # should build column by column for faster implementation
+    vcat((map(x -> p_partial_horner_vec(n,x), x))...)
+end
+
 function n_partial_horner(c,x)
     n = length(c)
-    if abs(x) >= 1 || isnan(x)
+    if abs(x) <= 1 || isnan(x)
         return 0.0im
     end
-    p = x
+    X = 1/x
+    p = X
     sum = c[end]*p
     for i = n-1:-1:1
-        p *= x
+        p *= X
         sum += c[i]*p        
     end
     sum
+end
+
+function n_partial_horner_vec(n,x)
+    if abs(x) <= 1 || isnan(x)
+        return zeros(ComplexF64,1,n)
+    end
+    X = 1/x
+    v = zeros(ComplexF64,1,n)
+    p = X
+    v[end] = p
+    for i = n-1:-1:1
+        p *= X
+        v[i] = p
+    end
+    v
+end
+
+function n_partial_horner_mat(n,x)  # should build column by column for faster implementation
+    vcat((map(x -> n_partial_horner_vec(n,x), x))...)
 end
 
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Circle}
