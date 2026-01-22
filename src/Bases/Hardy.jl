@@ -64,7 +64,7 @@ end
 
 function n_partial_horner(c,x)
     n = length(c)
-    if abs(x) <= 1 || isnan(x)
+    if abs(x) < 1 || isnan(x)
         return 0.0im
     end
     X = 1/x
@@ -97,7 +97,7 @@ function n_partial_horner_mat(n,x)  # should build column by column for faster i
 end
 
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Circle}
-    n_partial_horner(P.c,1.0./P.basis.GD.D.imap(X))
+    n_partial_horner(P.c,P.basis.GD.D.imap(X))
 end
 
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Interior, S <: Circle}
