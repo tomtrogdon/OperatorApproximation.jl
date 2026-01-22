@@ -58,9 +58,6 @@ function p_partial_horner_vec(n,x)
     v
 end
 
-function p_partial_horner_mat(n,x)  # should build column by column for faster implementation
-    vcat((map(x -> p_partial_horner_vec(n,x), x))...)
-end
 
 function n_partial_horner(c,x)
     n = length(c)
@@ -90,10 +87,6 @@ function n_partial_horner_vec(n,x)
         v[i] = p
     end
     v
-end
-
-function n_partial_horner_mat(n,x)  # should build column by column for faster implementation
-    vcat((map(x -> n_partial_horner_vec(n,x), x))...)
 end
 
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: Circle}

@@ -325,6 +325,24 @@ function hornermat_laurent(x,m)
     return A
 end
 
+function hornermat_laurent_neg(x,m)
+    A = zeros(ComplexF64,length(x),m)
+    A[:,1] = x.^(-m) #exp.(-1im*pi*mm*x)
+    for i = 2:m
+        A[:,i]  .=  copy(A[:,i-1]).*x
+    end
+    return A
+end
+
+function hornermat_laurent_pos(x,m)
+    A = zeros(ComplexF64,length(x),m)
+    A[:,1] = ones(m) #exp.(-1im*pi*mm*x)
+    for i = 2:m
+        A[:,i]  .=  copy(A[:,i-1]).*x
+    end
+    return A
+end
+
 function Matrix(Op::FourierEvaluationOperator,n,m)
     if typeof(Op.grid) <: Function
         return hornermat(Op.grid(n),m)
@@ -348,6 +366,31 @@ function Matrix(Op::LaurentEvaluationOperator,n,m)
         return hornermat_laurent(Op.grid,m)
     end
 end
+
+function Matrix(Op::NegLaurentEvaluationOperator,n,m)
+    if typeof(Op.grid) <: Function
+        return hornermat_laurent_neg(Op.grid(n),m)
+    end
+    if n <= length(Op.grid)
+        return hornermat_laurent_neg(Op.grid[1:n],m)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return hornermat_laurent_neg(Op.grid,m)
+    end
+end
+
+function Matrix(Op::PosLaurentEvaluationOperator,n,m)
+    if typeof(Op.grid) <: Function
+        return hornermat_laurent_pos(Op.grid(n),m)
+    end
+    if n <= length(Op.grid)
+        return hornermat_laurent_pos(Op.grid[1:n],m)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return hornermat_laurent_pos(Op.grid,m)
+    end
+end
+
 
 function horner_mat_rat(x,m)
     #need to ensure that the x that's being passed in is equivalent to:
