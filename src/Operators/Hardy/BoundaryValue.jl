@@ -62,3 +62,13 @@ function *(B::BoundaryValue,b1::Hardy{Interior{T},S}) where {T <: Union{Periodic
     end
     ConcreteOperator(b1,B.range,Op)
 end
+
+function *(B::BoundaryValue,b1::Hardy{Exterior{T},S}) where {T <: Union{PeriodicCircle,PeriodicMappedCircle}, S <: Circle}
+    basegrid = B.range.GD.grid
+    if B.o == -1
+        Op = NegLaurentEvaluationOperator(basegrid)
+    elseif B.o == 1
+        Op = ZeroOperator()
+    end
+    ConcreteOperator(b1,B.range,Op)
+end
