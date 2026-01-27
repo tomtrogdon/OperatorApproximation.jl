@@ -269,6 +269,27 @@ function getindex(Op::ConcreteOperator{D,R,T},i,j) where {D, R, T <: BlockMatrix
     ConcreteOperator(Op.domain[j],Op.range[i],Op.L[i,j])
 end
 
+function *(Op1::BlockMatrixOperator,Op2::BlockMatrixOperator)
+    if size(Op1)[2] != size(Op2)[1]
+        @error "Dimension mismatch in BlockMatrixOperator multiplication"
+    end 
+    k = size(Op1)[2]
+    # should be done correctly using BlockMatrixOperator(Op1.Ops*Op2.Ops)
+    # but further implentation is needed for the multiplication matrices
+    # of MatrixOperators
+    n, m = size(Op1)[1], size(Op2)[2]
+    out = Matrix{MatrixOperator}(undef,n,m)
+    for i = 1:n
+        for j = 1:m
+            out[i,j] = Op1.Ops[i,1]*Op2.Ops[1,j]
+            for l = 2:k
+                out[i,j] += Op1.Ops[i,l]*Op2.Ops[l,j]
+            end
+        end
+    end
+    BlockMatrixOperator(out)
+end
+
 # momtm = matrix of matrices to matrix
 # will go recursive
 function momtm(Ms::Union{Matrix{T},SparseMatrixCSC}) where T <: Union{Float64,ComplexF64}
