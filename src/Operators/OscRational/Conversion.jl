@@ -34,5 +34,6 @@ end
 #This converts the basis to itself
 function conversion(b1::OscRational,b2::OscRational)
     # TODO:  identity operator
-    ConcreteOperator(b1,b2,IdentityOperator())
+    #ConcreteOperator(b1,b2,IdentityOperator())
+    ConcreteOperator(b1,b2,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
 end
