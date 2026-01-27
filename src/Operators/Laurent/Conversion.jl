@@ -25,5 +25,6 @@ end
 
 function conversion(b1::Laurent,b2::Laurent)
     # TODO:  identity operator
-    ConcreteOperator(b1,b2,IdentityOperator())
+    # ConcreteOperator(b1,b2,IdentityOperator())
+    ConcreteOperator(b1,b2,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
 end
