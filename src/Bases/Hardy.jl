@@ -111,8 +111,9 @@ function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: A
     if imag(x) >= 0
         return 0.0im
     end
-    x = ((x.+1im)./(x.-1im))
-    n_partial_horner(P.c,x) - sum(P.c)*(abs(x) >= 1 ? 0.0 : 1.0)
+    x = ((x.-1im)./(x.+1im))
+    println(abs(x))
+    n_partial_horner(P.c,x) - sum(P.c)*(abs(x) >= 1 ? 1.0 : 0.0)
 end
 
 function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: Union{JacobiMappedInterval,JacobiInterval}, S <: Interval}
