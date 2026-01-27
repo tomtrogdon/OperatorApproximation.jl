@@ -155,12 +155,12 @@ LaurentEvaluationOperator(grid) = LaurentEvaluationOperator{ℤ,𝔼}(grid)
 struct PosLaurentEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
 end
-PosLaurentEvaluationOperator(grid) = PosLaurentEvaluationOperator{ℤ₊,𝔼}(grid)
+PosLaurentEvaluationOperator(grid) = PosLaurentEvaluationOperator{ℕ₊,𝔼}(grid)
 
 struct NegLaurentEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
 end
-NegLaurentEvaluationOperator(grid) = NegLaurentEvaluationOperator{ℤ₋,𝔼}(grid)
+NegLaurentEvaluationOperator(grid) = NegLaurentEvaluationOperator{ℕ₋,𝔼}(grid)
 
 struct RationalEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
