@@ -147,6 +147,21 @@ struct FourierEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain}
 end
 FourierEvaluationOperator(grid) = FourierEvaluationOperator{ℤ,𝔼}(grid)
 
+struct LaurentEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Union{Function,Vector}
+end
+LaurentEvaluationOperator(grid) = LaurentEvaluationOperator{ℤ,𝔼}(grid)
+
+struct PosLaurentEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Union{Function,Vector}
+end
+PosLaurentEvaluationOperator(grid) = PosLaurentEvaluationOperator{ℕ₊,𝔼}(grid)
+
+struct NegLaurentEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
+    grid::Union{Function,Vector}
+end
+NegLaurentEvaluationOperator(grid) = NegLaurentEvaluationOperator{ℕ₋,𝔼}(grid)
+
 struct RationalEvaluationOperator{T <: CoefficientDomain, S <: CoefficientDomain} <: BasisEvaluationOperator
     grid::Union{Function,Vector}
     α::Number
@@ -300,6 +315,34 @@ function hornermat(x,m)
     return A
 end
 
+function hornermat_laurent(x,m)
+    A = zeros(ComplexF64,length(x),m)
+    mm = convert(Int64,floor( m/2 ))
+    A[:,1] = x.^(-mm) #exp.(-1im*pi*mm*x)
+    for i = 2:m
+        A[:,i]  .=  copy(A[:,i-1]).*x
+    end
+    return A
+end
+
+function hornermat_laurent_neg(x,m)
+    A = zeros(ComplexF64,length(x),m)
+    A[:,1] = x.^(-m) #exp.(-1im*pi*mm*x)
+    for i = 2:m
+        A[:,i]  .=  copy(A[:,i-1]).*x
+    end
+    return A
+end
+
+function hornermat_laurent_pos(x,m)
+    A = zeros(ComplexF64,length(x),m)
+    A[:,1] = ones(m) #exp.(-1im*pi*mm*x)
+    for i = 2:m
+        A[:,i]  .=  copy(A[:,i-1]).*x
+    end
+    return A
+end
+
 function Matrix(Op::FourierEvaluationOperator,n,m)
     if typeof(Op.grid) <: Function
         return hornermat(Op.grid(n),m)
@@ -311,6 +354,43 @@ function Matrix(Op::FourierEvaluationOperator,n,m)
         return hornermat(Op.grid,m)
     end
 end
+
+function Matrix(Op::LaurentEvaluationOperator,n,m)
+    if typeof(Op.grid) <: Function
+        return hornermat_laurent(Op.grid(n),m)
+    end
+    if n <= length(Op.grid)
+        return hornermat_laurent(Op.grid[1:n],m)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return hornermat_laurent(Op.grid,m)
+    end
+end
+
+function Matrix(Op::NegLaurentEvaluationOperator,n,m)
+    if typeof(Op.grid) <: Function
+        return hornermat_laurent_neg(Op.grid(n),m)
+    end
+    if n <= length(Op.grid)
+        return hornermat_laurent_neg(Op.grid[1:n],m)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return hornermat_laurent_neg(Op.grid,m)
+    end
+end
+
+function Matrix(Op::PosLaurentEvaluationOperator,n,m)
+    if typeof(Op.grid) <: Function
+        return hornermat_laurent_pos(Op.grid(n),m)
+    end
+    if n <= length(Op.grid)
+        return hornermat_laurent_pos(Op.grid[1:n],m)
+    else
+        @warn "Asked for more rows than grid points.  Returning maximum number of rows."
+        return hornermat_laurent_pos(Op.grid,m)
+    end
+end
+
 
 function horner_mat_rat(x,m)
     #need to ensure that the x that's being passed in is equivalent to:

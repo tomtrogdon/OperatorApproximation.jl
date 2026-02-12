@@ -262,6 +262,10 @@ struct Derivative <: AbstractOperator
     order::Integer
 end
 
+struct Shift <: AbstractOperator
+    order::Integer
+end
+
 struct FloquetDerivative <: AbstractOperator
     order::Integer
     μ::Float64
@@ -283,7 +287,6 @@ end
 struct CoefConversion <: AbstractOperator
     range::Basis
 end
-
 
 struct BoundaryValue <: AbstractOperator
     o::Int64
@@ -324,6 +327,13 @@ function ^(D1::Derivative,k::Integer)
     Derivative(k*D1.order)
 end
 
+function *(S1::Shift,S2::Shift)
+    Shift(S1.order + S2.order)
+end
+
+function ^(S1::Shift,k::Integer)
+    Shift(k*S1.order)
+end
 
 function *(D1::FloquetDerivative,D2::FloquetDerivative)
     if D1.μ ≈ D2.μ
