@@ -121,7 +121,7 @@ RHP(Γ,J) = RHP(Γ,J,[],[])
 
 ### Adaptive stuff ###
 # TODO: Adapt for residues
-function truncateRHP(Jsamp,J,Γ,tol,n)
+function truncateRHP(Jsamp,J,Γ,P,R,tol,n,nvec=[])
     Gsamp = copy(Jsamp)
     G = copy(J)
     doms = Γ |> copy
@@ -129,6 +129,7 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
     
     doms = [doms[i,:] for i = 1:size(doms,1)]
     i = 0
+
     while i < k
         i += 1
         gd = LobattoMappedInterval(doms[i][1],doms[i][2])
@@ -159,6 +160,9 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
             deleteat!(doms,i)
             deleteat!(G,i)
             deleteat!(Gsamp,i)
+            if !isempty(nvec)
+                deleteat!(nvec,i)
+            end
             k -= 1
             i -= 1
         else
@@ -166,12 +170,31 @@ function truncateRHP(Jsamp,J,Γ,tol,n)
         end
     end
     doms = [transpose(x) for x in doms]
-    G, vcat(doms...)
+
+    poles = copy(P)
+    res = copy(R)
+    r = length(poles)
+    for j = r:-1:1
+        if norm(res[j]) < tol
+            deleteat!(poles,j)
+            deleteat!(res,j)
+        end
+    end
+
+    if isempty(nvec)
+        return G, vcat(doms...), poles, res
+    end
+    G, vcat(doms...), poles, res, nvec
 end
 #
 function adapt(rhp::RHP,j,ϵ::Float64)
-    J, Σ = truncateRHP(j,rhp.J,rhp.Γ,ϵ,100)
-    RHP(Σ,J)
+    J, Σ, P, R = truncateRHP(j,rhp.J,rhp.Γ,rhp.P,rhp.R,ϵ,100)
+    RHP(Σ,J,P,R)
+end
+
+function adapt(rhp::RHP,j,ϵ::Float64,nvec::Vector{Int})
+    J, Σ, P, R, nvec = truncateRHP(j,rhp.J,rhp.Γ,rhp.P,rhp.R,ϵ,100,nvec)
+    RHP(Σ,J,P,R), nvec
 end
 ########
 
@@ -205,6 +228,50 @@ function (R::RHSolver)(c::Tuple,n)
     m = length(c[1])
     q = length(c)
     out = []
+    for j = 1:q
+        if k == 1
+            push!(out, [u[j][i] for i=1:m])
+        else
+            push!(out, [u[j][(i-1)*k+1:i*k] for i=1:m])
+        end
+    end
+    return out
+end
+
+function (R::RHSolver)(c,n::Vector)
+    if length(n) != length(R.jumps)
+        error("Length of n must equal number of contours plus one if residues are present.")
+    end
+    b = vcat_rhs(R.jumps,R.res,c)
+    m = length(c)
+    if length(R.res) > 0
+        nvec = repeat(vcat(length(R.res),n),m)
+    else
+        nvec = repeat(n,m)
+    end
+    u = \(R.S,b,nvec)
+    k = length(R.jumps) + (length(R.res) > 0 ? 1 : 0)
+    if k == 1
+        return [u[i] for i=1:m]
+    end
+    return [u[(i-1)*k+1:i*k] for i=1:m]
+end
+
+function (R::RHSolver)(c::Tuple,n::Vector)
+    if length(n) != length(R.jumps)
+        error("Length of n must equal number of contours.")
+    end
+    b = map(c -> vcat_rhs(R.jumps,R.res,c), c)
+    m = length(c[1])
+    if length(R.res) > 0
+        nvec = repeat(vcat(length(R.res),n),m)
+    else
+        nvec = repeat(n,m)
+    end
+    u = \(R.S,b,nvec)
+    q = length(c)
+    out = []
+    k = length(R.jumps) + (length(R.res) > 0 ? 1 : 0)
     for j = 1:q
         if k == 1
             push!(out, [u[j][i] for i=1:m])
