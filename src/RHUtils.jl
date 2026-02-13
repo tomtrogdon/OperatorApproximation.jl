@@ -111,17 +111,19 @@ struct RHSolver
 end
 RHSolver(S,jumps) = RHSolver(S,jumps,[])
 
-struct RHP{T <: Union{Matrix,Vector}}
+struct RHP{T <: Union{Matrix,Vector}, S <: Union{Any,Function}, U <: Union{Any,Function}}
     Γ::T
     J::Vector
+    H::Vector{S}
     P::Vector
     R::Vector
+    Q::Vector{U}
 end
-RHP(Γ,J) = RHP(Γ,J,[],[])
+RHP(Γ,J) = RHP(Γ,J,[],[],[],[])
+RHP(Γ,J,P,R) = RHP(Γ,J,[],P,R,[])
 
 ### Adaptive stuff ###
-# TODO: Adapt for residues
-function truncateRHP(Jsamp,J,Γ,P,R,tol,n,nvec=[])
+function truncateRHP(Jsamp,Γ,J,H,P,R,Q,tol,n,nvec=[])
     Gsamp = copy(Jsamp)
     G = copy(J)
     doms = Γ |> copy
@@ -182,13 +184,13 @@ function truncateRHP(Jsamp,J,Γ,P,R,tol,n,nvec=[])
     end
 
     if isempty(nvec)
-        return G, vcat(doms...), poles, res
+        return vcat(doms...), G, poles, res
     end
-    G, vcat(doms...), poles, res, nvec
+    vcat(doms...), G, poles, res, nvec
 end
 #
 function adapt(rhp::RHP,j,ϵ::Float64)
-    J, Σ, P, R = truncateRHP(j,rhp.J,rhp.Γ,rhp.P,rhp.R,ϵ,100)
+    J, Σ, P, R = truncateRHP(j,rhp.Γ,rhp.J,rhp.P,rhp.R,ϵ,100)
     RHP(Σ,J,P,R)
 end
 
@@ -284,35 +286,15 @@ end
 
 function RHSolver(rhp::RHP{T}) where T <: Vector
     m = size(rhp.R[1],1) # size of RHP
-    # k = size(rhp.Γ,1) # number of intervals
-    # dom = rhdomain(rhp.Γ)
-    # ran = rhrange(dom)
     dom = FixedGridValues(Grid(rhp.P))
     ran = dom
-
-    # if length(rhp.P) > 0
-    #     k += 1
-    #     resdom = FixedGridValues(Grid(rhp.P))
-    #     dom = resdom ⊕ dom
-    # end
     ℰ⁻ = BoundaryValue(-1,ran)
-    #ℰ⁺ = BoundaryValue(+1,ran)
     ℰ⁺ = Residue(dom)
-    # if length(rhp.P) > 0
-    #     ran = resdom ⊕ ran
-    # end
-    # ℰ⁻ = BoundaryValue(-1,ran)
-    # if length(rhp.P) > 0
-    #     ℰ⁺ = Residue(resdom) ⊕ ℰ⁺
-    # end
     𝒞 = BlockAbstractOperator(CauchyTransform(),1,1)
     𝒞⁺ = ℰ⁺*𝒞
     𝒞⁻ = ℰ⁻*𝒞
     ℳ = rhmult_res(rhp.R)
-    # ℳ = rhmult_jump(rhp.J)
-    # if length(rhp.P) > 0
-    #     ℳ = rhmult_res(rhp.R) .⊕ ℳ
-    # end
+    
     ℳ𝒞⁻ = matrix2BlockOperator(ℳ.*fill(𝒞⁻,m,m))
     𝒞⁺ = diagm(fill(𝒞⁺,m))
     dom = ⊕([dom for i = 1:m]...)
