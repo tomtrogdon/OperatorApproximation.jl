@@ -354,6 +354,7 @@ function Matrix(Op::FourierEvaluationOperator,n,m)
         return hornermat(Op.grid,m)
     end
 end
+Matrix(Op::FourierEvaluationOperator,n) = Matrix(Op,n,n)
 
 function Matrix(Op::LaurentEvaluationOperator,n,m)
     if typeof(Op.grid) <: Function
