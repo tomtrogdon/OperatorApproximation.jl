@@ -304,6 +304,14 @@ function -(f::BasisExpansion,g::BasisExpansion)
     f + (-1)*g
 end
 
+function *(f::BasisExpansion,g::BasisExpansion)
+    Multiplication(f)*g
+end
+
+function length(f::BasisExpansion)
+    return length(f.c)
+end
+
 # Probably inefficient...
 function (f::BasisExpansion{T})(x) where T <: DirectSum
     [f[i](x) for i in 1:size(f,1)] |> sum

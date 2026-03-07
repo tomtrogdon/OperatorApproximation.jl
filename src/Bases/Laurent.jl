@@ -12,6 +12,14 @@ function dim(sp::Laurent)
     Inf
 end
 
+function sum(f::BasisExpansion{T}) where T <: Laurent
+    # if n is even, e.g., [-2,-1,0,1,2]
+    # n ÷ 2 = 2, the residue!
+    # if n is even then, e.g., [-2,-1,0,1]
+    # n ÷ 2 = 2, the residue
+    f.c[length(f) ÷ 2]
+end
+
 function testconv(f::BasisExpansion{T}) where T <: Laurent
     nm = N₋(length(f.c))
     testconv(f.c[1:nm] |> reverse) && testconv(f.c[nm+1:end])

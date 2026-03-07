@@ -161,6 +161,13 @@ end
 
     @test norm(Matrix(CCp,10,10) - Matrix(CCm,10,10) - Matrix(CE,10,10)) < 1e-10
 
+    gd = PeriodicCircle()
+    sp = Laurent(gd)
+    F = BasisExpansion(x -> sin(x),sp)
+    CF = CauchyTransform()*F
+
+    @test abs(CF(1im-1im*eps()) - CF(1im+1im*eps()) - F(1im)) < 1e-12
+
 end
 
 @testset "OperatorApproximation.jl: Hermite testing" begin
