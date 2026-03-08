@@ -3,11 +3,11 @@ function isconvertible(b1::Ultraspherical,b2::DiscreteBasis)
 end
 
 function isconvertible(b1::Ultraspherical,b2::Ultraspherical)
-    iscompatible(b1.GD,b2.GD) && mod(b1.λ - b2.λ,1) ≈ 0
+    iscompatible(b1.GD,b2.GD) && mod(b1.λ - b2.λ,1) < 1e-15
 end
 
 function hasfastconversion(b1::Ultraspherical,b2::DiscreteBasis)
-    isconvertible(b1,b2) &&  mod(b1.λ - b2.GD.λ,1) ≈ 0
+    isconvertible(b1,b2) &&  mod(b1.λ - b2.GD.λ,1) < 1e-15
 end
 
 function hasfastconversion(b1::Ultraspherical,b2::GridValues{T}) where T <: Union{UltraMappedInterval,UltraInterval}
