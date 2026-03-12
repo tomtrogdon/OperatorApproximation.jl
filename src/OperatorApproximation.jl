@@ -92,4 +92,6 @@ end
 Nmax = 10000
 tol = 1e-14
 
+include("Prettyprinting.jl")
+
 end # module OperatorApproximation
