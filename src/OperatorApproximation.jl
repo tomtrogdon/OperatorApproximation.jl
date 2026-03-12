@@ -76,7 +76,7 @@ include("LinAlg.jl")
 include("Solvers.jl")
 include("RHUtils.jl")
 include("Plotting.jl")
-
+include("FunDescr.jl")
 
 # probably not good to have these global variables
 global N = "adaptive"
