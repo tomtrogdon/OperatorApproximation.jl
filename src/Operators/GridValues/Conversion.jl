@@ -103,8 +103,3 @@ function conversion(b1::GridValues,b2::Laurent)
     Op = DiscreteFourierTransform()
     ConcreteOperator(b1,b2,Op)
 end
-
-function conversion(b1::Laurent,b2::GridValues)
-    Op = IDiscreteFourierTransform()
-    ConcreteOperator(b1,b2,Op)
-end

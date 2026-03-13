@@ -93,6 +93,10 @@ function *(denseL::DenseOperator,denseR::DenseOperator)
     DenseTimesDense(denseL,denseR)
 end
 
+function *(dense::DenseOperator,Ops::SumOfMatrixOperators)
+    SumOfMatrixOperators([dense*op for op in Ops.Ops],Ops.c)
+end
+
 function Matrix(Op::DenseTimesBanded,n,m)
     nn = max(m + rowgrowth(Op.banded),0) # could be optimized
     B = Matrix(Op.banded,nn,m) #Could be optimized for InverseBasicBandedOperator
@@ -215,18 +219,6 @@ function *(D::DiscreteFourierTransform,f::Vector)
     D.T(f)
 end
 
-struct IDiscreteFourierTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
-    T::Function
-    function IDiscreteFourierTransform{𝔼,ℤ}()
-        return new(midft)
-    end
-end
-IDiscreteFourierTransform() = IDiscreteFourierTransform{ℤ,𝔼}()
-
-function *(D::IDiscreteFourierTransform,f::Vector)
-    D.T(f)
-end
-
 struct DiscreteFourierTransformII{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
     T::Function
     function DiscreteFourierTransformII{𝔼,ℤ}()
@@ -283,6 +275,15 @@ struct GridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: Den
     grid::Union{Function,Vector}
 end
 GridMultiplication(f,grid) = GridMultiplication{𝔼,𝔼}(f,grid)
+
+struct FastGridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
+    f_grid::Function  # f_grid(n) returns n grid values of the multiplier
+end
+FastGridMultiplication(f_grid) = FastGridMultiplication{ℤ,ℤ}(f_grid)
+
+function *(Op::FastGridMultiplication, v::Vector)
+    mdft(midft(v) .* Op.f_grid(length(v)))
+end
 
 function Matrix(Op::OPEvaluationOperator,n,m)
     if typeof(Op.grid) <: Function
@@ -404,6 +405,34 @@ function Matrix(Op::PosLaurentEvaluationOperator,n,m)
     end
 end
 
+
+struct FastFourierToGrid{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
+    grid::Function
+end
+FastFourierToGrid(grid) = FastFourierToGrid{ℤ,𝔼}(grid)
+
+function *(Op::FastFourierToGrid, v::Vector)
+    midft(v)
+end
+
+function Matrix(Op::FastFourierToGrid, n, m)
+    hornermat(Op.grid(n), m)
+end
+Matrix(Op::FastFourierToGrid, n) = Matrix(Op, n, n)
+
+struct FastLaurentToGrid{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform
+    grid::Function
+end
+FastLaurentToGrid(grid) = FastLaurentToGrid{ℤ,𝔼}(grid)
+
+function *(Op::FastLaurentToGrid, v::Vector)
+    midft(v)
+end
+
+function Matrix(Op::FastLaurentToGrid, n, m)
+    hornermat_laurent(Op.grid(n), m)
+end
+Matrix(Op::FastLaurentToGrid, n) = Matrix(Op, n, n)
 
 function horner_mat_rat(x,m)
     #need to ensure that the x that's being passed in is equivalent to:
