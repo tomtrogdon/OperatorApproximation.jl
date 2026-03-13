@@ -215,6 +215,18 @@ function *(D::DiscreteFourierTransform,f::Vector)
     D.T(f)
 end
 
+struct IDiscreteFourierTransform{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
+    T::Function
+    function IDiscreteFourierTransform{𝔼,ℤ}()
+        return new(midft)
+    end
+end
+IDiscreteFourierTransform() = IDiscreteFourierTransform{ℤ,𝔼}()
+
+function *(D::IDiscreteFourierTransform,f::Vector)
+    D.T(f)
+end
+
 struct DiscreteFourierTransformII{T <: CoefficientDomain, S <: CoefficientDomain} <: FastTransform 
     T::Function
     function DiscreteFourierTransformII{𝔼,ℤ}()
