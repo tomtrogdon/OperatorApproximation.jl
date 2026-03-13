@@ -134,6 +134,11 @@ function pad(::Type{ℤ},v::Vector,n::Int64)
     vcat(vm,vp)
 end
 
+function pad(::Type{T},v::Vector,n::Int64) where T <: CoefficientDomain
+    @warn "pad() not implemented for coefficient domain $T, using default"
+    pad(v,n)
+end
+
 ## TODO: Need implmentation for DirectSum
 function pad(f::BasisExpansion,N::Int64)
     BasisExpansion(f.basis,pad(cfd(f.basis),f.c,N))
@@ -150,24 +155,29 @@ function Base.chop(c::Vector)
     c[1:ind]
 end
 
+function Base.chop(::Type{ℕ₊}, c::Vector)
+    Base.chop(copy(c))
+end
+
+function Base.chop(::Type{ℕ₋}, c::Vector)
+    Base.chop(copy(c) |> reverse) |> reverse
+end
+
+function Base.chop(::Type{ℤ}, c::Vector)
+    nm = N₋(length(c))
+    vm = Base.chop(copy(c[1:nm]) |> reverse) |> reverse
+    vp = Base.chop(copy(c[nm+1:end]))
+    k = max(length(vm), length(vp))
+    vcat(pad(ℕ₋, vm, k), pad(ℕ₊, vp, k))
+end
+
+function Base.chop(::Type{T}, c::Vector) where T <: CoefficientDomain
+    @warn "chop() not implemented for coefficient domain $T, returning unchanged"
+    c
+end
+
 function Base.chop(f::BasisExpansion{T}) where T
-    if cfd(f.basis) == ℤ
-        nm = N₋(length(f.c))
-        vm = Base.chop(copy(f.c[1:nm]) |> reverse) |> reverse;
-        vp = Base.chop(copy(f.c[nm+1:end]));
-        k = max(length(vm),length(vp))
-        vm = pad(vm |> reverse,k) |> reverse
-        vp = pad(vp,k)
-        return BasisExpansion(f.basis,vcat(vm,vp))
-    elseif cfd(f.basis) == ℕ₊
-        coeffs = Base.chop(copy(f.c));
-        return BasisExpansion(f.basis,coeffs)
-    elseif cdf(f.basis) == ℕ₋
-        coeffs = Base.chop(copy(f.c) |> reverse) |> reverse;
-        return BasisExpansion(f.basis,coeffs)
-    else
-        @warn "chop() hasn't been implemented for this coefficient domain yet"
-    end
+    BasisExpansion(f.basis, Base.chop(cfd(f.basis), f.c))
 end
 
 function Base.chop(f::BasisExpansion{T}) where T <: DirectSum
