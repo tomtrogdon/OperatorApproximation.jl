@@ -173,6 +173,20 @@ function *(D::BlockAbstractOperator,B::BlockAbstractOperator)
     BlockAbstractOperator(convert(Matrix{OperatorApproximation.AbstractOperator},D.Ops*B.Ops))
 end
 
+# Hadamard (entry-wise) composition:
+#   A ⊙ B  where B is scalar: (A ⊙ B)[i,j] = A[i,j] * B
+#   A ⊙ B  where both block:  (A ⊙ B)[i,j] = A[i,j] * B[i,j]
+function ⊙(A::BlockAbstractOperator, B::AbstractOperator)
+    matrix2BlockOperator(A.Ops .* fill(B, size(A.Ops)...))
+end
+
+function ⊙(A::BlockAbstractOperator, B::BlockAbstractOperator)
+    if size(A.Ops) != size(B.Ops)
+        @error "Block sizes must match for Hadamard product"
+    end
+    matrix2BlockOperator(A.Ops .* B.Ops)
+end
+
 function *(D::AbstractOperator,B::BlockAbstractOperator)
     if size(B.Ops,1) != 1
         @error "wrong block size"
