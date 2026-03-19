@@ -36,6 +36,20 @@ function toeplitz_function(c::Vector)
 end
 
 
+function *(M::FastMultiplication,sp::Fourier)
+    if typeof(M.f) <: Function
+        a = sp.GD.D.a
+        b = sp.GD.D.b
+        GD = PeriodicMappedInterval(a,b)
+        ff = BasisExpansion(M.f,Fourier(GD)) |> chop
+    else
+        ff = M.f
+    end
+    f_grid = n -> midft(pad(ℤ,ff.c,n))
+    Op = FastGridMultiplication(f_grid)
+    ConcreteOperator(sp,sp,Op)
+end
+
 function *(M::Multiplication,sp::Fourier)
     if typeof(M.f) <: Function
         a = sp.GD.D.a

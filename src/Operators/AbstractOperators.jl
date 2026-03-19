@@ -275,6 +275,10 @@ struct Multiplication <: AbstractOperator
     f::Union{Function,BasisExpansion,Vector}
 end
 
+struct FastMultiplication <: AbstractOperator
+    f::Union{Function,BasisExpansion,Vector}
+end
+
 ### SEMI ABSTRACT OPERATORS ###
 struct Conversion <: AbstractOperator
     range::Basis

@@ -22,7 +22,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval,
     weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot, combine, combinebasexp, simp,
     RationalMappedAxis, MappedSemiAxis, LaguerreSemiAxis, LaguerrePoly, LaguerreFun, roots,
-    FourierTransform, Shift
+    FourierTransform, Shift, FastMultiplication, pad
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))

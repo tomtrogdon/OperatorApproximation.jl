@@ -15,19 +15,9 @@ function testconv(f::BasisExpansion{T}) where T <: Fourier
     testconv(f.c[1:nm] |> reverse) && testconv(f.c[nm+1:end])
 end
 
-function chop(f::BasisExpansion{T}) where T <: Fourier
-    nm = N₋(length(f.c))
-    vm = chop(copy(f.c[1:nm]) |> reverse) |> reverse;
-    vp = chop(copy(f.c[nm+1:end]));
-    k = max(length(vm),length(vp))
-    vm = pad(vm |> reverse,k) |> reverse
-    vp = pad(vp,k)
-    BasisExpansion(f.basis,vcat(vm,vp))
-end
 ####################################
 ####################################
 ####################################
-
 
 mfftshift = x -> circshift(fftshift(x), isodd(length(x)) ? 1 : 0)
 mfft = x -> fftshift(fft(fftshift(x),1)) # fft(x,1) is used so that

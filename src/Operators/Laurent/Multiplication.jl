@@ -1,3 +1,17 @@
+function *(M::FastMultiplication,sp::Laurent)
+    if typeof(M.f) <: Function
+        cen = sp.GD.D.cen
+        rad = sp.GD.D.rad
+        GD = PeriodicMappedCircle(cen,rad)
+        ff = BasisExpansion(M.f,Laurent(GD)) |> chop
+    else
+        ff = M.f
+    end
+    f_grid = n -> midft(pad(ℤ,ff.c,n))
+    Op = FastGridMultiplication(f_grid)
+    ConcreteOperator(sp,sp,Op)
+end
+
 function *(M::Multiplication,sp::Laurent)
     if typeof(M.f) <: Function
         cen = sp.GD.D.cen
