@@ -599,3 +599,23 @@ end
     @test abs(erfc(.3) - merfc(.3)) < 1e-12
     @test abs(erfc(-.3) - merfc(-.3)) < 1e-12
 end
+
+@testset "OperatorApproximation.jl: Jacobi RHPs" begin
+    intervals = [-1.0  1.0;
+              2.0  3.0;
+             -3.0 -2.0]
+
+    J1 = [0.0 2im; 0.5im 0.0]
+    J2 = [0.0 4im; 0.25im 0.0]
+    J3 = [0.0 5im; 0.2im 0.0]
+    Js = [J1, J2, J3]
+    c  = [0 1]
+
+    rhp    = JacobiRHP(intervals, Js)
+    solver = JacobiRHSolver(rhp)
+    Φ      = solver(c, 100)
+
+    @test abs(Φ(0 + 1im*eps()) - Φ(0 - 1im*eps())*Js[1]) < 1e-10
+    @test abs(Φ(2.5 + 1im*eps()) - Φ(2.5 - 1im*eps())*Js[2]) < 1e-10
+    @test abs(Φ(-2.5 + 1im*eps()) - Φ(-2.5 - 1im*eps())*Js[3]) < 1e-10
+end

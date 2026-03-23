@@ -447,4 +447,75 @@ function rhwellposed(rhp::RHP)
     end
     out
 end
-#########
+
+### Jacobi-based multi-interval RHP ###
+
+struct JacobiRHP
+    intervals::Matrix{Float64}   # K×2: row k = [aₖ  bₖ]
+    Js::Vector                   # K m×m jump matrices
+end
+
+struct JacobiRHSolver
+    S::ConcreteOperator
+    Uis::Vector   # K inverse-eigenvector matrices
+    K::Int
+    m::Int
+    Js::Vector    # K jump matrices
+end
+
+function JacobiRHSolver(rhp::JacobiRHP)
+    intervals = rhp.intervals
+    Js = rhp.Js
+    K = size(intervals, 1)
+    m = size(Js[1], 1)
+
+    Es  = [eigen(Jk) for Jk in Js]
+    αs  = [-log.(E.values) ./ (2im*π) |> real for E in Es]
+    Uis = [inv(E.vectors) for E in Es]
+
+    gd(k, i) = JacobiMappedInterval(intervals[k,1], intervals[k,2], -αs[k][i], αs[k][i])
+    sp(k, i) = Jacobi(-αs[k][i], αs[k][i], gd(k, i))
+    gv(k)    = GridValues(gd(k, 1))
+
+    dom   = ⊕([⊕([sp(k, i) for k = 1:K]...) for i = 1:m]...)
+    ran_1 = ⊕([gv(k) for k = 1:K]...)
+
+    ℰ⁺ = BoundaryValue(+1, ran_1)
+    ℰ⁻ = BoundaryValue(-1, ran_1)
+    𝒞  = BlockAbstractOperator(fill(CauchyTransform(), K, K))
+    𝒞⁺ = ℰ⁺ * 𝒞
+    𝒞⁻ = ℰ⁻ * 𝒞
+
+    Gps = Matrix{Any}(nothing, m, m)
+    Gms = Matrix{Any}(nothing, m, m)
+    for i = 1:m, j = 1:m
+        Gps[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j])         for k = 1:K, l = 1:K])
+        Gms[j,i] = BlockAbstractOperator([Multiplication(z -> (Uis[l]*Js[k])[i,j]) for k = 1:K, l = 1:K])
+    end
+    Mp = convert(Matrix{BlockAbstractOperator}, Gps) |> BlockAbstractOperator
+    Mm = convert(Matrix{BlockAbstractOperator}, Gms) |> BlockAbstractOperator
+
+    ℳm𝒞⁻ = matrix2BlockOperator(Mm.Ops .⊙ fill(𝒞⁻, m, m))
+    ℳp𝒞⁺ = matrix2BlockOperator(Mp.Ops .⊙ fill(𝒞⁺, m, m))
+    Op = ℳp𝒞⁺ - ℳm𝒞⁻
+
+    JacobiRHSolver(Op * dom, Uis, K, m, Js)
+end
+
+function (R::JacobiRHSolver)(c, N::Integer)
+    Rhs = Vector{Any}(undef, R.m * R.K)
+    for i = 1:R.m, k = 1:R.K
+        Jkmi = R.Js[k] - I
+        Rhs[(i-1)*R.K + k] = _ -> (c * ComplexF64.(Jkmi))[i]
+    end
+    u  = \(R.S, Rhs, N)
+    Cu = reshape([CauchyTransform()*u[i] for i in 1:length(u)], R.K, R.m)
+    function Φ(z)
+        data = reshape(Cu(z), R.K, R.m)
+        for i = 1:R.K
+            data[i,:] = transpose(R.Uis[i])*data[i,:]
+        end
+        c + sum(data, dims=1)
+    end
+    Φ
+end

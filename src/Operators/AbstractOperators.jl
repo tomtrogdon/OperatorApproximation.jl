@@ -181,10 +181,12 @@ function ⊙(A::BlockAbstractOperator, B::AbstractOperator)
 end
 
 function ⊙(A::BlockAbstractOperator, B::BlockAbstractOperator)
-    if size(A.Ops) != size(B.Ops)
-        @error "Block sizes must match for Hadamard product"
+    if size(A.Ops) == size(B.Ops)
+        matrix2BlockOperator(A.Ops .* B.Ops)
+    else
+        # A is an outer m×m block of same-sized sub-blocks; broadcast B across each entry
+        matrix2BlockOperator(map(a -> a ⊙ B, A.Ops))
     end
-    matrix2BlockOperator(A.Ops .* B.Ops)
 end
 
 function *(D::AbstractOperator,B::BlockAbstractOperator)
