@@ -430,9 +430,13 @@ end
 ### Jacobi-based multi-interval RHP ###
 
 struct JacobiRHP
-    intervals::Matrix   # K×2: row k = [aₖ  bₖ]  (real or complex endpoints)
-    Js::Vector          # K m×m jump matrices
+    intervals::Matrix              # K×2: row k = [aₖ  bₖ]  (real or complex endpoints)
+    Js::Vector                     # K m×m jump matrices
+    αs::Union{Nothing,Matrix}
+    βs::Union{Nothing,Matrix}      # K×m Jacobi exponents (nothing = auto-compute)
 end
+
+JacobiRHP(intervals, Js) = JacobiRHP(intervals, Js, nothing, nothing)
 
 struct JacobiRHSolver
     S::ConcreteOperator
@@ -444,16 +448,49 @@ end
 
 function JacobiRHSolver(rhp::JacobiRHP)
     intervals = rhp.intervals
-    Js = rhp.Js
     K = size(intervals, 1)
-    m = size(Js[1], 1)
 
-    Es  = [eigen(Jk) for Jk in Js]
-    αs  = [-log.(E.values) ./ (2im*π) |> real for E in Es]
+    # Normalise: wrap constant matrices as constant functions
+    Js = [isa(Jk, Function) ? Jk : (z -> Jk) for Jk in rhp.Js]
+
+    # Evaluate each jump at the interval midpoint for eigendecomposition
+    mids   = [(intervals[k,1] + intervals[k,2]) / 2 for k = 1:K]
+    Js_ref = [Js[k](mids[k]) for k = 1:K]
+    m = size(Js_ref[1], 1)
+
+    Es  = [eigen(Jk) for Jk in Js_ref]
     Uis = [inv(E.vectors) for E in Es]
+    αs  = if rhp.αs !== nothing
+        [rhp.αs[k, :] for k = 1:K]
+    else
+        [log.(E.values) ./ (2im*π) |> real for E in Es]
+    end
 
-    gd(k, i) = JacobiMappedInterval(intervals[k,1], intervals[k,2], -αs[k][i], αs[k][i])
-    sp(k, i) = Jacobi(-αs[k][i], αs[k][i], gd(k, i))
+    βs = if rhp.βs == nothing
+        -αs
+    else
+        [rhp.βs[k, :] for k = 1:K]
+    end
+
+    # When αs[k][i] = 0... don't use Legendre
+    function αeff(k, i)
+        abs(αs[k][i]) > 1e-10 && return αs[k][i]
+        for j = 1:m
+            abs(αs[k][j]) > 1e-10 && return αs[k][j]
+        end
+        return 0.0
+    end
+
+    function βeff(k, i)
+        abs(βs[k][i]) > 1e-10 && return βs[k][i]
+        for j = 1:m
+            abs(βs[k][j]) > 1e-10 && return βs[k][j]
+        end
+        return 0.0
+    end
+
+    gd(k, i) = JacobiMappedInterval(intervals[k,1], intervals[k,2], αeff(k,i), βeff(k,i))
+    sp(k, i) = Jacobi(αeff(k,i), βeff(k,i), gd(k, i))
     gv(k)    = GridValues(gd(k, 1))
 
     dom   = ⊕([⊕([sp(k, i) for k = 1:K]...) for i = 1:m]...)
@@ -468,8 +505,8 @@ function JacobiRHSolver(rhp::JacobiRHP)
     Gps = Matrix{Any}(nothing, m, m)
     Gms = Matrix{Any}(nothing, m, m)
     for i = 1:m, j = 1:m
-        Gps[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j])         for k = 1:K, l = 1:K])
-        Gms[j,i] = BlockAbstractOperator([Multiplication(z -> (Uis[l]*Js[k])[i,j]) for k = 1:K, l = 1:K])
+        Gps[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j])           for k = 1:K, l = 1:K])
+        Gms[j,i] = BlockAbstractOperator([Multiplication(z -> (Uis[l]*Js[k](z))[i,j]) for k = 1:K, l = 1:K])
     end
     Mp = convert(Matrix{BlockAbstractOperator}, Gps) |> BlockAbstractOperator
     Mm = convert(Matrix{BlockAbstractOperator}, Gms) |> BlockAbstractOperator
@@ -484,11 +521,20 @@ end
 function (R::JacobiRHSolver)(c, N::Integer)
     Rhs = Vector{Any}(undef, R.m * R.K)
     for i = 1:R.m, k = 1:R.K
-        Jkmi = R.Js[k] - I
-        Rhs[(i-1)*R.K + k] = _ -> (c * ComplexF64.(Jkmi))[i]
+        Rhs[(i-1)*R.K + k] = x -> (c * ComplexF64.(R.Js[k](x) - I))[i]
     end
     u  = \(R.S, Rhs, N)
     Cu = reshape([CauchyTransform()*u[i] for i in 1:length(u)], R.K, R.m)
+    u = reshape([u[i] for i in 1:length(u)], R.K, R.m)
+    β = [moment(s,1) for s in u]*1im/(2pi)
+    α = [moment(s,0) for s in u]*1im/(2pi)
+    for i = 1:R.K
+        β[i,:] = transpose(R.Uis[i])*β[i,:]
+        α[i,:] = transpose(R.Uis[i])*α[i,:]
+    end
+    β = sum(β,dims=1)
+    α = sum(α,dims=1)
+
     function Φ(z)
         data = reshape(Cu(z), R.K, R.m)
         for i = 1:R.K
@@ -496,5 +542,5 @@ function (R::JacobiRHSolver)(c, N::Integer)
         end
         c + sum(data, dims=1)
     end
-    Φ
+    Φ, α, β, R.Uis, u
 end

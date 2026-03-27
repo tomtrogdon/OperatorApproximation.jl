@@ -195,6 +195,7 @@ function *(D::AbstractOperator,B::BlockAbstractOperator)
     end
     BlockAbstractOperator([D*op for op in B.Ops])
 end
+
 ####
 struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
@@ -373,6 +374,13 @@ end
 
 function *(P::ProductOfAbstractOperators,Op::AbstractOperator)
     ProductOfAbstractOperators(vcat(P.Ops,[Op]))
+end
+
+function *(P::ProductOfAbstractOperators,B::BlockAbstractOperator)
+    if size(B.Ops,1) != 1
+        @error "wrong block size"
+    end
+    BlockAbstractOperator([P*op for op in B.Ops])
 end
 
 function *(Op::ProductOfAbstractOperators,sp::Basis)
