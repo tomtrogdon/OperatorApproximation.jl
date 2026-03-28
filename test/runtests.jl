@@ -613,8 +613,8 @@ end
 
     rhp    = JacobiRHP(intervals, Js)
     solver = JacobiRHSolver(rhp)
-    Φ      = solver(c, 100)
-    
+    Φ      = solver(c, 100)[1]
+
     @test norm(Φ(0 + 1im*eps()) - Φ(0 - 1im*eps())*Js[1]) < 1e-10
     @test norm(Φ(2.5 + 1im*eps()) - Φ(2.5 - 1im*eps())*Js[2]) < 1e-10
     @test norm(Φ(-2.5 + 1im*eps()) - Φ(-2.5 - 1im*eps())*Js[3]) < 1e-10

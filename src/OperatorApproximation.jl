@@ -23,7 +23,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot, combine, combinebasexp, simp,
     RationalMappedAxis, MappedSemiAxis, LaguerreSemiAxis, LaguerrePoly, LaguerreFun, roots,
     FourierTransform, Shift, FastMultiplication, pad,
-    JacobiRHP, JacobiRHSolver
+    JacobiRHP, JacobiRHSolver, GeneralizedJacobiRHP, GeneralizedJacobiRHSolver
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
