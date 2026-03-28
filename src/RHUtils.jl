@@ -639,8 +639,8 @@ function GeneralizedJacobiRHSolver(rhp::GeneralizedJacobiRHP)
     Ups = Matrix{Any}(nothing, m, m)
     Ums = Matrix{Any}(nothing, m, m)
     for i = 1:m, j = 1:m
-        Ups[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j]) for k = 1:K, l = 1:K])
-        Ums[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j]) for k = 1:K, l = 1:K])
+        Ups[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j]*(k == l ? 1.0 : 0.0)) for k = 1:K, l = 1:K])
+        Ums[j,i] = BlockAbstractOperator([Multiplication(z -> Uis[l][i,j]*(k == l ? 1.0 : 0.0)) for k = 1:K, l = 1:K])
     end
 
     Mp = convert(Matrix{BlockAbstractOperator}, Gps) |> matrix2BlockOperator
@@ -651,11 +651,11 @@ function GeneralizedJacobiRHSolver(rhp::GeneralizedJacobiRHP)
     CCm = matrix2BlockOperator(fill(𝒞⁻, m, m))
     CCp = matrix2BlockOperator(fill(𝒞⁺, m, m))
 
-    # ℳm𝒞⁻ = (Mm ⊙ (CCm ⊙ Um))
-    # ℳp𝒞⁺ = (Mp ⊙ (CCp ⊙ Up))
+    # ℳm𝒞⁻ = Mm * (Um ⊙ CCm)
+    # ℳp𝒞⁺ = Mp * (Up ⊙ CCp)
 
-    ℳm𝒞⁻ = (Um ⊙ Mm ⊙ CCm)
-    ℳp𝒞⁺ = (Up ⊙ Mp ⊙ CCp)
+    ℳm𝒞⁻ = (Mm ⊙ CCm) * Um
+    ℳp𝒞⁺ = (Mp ⊙ CCp) * Up
 
     Op = ℳp𝒞⁺ - ℳm𝒞⁻
 
