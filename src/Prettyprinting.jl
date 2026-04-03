@@ -601,6 +601,11 @@ Base.show(io::IO, ::MIME"text/plain", F::FourierTransform) =
 Base.show(io::IO, ::AbstractZeroOperator) = print(io, "𝟎")
 Base.show(io::IO, ::MIME"text/plain", ::AbstractZeroOperator) = print(io, "Zero operator  𝟎")
 
+# --- IdentityOperator ---
+
+Base.show(io::IO, ::IdentityOperator) = print(io, "𝕀")
+Base.show(io::IO, ::MIME"text/plain", ::IdentityOperator) = print(io, "Identity operator  𝕀")
+
 # --- ProductOfAbstractOperators ---
 
 function Base.show(io::IO, P::ProductOfAbstractOperators)

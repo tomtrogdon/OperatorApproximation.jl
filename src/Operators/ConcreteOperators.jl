@@ -174,6 +174,7 @@ function *(Op::MatrixOperator,Op2::ZeroOperator)
     Op2
 end
 
+
 struct ProductOfBandedOperators{T<:CoefficientDomain, S<:CoefficientDomain} <: BandedOperator
     V::Vector{S} where S <: SingleBandedOperator
 end

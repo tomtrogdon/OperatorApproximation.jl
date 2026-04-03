@@ -275,6 +275,29 @@ function +(Op::SumOfAbstractOperators{T2}, Op2::AbstractZeroOperator) where T2<:
     Op
 end
 
+struct IdentityOperator <: AbstractOperator end
+
+function *(Op::IdentityOperator, Op2::AbstractOperator)
+    Op2
+end
+
+function *(Op::AbstractOperator, Op2::IdentityOperator)
+    Op
+end
+
+# Disambiguation methods
+function *(Op::IdentityOperator, Op2::IdentityOperator)
+    Op
+end
+
+function *(Op::AbstractZeroOperator, Op2::IdentityOperator)
+    Op
+end
+
+function *(Op::IdentityOperator, Op2::AbstractZeroOperator)
+    Op2
+end
+
 struct Derivative <: AbstractOperator
     order::Integer
 end
@@ -402,8 +425,17 @@ function *(Op::AbstractOperator,f::BasisExpansion)
     Opc*f
 end
 
+function *(Op::IdentityOperator,f::BasisExpansion)
+    f
+end
+
 function *(Op::AbstractZeroOperator,b::Basis)
     ConcreteOperator(AnyBasis(),AnyBasis(),ZeroOperator())
+end
+
+function *(Op::IdentityOperator,b::Basis)
+    T = cfd(b)
+    ConcreteOperator(b,b,BasicBandedOperator{T,T}(0,0,(i,j) -> i == j ? 1.0 : 0.0))
 end
 
 function *(Op::AbstractZeroOperator,b::DirectSum)
