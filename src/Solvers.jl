@@ -199,3 +199,119 @@ function eigen(L::ConcreteOperator{D,R,T},M::ConcreteOperator{D,R,T},N::Integer)
     vs = [BasisExpansion.(L.domain, E.vectors[:,i]) for i in 1:size(E.vectors,2)]
     ContinuousEigen(makeinf.(E.values),vs)
 end
+
+# ─────────────────────────────────────────────────────────────────────
+#  GMRES
+#
+#  gmres(L, b, ip; tol, maxiter, restart)
+#
+#  L        – operator (AbstractOperator or ConcreteOperator).
+#             Applied as L*x, so it must support multiplication by a
+#             BasisExpansion (or return a BasisExpansion when applied
+#             to the initial guess basis).
+#  b        – right-hand side (BasisExpansion)
+#  ip       – inner product: ip(u, v) -> scalar.  Must be sesquilinear
+#             (conjugate-linear in the first argument).
+#  tol      – relative residual tolerance (default 1e-12)
+#  maxiter  – maximum number of outer iterations (default 100)
+#  restart  – Krylov subspace size before restart (default maxiter)
+# ─────────────────────────────────────────────────────────────────────
+
+function gmres(L, b::BasisExpansion, ip::Function;
+               tol     = 1e-12,
+               maxiter = 100,
+               restart = maxiter,
+               x0      = nothing)
+
+    _ip_norm(v) = sqrt(real(ip(v, v)))
+
+    # Initial guess: zero expansion in the same basis as b
+    x = x0 === nothing ? BasisExpansion(b.basis, zero(b.c)) : x0
+
+    b_norm = _ip_norm(b)
+    if b_norm == 0
+        return x
+    end
+
+    for _outer in 1:cld(maxiter, restart)
+        r = b - L * x
+        r_norm = _ip_norm(r)
+
+        if r_norm / b_norm < tol
+            return x
+        end
+
+        m = min(restart, maxiter)
+
+        # Arnoldi basis vectors and upper Hessenberg matrix
+        Q = Vector{BasisExpansion}(undef, m + 1)
+        H = zeros(ComplexF64, m + 1, m)
+
+        Q[1] = (1 / r_norm) * r
+
+        # Givens rotation storage
+        cs = zeros(ComplexF64, m)
+        sn = zeros(ComplexF64, m)
+        e1 = zeros(ComplexF64, m + 1)
+        e1[1] = r_norm
+
+        j_final = m
+        for j in 1:m
+            w = L * Q[j]
+
+            # Modified Gram-Schmidt
+            for i in 1:j
+                H[i, j] = ip(Q[i], w)
+                w = w - H[i, j] * Q[i]
+            end
+            H[j+1, j] = _ip_norm(w)
+
+            if abs(H[j+1, j]) < 1e-14 * b_norm
+                j_final = j
+                break
+            end
+
+            Q[j+1] = (1 / H[j+1, j]) * w
+
+            # Apply previous Givens rotations to new column
+            for i in 1:j-1
+                tmp        =  cs[i] * H[i, j] + sn[i] * H[i+1, j]
+                H[i+1, j]  = -conj(sn[i]) * H[i, j] + cs[i] * H[i+1, j]
+                H[i, j]    =  tmp
+            end
+
+            # Compute new Givens rotation
+            denom = sqrt(abs2(H[j, j]) + abs2(H[j+1, j]))
+            cs[j] = H[j, j]   / denom
+            sn[j] = H[j+1, j] / denom
+
+            H[j, j]   =  cs[j] * H[j, j] + sn[j] * H[j+1, j]
+            H[j+1, j] = 0
+
+            e1[j+1] = -conj(sn[j]) * e1[j]
+            e1[j]   =  cs[j] * e1[j]
+
+            if abs(e1[j+1]) / b_norm < tol
+                j_final = j
+                break
+            end
+        end
+
+        # Solve upper-triangular system H[1:j,1:j] y = e1[1:j]
+        j = j_final
+        y = H[1:j, 1:j] \ e1[1:j]
+
+        # Update solution
+        for i in 1:j
+            x = x + y[i] * Q[i]
+        end
+
+        # Check convergence after restart
+        r = b - L * x
+        if _ip_norm(r) / b_norm < tol
+            return x
+        end
+    end
+
+    return x
+end

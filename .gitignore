@@ -29,3 +29,4 @@ dev_code.jl
 /notebooks/.ipynb_checkpoints
 /*/.ipynb_checkpoints
 .vscode
+/testnotebooks/

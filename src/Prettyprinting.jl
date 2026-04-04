@@ -436,29 +436,40 @@ function Base.show(io::IO, ::MIME"text/plain", f::BasisExpansion{T}) where T
     else
         n = length(f.c)
         println(io, "  ", n, " coefficient", n != 1 ? "s" : "")
-        _show_coefficients(io, f.c)
+        _show_coefficients(io, f.c, cfd(f.basis))
     end
 end
 
-function _show_coefficients(io::IO, c::Vector; maxshow=6)
+"""Map a 1-based vector position to a logical coefficient index."""
+_coef_idx(::Type{ℕ₊}, i, n) = i - 1        # 0-based: 0, 1, 2, …
+_coef_idx(::Type{ℕ₋}, i, n) = -(n - i)     # …, -2, -1, 0
+_coef_idx(::Type{ℤ},  i, n) = i - 1 - N₋(n) # …, -1, 0, 1, …
+_coef_idx(::Type{T},  i, n) where T = i     # default: 1-based
+
+function _show_coefficients(io::IO, c::Vector, cfd_type::Type; maxshow=6)
     n = length(c)
+    idx(i) = _coef_idx(cfd_type, i, n)
     if n <= maxshow
-        for (i, v) in enumerate(c)
-            i == n ? print(io, "    c[", i, "] = ", _fmt_coeff(v)) :
-                     println(io, "    c[", i, "] = ", _fmt_coeff(v))
+        for i in 1:n
+            i == n ? print(io, "    c[", idx(i), "] = ", _fmt_coeff(c[i])) :
+                     println(io, "    c[", idx(i), "] = ", _fmt_coeff(c[i]))
         end
     else
         half = maxshow ÷ 2
         for i in 1:half
-            println(io, "    c[", i, "] = ", _fmt_coeff(c[i]))
+            println(io, "    c[", idx(i), "] = ", _fmt_coeff(c[i]))
         end
         println(io, "    ⋮")
         for i in n-half+1:n
-            i == n ? print(io, "    c[", i, "] = ", _fmt_coeff(c[i])) :
-                     println(io, "    c[", i, "] = ", _fmt_coeff(c[i]))
+            i == n ? print(io, "    c[", idx(i), "] = ", _fmt_coeff(c[i])) :
+                     println(io, "    c[", idx(i), "] = ", _fmt_coeff(c[i]))
         end
     end
 end
+
+# Fallback for callers without a cfd type (uses 1-based indexing)
+_show_coefficients(io::IO, c::Vector; maxshow=6) =
+    _show_coefficients(io, c, 𝕏; maxshow=maxshow)
 
 function _fmt_coeff(x::Number)
     if isa(x, Complex)

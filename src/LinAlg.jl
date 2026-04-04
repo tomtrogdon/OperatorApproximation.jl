@@ -55,6 +55,8 @@ end
 
 dot(f::BasisExpansion,g::BasisExpansion) = Base.sum(Multiplication(f)*Base.conj(g))
 
+dot(f::BasisExpansion{T},g::BasisExpansion{T}) where T = LinearAlgebra.dot(f.c, g.c)
+
 function dot(f::BasisExpansion{T},g::BasisExpansion{T}) where T <: DirectSum
     inner_prod = 0
     for i=1:length(f)
