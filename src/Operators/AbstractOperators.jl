@@ -181,10 +181,12 @@ function ⊙(A::BlockAbstractOperator, B::AbstractOperator)
 end
 
 function ⊙(A::BlockAbstractOperator, B::BlockAbstractOperator)
-    if size(A.Ops) != size(B.Ops)
-        @error "Block sizes must match for Hadamard product"
+    if size(A.Ops) == size(B.Ops)
+        matrix2BlockOperator(A.Ops .* B.Ops)
+    else
+        # A is an outer m×m block of same-sized sub-blocks; broadcast B across each entry
+        matrix2BlockOperator(map(a -> a ⊙ B, A.Ops))
     end
-    matrix2BlockOperator(A.Ops .* B.Ops)
 end
 
 function *(D::AbstractOperator,B::BlockAbstractOperator)
@@ -193,6 +195,7 @@ function *(D::AbstractOperator,B::BlockAbstractOperator)
     end
     BlockAbstractOperator([D*op for op in B.Ops])
 end
+
 ####
 struct ProductOfAbstractOperators{T} <: AbstractOperator where T <: AbstractOperator
     Ops::Vector{T}
@@ -272,6 +275,29 @@ function +(Op::SumOfAbstractOperators{T2}, Op2::AbstractZeroOperator) where T2<:
     Op
 end
 
+struct IdentityOperator <: AbstractOperator end
+
+function *(Op::IdentityOperator, Op2::AbstractOperator)
+    Op2
+end
+
+function *(Op::AbstractOperator, Op2::IdentityOperator)
+    Op
+end
+
+# Disambiguation methods
+function *(Op::IdentityOperator, Op2::IdentityOperator)
+    Op
+end
+
+function *(Op::AbstractZeroOperator, Op2::IdentityOperator)
+    Op
+end
+
+function *(Op::IdentityOperator, Op2::AbstractZeroOperator)
+    Op2
+end
+
 struct Derivative <: AbstractOperator
     order::Integer
 end
@@ -291,7 +317,9 @@ end
 
 struct FastMultiplication <: AbstractOperator
     f::Union{Function,BasisExpansion,Vector}
+    growth::Integer
 end
+FastMultiplication(f) = FastMultiplication(f, -1)  # -1 means: use length(ff.c) at apply time
 
 ### SEMI ABSTRACT OPERATORS ###
 struct Conversion <: AbstractOperator
@@ -373,6 +401,13 @@ function *(P::ProductOfAbstractOperators,Op::AbstractOperator)
     ProductOfAbstractOperators(vcat(P.Ops,[Op]))
 end
 
+function *(P::ProductOfAbstractOperators,B::BlockAbstractOperator)
+    if size(B.Ops,1) != 1
+        @error "wrong block size"
+    end
+    BlockAbstractOperator([P*op for op in B.Ops])
+end
+
 function *(Op::ProductOfAbstractOperators,sp::Basis)
     p = Op.Ops[end]*sp
     for i = length(Op.Ops)-1:-1:1
@@ -392,8 +427,17 @@ function *(Op::AbstractOperator,f::BasisExpansion)
     Opc*f
 end
 
+function *(Op::IdentityOperator,f::BasisExpansion)
+    f
+end
+
 function *(Op::AbstractZeroOperator,b::Basis)
     ConcreteOperator(AnyBasis(),AnyBasis(),ZeroOperator())
+end
+
+function *(Op::IdentityOperator,b::Basis)
+    T = cfd(b)
+    ConcreteOperator(b,b,BasicBandedOperator{T,T}(0,0,(i,j) -> i == j ? 1.0 : 0.0))
 end
 
 function *(Op::AbstractZeroOperator,b::DirectSum)

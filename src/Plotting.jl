@@ -92,6 +92,22 @@ function coefplot(f::BasisExpansion{T};kwargs...) where T <: DirectSum
     p
 end
 
+function plot(f::BasisExpansion{T};dθ = 0.01,kwargs...) where T <: Union{Fourier,Laurent}
+    θ = (-π):dθ:π
+    z = f.basis.GD.D.map.(exp.(1im.*θ))
+    y = f.(z)
+    plot(θ, y |> real; kwargs...)
+    plot!(θ, y |> imag; kwargs...)
+end
+
+function plot!(f::BasisExpansion{T};dθ = 0.01,kwargs...) where T <: Union{Fourier,Laurent}
+    θ = (-π):dθ:π
+    z = f.basis.GD.D.map.(exp.(1im.*θ))
+    y = f.(z)
+    plot!(θ, y |> real; kwargs...)
+    plot!(θ, y |> imag; kwargs...)
+end
+
 ### needs to be extended
 function plot(f::BasisExpansion{T};dx = 0.01,L = 10,kwargs...) where T <: Union{Hermite,OscRational}
     x = -L:dx:L

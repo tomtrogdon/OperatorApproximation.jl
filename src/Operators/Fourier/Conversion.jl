@@ -24,7 +24,6 @@ function conversion(b1::Fourier,b2::FixedGridValues)
 end
 
 function conversion(b1::Fourier,b2::Fourier)
-    # TODO:  identity operator
-    #ConcreteOperator(b1,b2,IdentityOperator())
-    ConcreteOperator(b1,b2,BasicBandedOperator{ℤ,ℤ}(0,0, (i,j) -> i == j ? complex(1.0) : 0.0im ))
+    T = cfd(b1)
+    ConcreteOperator(b1,b2,BasicBandedOperator{T,T}(0,0,(i,j) -> i == j ? complex(1.0) : 0.0im))
 end

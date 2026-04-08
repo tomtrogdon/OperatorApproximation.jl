@@ -45,8 +45,9 @@ function *(M::FastMultiplication,sp::Fourier)
     else
         ff = M.f
     end
+    growth = M.growth < 0 ? length(ff.c) : M.growth
     f_grid = n -> midft(pad(ℤ,ff.c,n))
-    Op = FastGridMultiplication(f_grid)
+    Op = FastGridMultiplication(f_grid, growth)
     ConcreteOperator(sp,sp,Op)
 end
 

@@ -17,7 +17,7 @@ function sum(f::BasisExpansion{T}) where T <: Laurent
     # n ÷ 2 = 2, the residue!
     # if n is even then, e.g., [-2,-1,0,1]
     # n ÷ 2 = 2, the residue
-    f.c[length(f) ÷ 2]
+    f.c[length(f) ÷ 2 + 1]
 end
 
 function testconv(f::BasisExpansion{T}) where T <: Laurent
@@ -37,6 +37,11 @@ end
 ####################################
 ####################################
 ####################################
+
+function Base.conj(f::BasisExpansion{Laurent})
+    c = iseven(length(f.c)) ? vcat(f.c, zero(eltype(f.c))) : f.c
+    BasisExpansion(f.basis, reverse(conj(c)))
+end
 
 function (P::BasisExpansion{Laurent})(X::Number) # Horner's method
     x = P.basis.GD.D.imap(X)
