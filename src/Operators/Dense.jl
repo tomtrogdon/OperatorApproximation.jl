@@ -278,11 +278,14 @@ GridMultiplication(f,grid) = GridMultiplication{𝔼,𝔼}(f,grid)
 
 struct FastGridMultiplication{T <: CoefficientDomain, S <: CoefficientDomain} <: DenseOperator
     f_grid::Function  # f_grid(n) returns n grid values of the multiplier
+    growth::Integer   # extra coefficients added to output length; 0 = no growth
 end
-FastGridMultiplication(f_grid) = FastGridMultiplication{ℤ,ℤ}(f_grid)
+FastGridMultiplication(f_grid, growth) = FastGridMultiplication{ℤ,ℤ}(f_grid, growth)
 
 function *(Op::FastGridMultiplication, v::Vector)
-    mdft(midft(v) .* Op.f_grid(length(v)))
+    n_in  = length(v)
+    n_out = n_in + Op.growth
+    mdft(midft(pad(ℤ, v, n_out)) .* Op.f_grid(n_out))
 end
 
 function Matrix(Op::OPEvaluationOperator,n,m)

@@ -317,7 +317,9 @@ end
 
 struct FastMultiplication <: AbstractOperator
     f::Union{Function,BasisExpansion,Vector}
+    growth::Integer
 end
+FastMultiplication(f) = FastMultiplication(f, -1)  # -1 means: use length(ff.c) at apply time
 
 ### SEMI ABSTRACT OPERATORS ###
 struct Conversion <: AbstractOperator

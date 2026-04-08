@@ -436,7 +436,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::BasisExpansion{T}) where T
     else
         n = length(f.c)
         println(io, "  ", n, " coefficient", n != 1 ? "s" : "")
-        _show_coefficients(io, f.c, cfd(f.basis))
+        _show_coefficients(io, f.c, applicable(cfd, f.basis) ? cfd(f.basis) : 𝕏)
     end
 end
 
