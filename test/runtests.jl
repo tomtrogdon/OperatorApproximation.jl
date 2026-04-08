@@ -1,4 +1,4 @@
-using OperatorApproximation, SpecialFunctions, LinearAlgebra, Memoize
+using OperatorApproximation, SpecialFunctions, LinearAlgebra, Memoize, Random
 using Test
 
 @testset "OperatorApproximation.jl: Basic tests" begin
@@ -18,7 +18,7 @@ using Test
 
     R = 10;
     sp = Ultraspherical(0.0,ChebyshevMappedInterval(-R,R));
-    f = BasisExpansion(sp,randn(10))
+    f = BasisExpansion(sp,randn(MersenneTwister(42),10))
     sp = Ultraspherical(0.0,ChebyshevMappedInterval(-R,R));
     g = Conversion(sp)*f
     @test abs(g(1.0) - f(1.0)) < 1e-10
