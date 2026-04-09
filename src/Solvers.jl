@@ -221,7 +221,8 @@ function gmres(L, b::BasisExpansion, ip::Function;
                tol     = 1e-12,
                maxiter = 100,
                restart = maxiter,
-               x0      = nothing)
+               x0      = nothing,
+               chop_iter = false)
 
     _ip_norm(v) = sqrt(real(ip(v, v)))
 
@@ -258,6 +259,9 @@ function gmres(L, b::BasisExpansion, ip::Function;
         j_final = m
         for j in 1:m
             w = L * Q[j]
+            if chop_iter
+                w = chop(w)
+            end
 
             # Modified Gram-Schmidt
             for i in 1:j
@@ -304,6 +308,9 @@ function gmres(L, b::BasisExpansion, ip::Function;
         # Update solution
         for i in 1:j
             x = x + y[i] * Q[i]
+        end
+        if chop_iter
+            x = chop(x)
         end
 
         # Check convergence after restart

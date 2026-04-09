@@ -440,6 +440,14 @@ function *(Op::IdentityOperator,b::Basis)
     ConcreteOperator(b,b,BasicBandedOperator{T,T}(0,0,(i,j) -> i == j ? 1.0 : 0.0))
 end
 
+*(::LinearAlgebra.UniformScaling, b::Basis) = IdentityOperator() * b
+*(::LinearAlgebra.UniformScaling, f::BasisExpansion) = IdentityOperator() * f
+
++(::LinearAlgebra.UniformScaling, Op::AbstractOperator) = IdentityOperator() + Op
++(Op::AbstractOperator, ::LinearAlgebra.UniformScaling) = Op + IdentityOperator()
+-(::LinearAlgebra.UniformScaling, Op::AbstractOperator) = IdentityOperator() - Op
+-(Op::AbstractOperator, ::LinearAlgebra.UniformScaling) = Op - IdentityOperator()
+
 function *(Op::AbstractZeroOperator,b::DirectSum)
     m = b.bases |> length
     B = BlockAbstractOperator(fill(AbstractZeroOperator(),m,m))

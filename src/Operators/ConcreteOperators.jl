@@ -101,6 +101,10 @@ function *(Op1::SumOfMatrixOperators,Op2::MatrixOperator)
     SumOfMatrixOperators([l*Op2 for l in Op1.Ops],Op1.c)
 end
 
+function *(Op1::BandedOperator,Op2::SumOfMatrixOperators)
+    SumOfMatrixOperators([Op1*l for l in Op2.Ops],Op2.c)
+end
+
 for op in (:ℕ₊,:ℕ₋,:ℤ)
     @eval begin
         function *(Op::SumOfMatrixOperators{T,S},c::Vector) where {T, S <: $op}
