@@ -1,6 +1,6 @@
 module OperatorApproximation
 
-using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunctions, Memoize, SpecialFunctions
+using SparseArrays, LinearAlgebra, Plots, FFTW, AbstractFFTs, HypergeometricFunctions, Memoize, SpecialFunctions, Statistics, Random
 import Plots: plot, plot!
 import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     getindex, setindex!, firstindex, lastindex, show, getindex, size, axes,
@@ -24,7 +24,8 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     RationalMappedAxis, MappedSemiAxis, LaguerreSemiAxis, LaguerrePoly, LaguerreFun, roots,
     FourierTransform, Shift, FastMultiplication, pad, IdentityOperator,
     JacobiRHP, JacobiRHSolver, GeneralizedJacobiRHP, GeneralizedJacobiRHSolver,
-    gmres
+    gmres,
+    lanczos_with_extend, cholesky_jacobi, stieltjes_estimate, spike_detect, count_spikes
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
@@ -77,6 +78,7 @@ include("Operators/ConcreteOperators.jl")
 include("LinAlg.jl")
 include("Solvers.jl")
 include("RHUtils.jl")
+include("SpikeDetect.jl")
 include("Plotting.jl")
 include("FunDescr.jl")
 

@@ -434,10 +434,12 @@ struct MarchenkoPasturMappedInterval <: GridInterval
     D::Interval
     d::Float64
     grid::Function
-    function MarchenkoPasturMappedInterval(a,b,d)
+    function MarchenkoPasturMappedInterval(a, b)
+        d = ((sqrt(b) - sqrt(a)) / (sqrt(b) + sqrt(a)))^2
+        σ = 4 / (sqrt(a) + sqrt(b))^2
         A, B = MP_ab(d)
-        gridfun = n -> Gauss_quad(A,B,n-1)[1]
-        return new(MappedInterval(a,b), d, gridfun)
+        gridfun = n -> Gauss_quad(A, B, n-1)[1]
+        return new(MappedInterval(a, b), d, gridfun)
     end
 end
 function ==(J1::MarchenkoPasturMappedInterval,J2::MarchenkoPasturMappedInterval)

@@ -27,6 +27,14 @@ end
 ####################################
 #####  Important to implement  #####
 ####################################
+#
+#   Fmp = BasisExpansion(F,sp)
+#   w = OperatorApproximation.getweight(sp)
+#   W = x -> 2*w(gd.D.imap(x))
+#   g = x -> F(x)*W(x)
+#   
+#   Then the Cauchy integral of g over sp.GD is CauchyTransform()*Fmp
+#
 function sum(f::BasisExpansion{T}) where T <: MarchenkoPastur
     (f.basis.GD.D.b - f.basis.GD.D.a)*f.c[1]
 end

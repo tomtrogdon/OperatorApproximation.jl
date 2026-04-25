@@ -600,7 +600,7 @@ function GeneralizedJacobiRHSolver(rhp::GeneralizedJacobiRHP)
     𝒞⁺ = ℰ⁺ * 𝒞
     𝒞⁻ = ℰ⁻ * 𝒞
 
-    # Left-multiplication matrices: identity (plus side) and J (minus side)
+    # Left-multiplication  matrices: identity (plus side) and J (minus side)
     # Gps[j,i]: K×K block — (k,l) entry is δᵢⱼ (identity in the m×m sense)
     # Gms[j,i]: K×K block — (k,l) entry is J_k(z)[i,j] (J depends on output interval k)
     Gps = Matrix{Any}(nothing, m, m)
