@@ -448,7 +448,7 @@ struct MarchenkoPasturMappedInterval <: GridInterval
     function MarchenkoPasturMappedInterval(a, b)
         d = ((sqrt(b) - sqrt(a)) / (sqrt(b) + sqrt(a)))^2
         A, B = MP_ab(d)
-        gridfun = n -> Gauss_quad(A, B, n-1)[1]
+        gridfun = n -> (1 + d) .+ 2*sqrt(d) .* Gauss_quad(A, B, n-1)[1]
         return new(MappedGeneralInterval(GeneralInterval((1 - sqrt(d))^2, (1 + sqrt(d))^2), a, b), d, gridfun)
     end
 end

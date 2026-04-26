@@ -148,22 +148,22 @@ function legendrestieltjes_neg(z)
     return 1im/(4*pi)*(log(1+z) + 1im*pi - log(1-z))
 end
 
-function MPSeed(d,z)
+function MPSeed(d)
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
-    (1 - d - z + sqrt(z - dp)*sqrt(z - dm))/(4im*d*pi*z)
+    z -> (1 - d - z + sqrt(z - dp)*sqrt(z - dm))/(4im*d*pi*z)
 end
 
-function MPSeedPos(d,z)
+function MPSeedPos(d)
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
-    ((d -1 - z) + 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
+    z -> ((d -1 - z) + 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
 end
 
-function MPSeedNeg(d,z)
+function MPSeedNeg(d)
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
-    ((d -1 - z) - 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
+    z -> ((d -1 - z) - 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
 end
 
 function JacobiSeed(α,β)
