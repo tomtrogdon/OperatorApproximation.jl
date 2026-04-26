@@ -14,9 +14,9 @@ function Laguerre_ab(a)
     return (afun, bfun)
 end
 
-function MP_ab(d) # need to map support to [-1,1]
-   bfun = n -> 0.5# sqrt(d)
-   afun = n -> n == 0 ? -sqrt(d)/2.0 : 0.0
+function MP_ab(d) # no longer need to map support to [-1,1]
+   bfun = n -> sqrt(d)
+   afun = n -> n == 0 ? 1 : 1 + d
    (afun,bfun)                                   
 end
 
@@ -106,7 +106,7 @@ function JacobiWconst(a,b)
     return 1/c
 end
 
-function MPW(d,x)  # not correct...
+function MPW(d,x)  # now correct...
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
     1/(2*pi*d*x)*sqrt(dp-x)*sqrt(x-dm)
@@ -148,46 +148,22 @@ function legendrestieltjes_neg(z)
     return 1im/(4*pi)*(log(1+z) + 1im*pi - log(1-z))
 end
 
-function MPSeedUnmapped(d,z)
+function MPSeed(d,z)
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
     (1 - d - z + sqrt(z - dp)*sqrt(z - dm))/(4im*d*pi*z)
 end
 
-function MPSeedUnmappedPos(d,z)
+function MPSeedPos(d,z)
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
     ((d -1 - z) + 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
 end
 
-function MPSeedUnmappedNeg(d,z)
+function MPSeedNeg(d,z)
     dp = (1 + sqrt(d))^2
     dm = (1 - sqrt(d))^2
     ((d -1 - z) - 1im*sqrt(dp - z)*sqrt(z - dm))/(4im*pi*z)
-end
-
-function MPSeed(d)
-    function f(z)
-        Z = 2*sqrt(d)*z + 1 + d
-        MPSeedUnmapped(d,Z)*2*sqrt(d)
-    end
-    f
-end
-
-function MPSeedPos(d)
-    function f(z)
-        Z = 2*sqrt(d)*z + 1 + d
-        MPSeedUnmappedPos(d,Z)*2*sqrt(d)
-    end
-    f
-end
-
-function MPSeedNeg(d)
-    function f(z)
-        Z = 2*sqrt(d)*z + 1 + d
-        MPSeedUnmappedNeg(d,Z)*2*sqrt(d)
-    end
-    f
 end
 
 function JacobiSeed(α,β)

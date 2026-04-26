@@ -463,11 +463,11 @@ Hardy
 
     conversion(b1::Hardy{Exterior{T},S},b2::GridValues) where {T <: Union{JacobiMappedInterval,JacobiInterval}, S <: Interval}
 
-    conversion(b1::Hardy{Exterior{T},S},b2::GridValues) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+    conversion(b1::Hardy{Exterior{T},S},b2::GridValues) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
 
     conversion(b1::Hardy{Exterior{T},S},b2::FixedGridValues) where {T <: Union{JacobiMappedInterval,JacobiInterval}, S <: Interval}
 
-    conversion(b1::Hardy{Exterior{T},S},b2::FixedGridValues) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+    conversion(b1::Hardy{Exterior{T},S},b2::FixedGridValues) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
 
     conversion(b1::Hardy{T,S},b2::GridValues) where {T <: Exterior, S <: DiscreteDomain}
 
@@ -1377,41 +1377,25 @@ function Truncation(x::Empty_Abst)
 end
 
 """
-    MarchenkoPasturInterval(D::Interval, d::Number, grid::Function) <: GridInterval
-    
-Marchenko Pastur interval structure over `Interval` `D` with coefficient number -> grid values function `grid` and scaled support width `d`=4√γ
+    MarchenkoPasturMappedInterval(a, b) <: GridInterval
 
----
-
-    MarchenkoPasturInterval(d)
-
-Constructs `MarchenkoPasturInterval` over interval [(1 - √`d`)², (1 + √`d`)²] with appropriate Marchenko-Pastur grid function.
+Constructs a Marchenko-Pastur grid interval on `[a, b]`.  The shape parameter
+`d` and scale `σ` are determined from the endpoints via
+`d = ((√b − √a)/(√b + √a))²`, `σ = 4/(√a + √b)²`, so that `w(σx; d)` has
+support exactly `[a, b]`.
 """
-function MarchenkoPasturInterval(x::Empty_Abst)
+function MarchenkoPasturMappedInterval(x::Empty_Abst)
 end
 
 """
-    MarchenkoPastur(d::Number, GD::GridInterval) <: Basis
+    MarchenkoPastur(GD::MarchenkoPasturMappedInterval) <: Basis
 
-Marchenko Pastur type structure with scaled support width `d` and `GridInterval` (`GridDomain`) `GD`.   
-
+Marchenko-Pastur basis on the interval defined by `GD`.  The shape parameter `d`
+is taken from `GD.d`.
 """
 function MarchenkoPastur(x::Empty_Abst)
 end
 
-"""
-    MarchenkoPasturMappedInterval(D::Interval, d::Number, grid::Function) <: GridInterval
-    
-Mapped Marchenko Pastur interval structure over `Interval` `D` with coefficient number -> grid values function `grid` and scaled support width `d`=4√γ
-
----
-
-    MarchenkoPasturMappedInterval(d)
-
-Constructs `MarchenkoPasturMappedInterval` over interval [`a`, `b`] with scaled support width `d` and appropriate Marchenko-Pastur grid function.
-"""
-function MarchenkoPasturMappedInterval(x::Empty_Abst)
-end
 
 """
     weightplot(f::BasisExpansion; dx = .01, kwargs...)

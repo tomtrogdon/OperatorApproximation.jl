@@ -9,8 +9,7 @@ function isconvertible(b1::DiscreteBasis,b2::Jacobi)
 end
 
 function isconvertible(b1::DiscreteBasis,b2::MarchenkoPastur)
-    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturInterval && b1.GD.d ≈ b2.d) || 
-    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturMappedInterval && b1.GD.d ≈ b2.d)
+    (iscompatible(b1.GD,b2.GD) && typeof(b1.GD) <: MarchenkoPasturMappedInterval && b1.GD.d ≈ b2.GD.d)
 end
 
 function isconvertible(b1::DiscreteBasis,b2::Fourier)
@@ -54,7 +53,7 @@ function conversion(b1::GridValues,b2::Ultraspherical)
 end
 
 function conversion(b1::GridValues,b2::MarchenkoPastur)
-    d = b2.d
+    d = b2.GD.d
     a,b = MP_ab(d)
     Op = OPEigenTransform(a,b)
     ConcreteOperator(b1,b2,Op)

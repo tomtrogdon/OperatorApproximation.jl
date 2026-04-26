@@ -20,7 +20,7 @@ function *(B::BoundaryValue,b1::Hardy{Exterior{T},S}) where {T <: Union{JacobiMa
     ConcreteOperator(b1,B.range,Op)
 end
 
-function *(B::BoundaryValue,b1::Hardy{Exterior{T},S}) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+function *(B::BoundaryValue,b1::Hardy{Exterior{T},S}) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
     if !(b1.GD.D == B.range.GD.D)
         return Conversion(B.range)*b1
     end

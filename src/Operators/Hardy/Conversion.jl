@@ -17,7 +17,7 @@ function conversion(b1::Hardy{Exterior{T},S},b2::GridValues) where {T <: Union{J
     ConcreteOperator(b1,b2,Op)
 end
 
-function conversion(b1::Hardy{Exterior{T},S},b2::GridValues) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+function conversion(b1::Hardy{Exterior{T},S},b2::GridValues) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
     if typeof(b2.GD) <: DirectedGridInterval
         basegrid =  n -> b2.GD.dgrid(n)
     else
@@ -42,7 +42,7 @@ function conversion(b1::Hardy{Exterior{T},S},b2::FixedGridValues) where {T <: Un
     ConcreteOperator(b1,b2,Op)
 end
 
-function conversion(b1::Hardy{Exterior{T},S},b2::FixedGridValues) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+function conversion(b1::Hardy{Exterior{T},S},b2::FixedGridValues) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
     basegrid = b2.GD.grid
     # We need to do this:
     mapgrid = b1.GD.D.imap(b2.GD.D.map(basegrid))

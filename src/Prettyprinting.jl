@@ -177,17 +177,12 @@ Base.show(io::IO, gd::UltraMappedInterval) =
 Base.show(io::IO, ::MIME"text/plain", gd::UltraMappedInterval) =
     print(io, "UltraMappedInterval on ", gd.D, "  λ = ", _fmt(gd.λ))
 
-Base.show(io::IO, gd::MarchenkoPasturInterval) =
-    print(io, "MarchenkoPasturInterval(", gd.D, ", d=", _fmt(gd.d), ")")
-
-Base.show(io::IO, ::MIME"text/plain", gd::MarchenkoPasturInterval) =
-    print(io, "MarchenkoPasturInterval on ", gd.D, "  d = ", _fmt(gd.d))
 
 Base.show(io::IO, gd::MarchenkoPasturMappedInterval) =
-    print(io, "MarchenkoPasturMappedInterval(", gd.D, ", d=", _fmt(gd.d), ")")
+    print(io, "MarchenkoPasturMappedInterval([", _fmt(gd.D.a), ", ", _fmt(gd.D.b), "], d=", _fmt(gd.d), ")")
 
 Base.show(io::IO, ::MIME"text/plain", gd::MarchenkoPasturMappedInterval) =
-    print(io, "MarchenkoPasturMappedInterval on ", gd.D, "  d = ", _fmt(gd.d))
+    print(io, "MarchenkoPasturMappedInterval on [", _fmt(gd.D.a), ", ", _fmt(gd.D.b), "]  d = ", _fmt(gd.d))
 
 # --- Grid on LLobattoMappedInterval / RLobattoMappedInterval ---
 
@@ -377,10 +372,10 @@ Base.show(io::IO, ::MIME"text/plain", sp::OscRational) =
 # --- MarchenkoPastur ---
 
 Base.show(io::IO, sp::MarchenkoPastur) =
-    print(io, "MarchenkoPastur(d=", _fmt(sp.d), ", ", sp.GD, ")")
+    print(io, "MarchenkoPastur([", _fmt(sp.GD.D.a), ", ", _fmt(sp.GD.D.b), "], d=", _fmt(sp.GD.d), ")")
 
 Base.show(io::IO, ::MIME"text/plain", sp::MarchenkoPastur) =
-    print(io, "Marchenko–Pastur basis (d=", _fmt(sp.d), ") on ", sp.GD)
+    print(io, "Marchenko–Pastur basis (d=", _fmt(sp.GD.d), ") on [", _fmt(sp.GD.D.a), ", ", _fmt(sp.GD.D.b), "]")
 
 # --- Discrete Bases ---
 

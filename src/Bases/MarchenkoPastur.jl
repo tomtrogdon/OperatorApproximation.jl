@@ -1,6 +1,8 @@
 struct MarchenkoPastur <: Basis
-    d::Number
-    GD::GridInterval
+    GD::MarchenkoPasturMappedInterval
+    function MarchenkoPastur(GD::MarchenkoPasturMappedInterval)
+        new(GD)
+    end
 end
 
 ####################################
@@ -21,8 +23,9 @@ function chop(f::BasisExpansion{T}) where T <: MarchenkoPastur
 end
 
 function getweight(sp::MarchenkoPastur)
-    d = sp.d
-    x -> 2/(pi*(2*sqrt(d)*x + 1 + d))*sqrt(1-x)*sqrt(1 + x)
+    d = sp.GD.d
+    #x -> 2/(pi*(2*sqrt(d)*x + 1 + d))*sqrt(1-x)*sqrt(1 + x)
+    x -> 1/(2pi*d*x)*sqrt(1-x)*sqrt(1 + x)
 end
 ####################################
 #####  Important to implement  #####
@@ -48,7 +51,7 @@ end
 
 function (P::BasisExpansion{MarchenkoPastur})(X::Number) # Clenshaw's algorithm
     n = P.c |> length
-    d = P.basis.d
+    d = P.basis.GD.d
     x = P.basis.GD.D.imap(X)
     a,b = MP_ab(d)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]

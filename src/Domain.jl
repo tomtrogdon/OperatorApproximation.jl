@@ -86,6 +86,16 @@ struct UnitInterval <: Interval
     end
 end
 
+struct GeneralInterval <: Interval
+    map::Function
+    imap::Function
+    a
+    b
+    function GeneralInterval(a, b)
+        return new(x -> x, x -> x, a, b)
+    end
+end
+
 struct UnitCircle <: Circle  ## could be a map of UnitInterval()
     map::Function
     imap::Function
@@ -154,6 +164,20 @@ struct MappedInterval <: Interval
     b
     function MappedInterval(a,b)
         return new(x -> M(a,b,x), x -> iM(a,b,x), a, b)
+    end
+end
+
+struct MappedGeneralInterval <: Interval
+    GI::GeneralInterval   # base interval [a, b]
+    map::Function         # maps [a, b] → [c, d]
+    imap::Function        # maps [c, d] → [a, b]
+    a                     # c: left endpoint of mapped interval
+    b                     # d: right endpoint of mapped interval
+    function MappedGeneralInterval(GI::GeneralInterval, c, d)
+        a, b = GI.a, GI.b
+        mapfn  = x -> c .+ (d - c) / (b - a) * (x .- a)
+        imapfn = y -> a .+ (b - a) / (d - c) * (y .- c)
+        return new(GI, mapfn, imapfn, c, d)
     end
 end
 
@@ -307,23 +331,8 @@ struct JacobiInterval <: GridInterval
     end
 end
 
-struct MarchenkoPasturInterval <: GridInterval
-    D::Interval
-    d::Number
-    grid::Function
-    function MarchenkoPasturInterval(d)
-        a, b = MP_ab(d)
-        gridfun = n -> Gauss_quad(a,b,n-1)[1]
-        return new(MappedInterval((1 - sqrt(d))^2, (1 + sqrt(d))^2), d, gridfun)
-    end
-end
-
 function ==(J1::JacobiInterval,J2::JacobiInterval)
     J1.D == J2.D && J1.α == J2.α && J1.β == J2.β
-end
-
-function ==(J1::MarchenkoPasturInterval,J2::MarchenkoPasturInterval)
-    J1.D == J2.D && J1.d == J2.d
 end
 
 struct UltraInterval <: GridInterval
@@ -430,16 +439,17 @@ struct JacobiMappedInterval <: GridInterval
     end
 end
 
+_σ(a, b) = 4 / (sqrt(a) + sqrt(b))^2
+
 struct MarchenkoPasturMappedInterval <: GridInterval
-    D::Interval
+    D::MappedGeneralInterval
     d::Float64
     grid::Function
     function MarchenkoPasturMappedInterval(a, b)
         d = ((sqrt(b) - sqrt(a)) / (sqrt(b) + sqrt(a)))^2
-        σ = 4 / (sqrt(a) + sqrt(b))^2
         A, B = MP_ab(d)
         gridfun = n -> Gauss_quad(A, B, n-1)[1]
-        return new(MappedInterval(a, b), d, gridfun)
+        return new(MappedGeneralInterval(GeneralInterval((1 - sqrt(d))^2, (1 + sqrt(d))^2), a, b), d, gridfun)
     end
 end
 function ==(J1::MarchenkoPasturMappedInterval,J2::MarchenkoPasturMappedInterval)

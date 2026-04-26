@@ -123,7 +123,7 @@ function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: Union{
     dot(cauchy(a,b,JacobiSeed(α,β),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2
 end
 
-function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: Union{MarchenkoPasturMappedInterval,MarchenkoPasturInterval}, S <: Interval}
+function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
     d = P.basis.GD.GD.d
     a, b = MP_ab(d)
     dot(cauchy(a,b,MPSeed(d),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2

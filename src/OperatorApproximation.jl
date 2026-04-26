@@ -7,7 +7,7 @@ import Base: +, -, *, \, complex, /, length, iterate, log, sqrt, ==, ^,
     real, imag, abs, sum, zero, intersect, conj, chop, copy
 import LinearAlgebra: I, Matrix, norm, eigen, diagm, transpose, dot
 
-export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval,
+export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, ChebyshevInterval, GeneralInterval, MappedGeneralInterval,
      GridValues, FixedGridValues, FiniteGridValues, ConcreteOperator, Multiplication, FastConversion,
     ChebyshevMappedInterval, MappedInterval, BasisExpansion, Conversion, UnitInterval,
     MappedInterval, Transform, setbasis, setgrid, setN, UltraInterval, JacobiInterval,
@@ -19,7 +19,7 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     BlockAbstractOperator, rhmult, rhrhs, matrix2BlockOperator, RHSolver, domainplot, domainplot!, mvf2mof, coefplot, coefplot!, RHSolverVec,
     arclength, RHP, adapt, mofeval, mult2x2, dilog, rhwellposed, rhsplot, rhplot, clearCauchycache,
     HermitePoly, HermiteFun, Axis, GridAxis, RealAxis, HermiteRealAxis, CoefConversion, Erf, lancz, RecCoef,
-    DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPasturInterval, MarchenkoPastur, MarchenkoPasturMappedInterval,
+    DiscreteDomain, Grid, Residue, moment, Truncation, MarchenkoPastur, MarchenkoPasturMappedInterval,
     weightplot, weightplot!, RationalRealAxis, OscRational, dot, norm, ⊙, mfft, sumdot, combine, combinebasexp, simp,
     RationalMappedAxis, MappedSemiAxis, LaguerreSemiAxis, LaguerrePoly, LaguerreFun, roots,
     FourierTransform, Shift, FastMultiplication, pad, IdentityOperator,
