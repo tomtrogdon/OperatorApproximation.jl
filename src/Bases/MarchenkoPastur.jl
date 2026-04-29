@@ -52,6 +52,7 @@ end
 function (P::BasisExpansion{MarchenkoPastur})(X::Number) # Clenshaw's algorithm
     n = P.c |> length
     d = P.basis.GD.d
+    #((1-sqrt(d))^2, (1+sqrt(d))^2) |> display
     x = P.basis.GD.D.imap(X)
     a,b = MP_ab(d)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]

@@ -181,6 +181,12 @@ struct MappedGeneralInterval <: Interval
     end
 end
 
+_baseendpoints(I::MappedInterval) = (-1.0, 1.0)
+_baseendpoints(I::GeneralInterval) = (I.a, I.b)
+_baseendpoints(I::MappedGeneralInterval) = (I.GI.a, I.GI.b)
+_baseendpoints(GD::GridInterval) = _baseendpoints(GD.D)
+_baseendpoints(b::Basis) = _baseendpoints(b.GD)
+
 struct MappedCircle <: Circle
     map::Function # maps unit circle to mapped circle
     imap::Function

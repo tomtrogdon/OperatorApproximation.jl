@@ -171,7 +171,8 @@ function plot!(f::BasisExpansion{T};dx = 0.01,L = 10,kwargs...) where T <: Lague
 end
 
 function plot(f::BasisExpansion{T};dx = 0.01,kwargs...) where T
-    x = -1:dx:1
+    ab, bb = _baseendpoints(f.basis)
+    x = ab:dx:bb
     x = f.basis.GD.D.map.(x)
     y = f.(x)
     a = f.basis.GD.D.a
@@ -186,7 +187,8 @@ function plot(f::BasisExpansion{T};dx = 0.01,kwargs...) where T
 end
 
 function plot!(f::BasisExpansion{T};dx = 0.01,kwargs...) where T
-    x = -1:dx:1
+    ab, bb = _baseendpoints(f.basis)
+    x = ab:dx:bb
     x = f.basis.GD.D.map.(x)
     y = f.(x)
     a = f.basis.GD.D.a
@@ -201,7 +203,8 @@ function plot!(f::BasisExpansion{T};dx = 0.01,kwargs...) where T
 end
 
 function weightplot(f::BasisExpansion;dx = 0.01,kwargs...)
-    X = -1:dx:1
+    ab, bb = _baseendpoints(f.basis)
+    X = ab:dx:bb
     x = f.basis.GD.D.map.(X)
     y = f.(x)
     w = getweight(f.basis)
@@ -220,7 +223,8 @@ function weightplot(f::BasisExpansion;dx = 0.01,kwargs...)
 end
 
 function weightplot!(f::BasisExpansion;dx = 0.01,kwargs...)
-    X = -1:dx:1
+    ab, bb = _baseendpoints(f.basis)
+    X = ab:dx:bb
     x = f.basis.GD.D.map.(X)
     y = f.(x)
     w = getweight(f.basis)
