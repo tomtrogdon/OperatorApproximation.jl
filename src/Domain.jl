@@ -181,12 +181,6 @@ struct MappedGeneralInterval <: Interval
     end
 end
 
-_baseendpoints(I::MappedInterval) = (-1.0, 1.0)
-_baseendpoints(I::GeneralInterval) = (I.a, I.b)
-_baseendpoints(I::MappedGeneralInterval) = (I.GI.a, I.GI.b)
-_baseendpoints(GD::GridInterval) = _baseendpoints(GD.D)
-_baseendpoints(b::Basis) = _baseendpoints(b.GD)
-
 struct MappedCircle <: Circle
     map::Function # maps unit circle to mapped circle
     imap::Function
@@ -454,7 +448,7 @@ struct MarchenkoPasturMappedInterval <: GridInterval
     function MarchenkoPasturMappedInterval(a, b)
         d = ((sqrt(b) - sqrt(a)) / (sqrt(b) + sqrt(a)))^2
         A, B = MP_ab(d)
-        gridfun = n -> (1 + d) .+ 2*sqrt(d) .* Gauss_quad(A, B, n-1)[1]
+        gridfun = n -> Gauss_quad(A, B, n-1)[1]
         return new(MappedGeneralInterval(GeneralInterval((1 - sqrt(d))^2, (1 + sqrt(d))^2), a, b), d, gridfun)
     end
 end
@@ -472,3 +466,8 @@ struct UltraMappedInterval <: GridInterval
         return new(MappedInterval(a,b), λ, gridfun)
     end
 end
+
+_baseendpoints(I::MappedInterval) = (-1.0, 1.0)
+_baseendpoints(I::GeneralInterval) = (I.a, I.b)
+_baseendpoints(I::MappedGeneralInterval) = (I.GI.a, I.GI.b)
+_baseendpoints(GD::GridInterval) = _baseendpoints(GD.D)

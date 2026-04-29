@@ -120,6 +120,8 @@ function ==(b1::DirectSum,b2::DirectSum)
     prod(b1.bases .== b2.bases)
 end
 
+_baseendpoints(b::Basis) = _baseendpoints(b.GD)
+
 function isconvertible(b1::Basis,b2::Basis) # false by default
     false
 end
