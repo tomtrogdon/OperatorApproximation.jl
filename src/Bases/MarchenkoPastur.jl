@@ -25,7 +25,8 @@ end
 function getweight(sp::MarchenkoPastur)
     d = sp.GD.d
     #x -> 2/(pi*(2*sqrt(d)*x + 1 + d))*sqrt(1-x)*sqrt(1 + x)
-    x -> 1/(2pi*d*x)*sqrt(1-x)*sqrt(1 + x)
+    γm, γp = (1-sqrt(d))^2, (1+sqrt(d))^2
+    x -> 1/(2pi*d*x)*sqrt(γp-x)*sqrt(x - γm)
 end
 ####################################
 #####  Important to implement  #####
