@@ -222,7 +222,8 @@ function gmres(L, b::BasisExpansion, ip::Function;
                maxiter = 100,
                restart = maxiter,
                x0      = nothing,
-               chop_iter = false)
+               chop_iter = false,
+               history = false)
 
     _ip_norm(v) = sqrt(real(ip(v, v)))
 
@@ -230,8 +231,10 @@ function gmres(L, b::BasisExpansion, ip::Function;
     x = x0 === nothing ? BasisExpansion(b.basis, zero(b.c)) : x0
 
     b_norm = _ip_norm(b)
+    residuals = Float64[]
+
     if b_norm == 0
-        return x
+        return history ? (x, residuals) : x
     end
 
     for _outer in 1:cld(maxiter, restart)
@@ -239,7 +242,7 @@ function gmres(L, b::BasisExpansion, ip::Function;
         r_norm = _ip_norm(r)
 
         if r_norm / b_norm < tol
-            return x
+            return history ? (x, residuals) : x
         end
 
         m = min(restart, maxiter)
@@ -295,6 +298,8 @@ function gmres(L, b::BasisExpansion, ip::Function;
             e1[j+1] = -conj(sn[j]) * e1[j]
             e1[j]   =  cs[j] * e1[j]
 
+            push!(residuals, abs(e1[j+1]) / b_norm)
+
             if abs(e1[j+1]) / b_norm < tol
                 j_final = j
                 break
@@ -316,9 +321,9 @@ function gmres(L, b::BasisExpansion, ip::Function;
         # Check convergence after restart
         r = b - L * x
         if _ip_norm(r) / b_norm < tol
-            return x
+            return history ? (x, residuals) : x
         end
     end
 
-    return x
+    return history ? (x, residuals) : x
 end

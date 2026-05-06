@@ -228,13 +228,14 @@ estimate is the rounded mean count across all k runs.
 Implements Algorithm P.3 of arXiv:2504.03066.
 """
 function count_spikes(γp::Float64,
-                      jacobi::Tuple{Vector{Float64}, Vector{Float64}},
+                      cholesky::Tuple{Vector{Float64}, Vector{Float64}},
                       N::Integer;
                       C::Float64 = 1.0, δ::Float64 = 0.25)
     threshold = γp + C * N^(-δ)
-    a, b = jacobi
-    λs = eigvals(SymTridiagonal(a, b))
-    return count(λ -> λ > threshold, λs)
+    a, b = cholesky
+    L = Bidiagonal(a,b,:L)
+    λs = eigvals(L'*L)
+    return count(λ -> λ > threshold, λs), λs[λs .> threshold]
 end
 
 support_endpoints(α_inf, β_inf) = ((α_inf - β_inf)^2, (α_inf + β_inf)^2)
@@ -292,7 +293,7 @@ end
 
 Density ρ(x) = v(x)·√((b−x)(x−a))/π on the bulk (a, b); zero outside.
 """
-function density(α::AbstractVector, β::AbstractVector, x::Real)
+function density_est(α::AbstractVector, β::AbstractVector, x::Real)
     _, v = density_components(α, β, x)
     a, b = support_endpoints(α[end],β[end])
     S2 = (b - x) * (x - a)
