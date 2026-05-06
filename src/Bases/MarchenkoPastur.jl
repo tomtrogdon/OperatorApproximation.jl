@@ -40,7 +40,7 @@ end
 #   Then the Cauchy integral of g over sp.GD is CauchyTransform()*Fmp
 #
 function sum(f::BasisExpansion{T}) where T <: MarchenkoPastur
-    (f.basis.GD.D.b - f.basis.GD.D.a)*f.c[1]
+    (f.basis.GD.D.b - f.basis.GD.D.a)*f.c[1]/(2*sqrt(f.basis.GD.d))
 end
 
 function moment(f::BasisExpansion{T},k::Int64) where T <: MarchenkoPastur
@@ -58,3 +58,11 @@ function (P::BasisExpansion{MarchenkoPastur})(X::Number) # Clenshaw's algorithm
     a,b = MP_ab(d)
     (hcat(e(1,n) |> sparse,(jacobi(a,b,n) - x*I)[1:end-1,1:end-2] |> sparse)\P.c)[1]
 end
+
+function weval(P::BasisExpansion{MarchenkoPastur},X::Number) # Clenshaw's algorithm
+    x = P.basis.GD.D.imap.(X)
+    y = P.(X)
+    w = getweight(P.basis)
+    return 2*y.*w.(x)
+end
+
