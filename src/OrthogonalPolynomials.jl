@@ -263,7 +263,39 @@ end
             c[j+2] /= b(j)
         end
     end
-    c[1:n+1] 
+    c[1:n+1]
+end
+
+# Overload for polynomial systems whose support is not [-1,1].
+# `center` and `halflen` define the interval via x ∈ [center-halflen, center+halflen].
+# The Bernstein-ellipse check is done in the normalised coordinate (z-center)/halflen
+# so that `dist` is evaluated against the correct ellipse rather than the one for [-1,1].
+@memoize function cauchy(a, b, seed, n, z::Number, center::Real, halflen::Real)
+    if dist((z - center) / halflen, n) == 0
+        m = 16
+        err = 1.0
+        while err > 1e-15
+            m *= 2
+            c = fill(0.0im, m)
+            c[1] = 1.0/(2im*pi)
+            ldiv!(jacobi(a,b,m-1) - complex(z)*I, c)
+            err = maximum(abs.(c[end-3:end]))
+        end
+        if m < n + 1
+            append!(c, zeros(n + 10 - m))
+        end
+    else
+        c = fill(0.0im, n+3)
+        c[1] = seed(z)
+        Z = complex(z)
+        c[2] = Z*c[1] - a(0)*c[1] + 1/(2im*pi)
+        c[2] /= b(0)
+        for j = 1:n-1
+            c[j+2] = Z*c[j+1] - a(j)*c[j+1] - b(j-1)*c[j]
+            c[j+2] /= b(j)
+        end
+    end
+    c[1:n+1]
 end
 
 function cauchy(a,b,seed,n,z::Vector)  # vectorize!

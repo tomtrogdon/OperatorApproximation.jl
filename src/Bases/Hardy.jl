@@ -126,7 +126,14 @@ end
 function (P::BasisExpansion{Hardy{Exterior{T},S}})(X::Number) where {T <: MarchenkoPasturMappedInterval, S <: Interval}
     d = P.basis.GD.GD.d
     a, b = MP_ab(d)
-    dot(cauchy(a,b,MPSeed(d),length(P.c)-1,P.basis.GD.GD.D.imap(X)) |> conj,P.c)*2
+    z = P.basis.GD.GD.D.imap(X)
+    # MP polynomials live on [(1-√d)², (1+√d)²]; pass the interval geometry so
+    # that cauchy() checks the Bernstein ellipse around this interval rather than
+    # the default [-1,1], preventing an unstable forward recurrence when z is
+    # outside the MP support but inside [-1,1].
+    cen    = 1.0 + d
+    halflen = 2.0 * sqrt(d)
+    dot(cauchy(a, b, MPSeed(d), length(P.c)-1, z, cen, halflen) |> conj, P.c)*2*halflen
 end
 
 function (P::BasisExpansion{Hardy{T,S}})(X::Number) where {T <: Exterior, S <: DiscreteDomain}

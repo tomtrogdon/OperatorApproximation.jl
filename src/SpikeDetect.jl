@@ -142,32 +142,38 @@ function stieltjes_estimate(α::Vector{Float64}, β::Vector{Float64}, z::Number)
 end
 
 """
-    spike_detect(apply_A, N, k; nsteps, navg) -> (γm, γp, m0, jacobi)
+    spike_detect(apply_A, N, k; nsteps, navg) -> (γm, γp, m0, cholesky_list)
 
-Stochastic Lanczos spectral estimation using the (A ⊗ Iₖ) trick.
+Stochastic Lanczos spectral estimation with per-run tail stabilisation and
+cross-run tail synchronisation.
+
+For each of `k` independent Lanczos runs on the N-dimensional system:
+1. Compute the Cholesky factorisation of the resulting Jacobi matrix.
+2. Stabilise the tail of that run by replacing its last `navg` entries with
+   their mean (SR.3 applied independently per run).
+
+Then average the stabilised tail values across all `k` runs to obtain a common
+tail, and replace every run's tail region with this common value so all runs
+share the same asymptotic behaviour.  All `k` Cholesky factor pairs are
+returned; the first is used for spike detection.
+
+This avoids the near-degeneracy problem of the (A ⊗ Iₖ) trick, where
+floating-point perturbations turn k exactly-repeated eigenvalues into k
+nearly-equal but distinct ones.
 
 # Arguments
 - `apply_A`: function `ℝᴺ → ℝᴺ` representing the (symmetric) linear operator.
 - `N`: ambient dimension.
-- `k`: number of blocks (columns of the starting matrix).
-- `nsteps`: number of Lanczos iterations (default `⌈4 log N⌉`).
-- `navg`: number of tail entries to average for tail stabilisation (SR.3,
-  default `⌈nsteps/4⌉`).
-
-# Starting-vector construction
-Construct b₀ = [b₁; b₂; …; bₖ] ∈ ℝ^{Nk} where each bⱼ ∈ ℝᴺ is an
-independent Gaussian vector normalised to unit 2-norm, then b₀ is normalised
-to unit length.
-
-# Matrix-vector product
-`(A ⊗ Iₖ)` is applied implicitly: the current Nk vector is split into k
-consecutive N-blocks and `apply_A` is called on each block independently.
+- `k`: number of independent Lanczos runs.
+- `nsteps`: Lanczos steps per run (default `⌈4 log N⌉`).
+- `navg`: tail entries stabilised per run (default `⌈nsteps/4⌉`).
 
 # Returns
-- `γm`, `γp`: estimated left and right edges of the bulk support.
-- `m0(z)`: Stieltjes transform estimate (function of z ∈ ℂ).
-- `jacobi`: 1-element vector containing the `(a, b)` Jacobi matrix pair from
-  the single Lanczos run (for use with `count_spikes`).
+- `γm`, `γp`: estimated left and right bulk-support edges (from run 1).
+- `m0(z)`: Stieltjes transform estimate (from run 1).
+- `cholesky_list`: length-`k` vector of `(α, β)` Cholesky factor pairs,
+  all sharing a common stabilised tail. Use `cholesky_list[1]` for spike
+  detection and density estimation.
 
 Implements Algorithms SR.1–SR.3 and P.2 of arXiv:2504.03066.
 """
@@ -175,65 +181,69 @@ function spike_detect(apply_A::Function, N::Integer, k::Integer;
                       nsteps::Integer = max(5, ceil(Int, 4 * log(N))),
                       navg::Integer   = max(2, ceil(Int, nsteps / 4)))
 
-    # ── Construct the Nk starting vector ────────────────────────────────────
-    b0 = zeros(N * k)
+    # ── SR.1: k independent Lanczos runs on the N-dimensional system ─────────
+    all_α = Vector{Vector{Float64}}(undef, k)
+    all_β = Vector{Vector{Float64}}(undef, k)
+
     for j = 1:k
-        bj = randn(N)
-        bj /= norm(bj)                     # normalise each N-block to unit 2-norm
-        b0[(j-1)*N+1 : j*N] = bj
-    end
-    b0 /= norm(b0)                         # normalise the full Nk vector
-
-    # ── Implicit (A ⊗ Iₖ) matrix-vector product ─────────────────────────────
-    function apply_kron(v::AbstractVector)
-        w = similar(v)
-        for j = 1:k
-            idx = (j-1)*N+1 : j*N
-            w[idx] = apply_A(v[idx])
-        end
-        return w
+        q = randn(N)
+        q /= norm(q)
+        a_jac, b_jac = lanczos_with_extend(apply_A, q, nsteps)
+        all_α[j], all_β[j] = cholesky_jacobi(a_jac, b_jac)
     end
 
-    # ── SR.1: single Lanczos run on the Nk-dimensional system ───────────────
-    a_jac, b_jac = lanczos_with_extend(apply_kron, b0, nsteps)
-    jacobi = (a_jac, b_jac)
+    # ── SR.3 (per run): stabilise each run's tail independently ──────────────
+    α_tails = zeros(k)
+    β_tails = zeros(k)
+    for j = 1:k
+        αj = all_α[j];  nα = length(αj)
+        βj = all_β[j];  nβ = length(βj)
+        αt = mean(αj[max(1, nα - navg) : nα - 1])
+        βt = mean(βj[max(1, nβ - navg + 1) : nβ])
+        αj[max(1, nα - navg) : nα - 1] .= αt
+        αj[nα] = αt
+        βj[max(1, nβ - navg + 1) : nβ] .= βt
+        α_tails[j] = αt
+        β_tails[j] = βt
+    end
 
-    # ── SR.3: stabilise the tail of the single Cholesky factorisation ───────
-    α, β = cholesky_jacobi(a_jac, b_jac)
-    nα = length(α)
-    nβ = length(β)
+    # ── Cross-run tail sync: replace each run's tail with the common mean ─────
+    α_common = mean(α_tails)
+    β_common = mean(β_tails)
+    for j = 1:k
+        αj = all_α[j];  nα = length(αj)
+        βj = all_β[j];  nβ = length(βj)
+        αj[max(1, nα - navg) : nα] .= α_common
+        βj[max(1, nβ - navg + 1) : nβ] .= β_common
+    end
 
-    α_tail = mean(α[max(1, nα - navg) : nα - 1])
-    β_tail = mean(β[max(1, nβ - navg + 1) : nβ])
-    α[max(1, nα - navg) : nα - 1] .= α_tail
-    β[max(1, nβ - navg + 1) : nβ]  .= β_tail
-    α[nα] = α_tail   # enforce α[end] == α[end-1]
-    cholesky = (α, β)
+    cholesky_list = [(all_α[j], all_β[j]) for j = 1:k]
 
-    # ── SR.2: Stieltjes transform and support endpoints ──────────────────────
-    _, γm, γp = stieltjes_estimate(α, β, 1.0 + 1im)
-    m0 = z -> stieltjes_estimate(α, β, z)[1]
+    # ── SR.2: support endpoints and Stieltjes transform (from run 1) ─────────
+    α1, β1 = cholesky_list[1]
+    _, γm, γp = stieltjes_estimate(α1, β1, 1.0 + 1im)
+    m0 = z -> stieltjes_estimate(α1, β1, z)[1]
 
-    return γm, γp, m0, cholesky
+    return γm, γp, m0, cholesky_list
 end
 
 """
-    count_spikes(γp, jacobi, N; C, δ) -> r̂
+    count_spikes(γp, cholesky_list, N; C, δ) -> (count, outliers)
 
-Count the number of spike eigenvalues above the bulk edge.  For each Lanczos
-run, eigenvalues of the Jacobi matrix are computed via `eigvals(SymTridiagonal(a,b))`
-and those exceeding the threshold `γp + C * N^(-δ)` are counted.  The returned
-estimate is the rounded mean count across all k runs.
+Count spike eigenvalues above the bulk edge using the first Cholesky pair in
+`cholesky_list` (as returned by `spike_detect`).  Eigenvalues are obtained from
+`eigvals(L'L)` where `L = Bidiagonal(α, β, :L)`, and those exceeding
+`γp + C * N^(-δ)` are counted.
 
 Implements Algorithm P.3 of arXiv:2504.03066.
 """
 function count_spikes(γp::Float64,
-                      cholesky::Tuple{Vector{Float64}, Vector{Float64}},
+                      cholesky_list::Vector{<:Tuple{Vector{Float64}, Vector{Float64}}},
                       N::Integer;
                       C::Float64 = 1.0, δ::Float64 = 0.25)
     threshold = γp + C * N^(-δ)
-    a, b = cholesky
-    L = Bidiagonal(a,b,:L)
+    α, β = cholesky_list[1]
+    L = Bidiagonal(α, β, :L)
     λs = eigvals(L'*L)
     return count(λ -> λ > threshold, λs), λs[λs .> threshold]
 end
@@ -313,4 +323,16 @@ discrete spike locations.
 function rational_factor(α::AbstractVector, β::AbstractVector, x::Real)
     _, v = density_components(α, β, x)
     return v / π
+end
+
+# Averaged overloads: accept the full cholesky_list from spike_detect and
+# return the mean over all k Cholesky factors.
+const CholeskyList = Vector{<:Tuple{Vector{Float64}, Vector{Float64}}}
+
+function density_est(cholesky_list::CholeskyList, x::Real)
+    mean(density_est(cj[1], cj[2], x) for cj in cholesky_list)
+end
+
+function rational_factor(cholesky_list::CholeskyList, x::Real)
+    mean(rational_factor(cj[1], cj[2], x) for cj in cholesky_list)
 end
