@@ -13,7 +13,8 @@ struct FixedGridValues <: DiscreteBasis
         if  map(x -> isin(x,GD.D),pts) |> prod
             new(GD.D.imap.(pts),GD)
         else
-            @error "Supplied points not in the Domain."
+            X = GD.D.imap.(pts[.!map(x -> isin(x,GD.D),pts)])
+            @error "Supplied points not in the Domain. Value(s) after mapping are $X"
         end
     end
 end

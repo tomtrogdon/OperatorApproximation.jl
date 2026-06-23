@@ -64,16 +64,16 @@ Interior(GD) = Interior{typeof(GD)}(GD)
 
 
 M = (A,B,x) -> (B - A)/2*x .+ (B + A)/2  # from I to [A,B]
-iM = (A,B,x) -> 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
+iM = (A,B,x) -> abs(B - x) < 1e-15 ? 1.0 : abs(A - x) < 1e-15 ? -1.0 : 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
 
 function isin(x::Number,I::Interval)
     X = I.imap(x)
-    -1 <= real(X) <= 1 && imag(X) < 1e-14
+    -1 - 1e-13 <= real(X) <= 1 + 1e-13 && imag(X) < 1e-13
 end
 
 function isin(x::Number,I::Circle)
     X = I.imap(x)
-    abs(abs2(X) -1) < 1e-14
+    abs(abs2(X) -1) < 1e-13
 end
 
 struct UnitInterval <: Interval
