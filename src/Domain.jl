@@ -64,8 +64,8 @@ Interior(GD) = Interior{typeof(GD)}(GD)
 
 
 M = (A,B,x) -> (B - A)/2*x .+ (B + A)/2  # from I to [A,B]
-iM = (A,B,x) -> 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
-#iM = (A,B,x) -> map(s-> abs(B - s) < 1e-15 ? 1.0 : abs(A - s) < 1e-15 ? -1.0 : 2/(B - A)*(s .- (B + A)/2),x) # From [A,B] to I
+iM(A,B,x::Number) = abs(B - x) < 1e-15 ? 1.0 : abs(A - x) < 1e-15 ? -1.0 : 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
+iM(A,B,x::Vector) = map(s -> iM(A,B,s), x)
 
 function isin(x::Number,I::Interval)
     X = I.imap(x)

@@ -6,6 +6,7 @@ struct ArgNum <: Number
         new(z |> complex,ρ,θ |> mmod)
     end
 end
+iM(A,B,x::ArgNum) = 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
 
 function real(z::ArgNum)
     real(z.z)
