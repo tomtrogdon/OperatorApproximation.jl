@@ -64,11 +64,12 @@ Interior(GD) = Interior{typeof(GD)}(GD)
 
 
 M = (A,B,x) -> (B - A)/2*x .+ (B + A)/2  # from I to [A,B]
-iM = (A,B,x) -> abs(B - x) < 1e-15 ? 1.0 : abs(A - x) < 1e-15 ? -1.0 : 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
+iM = (A,B,x) -> 2/(B - A)*(x .- (B + A)/2) # From [A,B] to I
+#iM = (A,B,x) -> map(s-> abs(B - s) < 1e-15 ? 1.0 : abs(A - s) < 1e-15 ? -1.0 : 2/(B - A)*(s .- (B + A)/2),x) # From [A,B] to I
 
 function isin(x::Number,I::Interval)
     X = I.imap(x)
-    -1 - 1e-13 <= real(X) <= 1 + 1e-13 && imag(X) < 1e-13
+    -1 - 1e-14 <= real(X) <= 1 + 1e-14 && imag(X) < 1e-14
 end
 
 function isin(x::Number,I::Circle)
