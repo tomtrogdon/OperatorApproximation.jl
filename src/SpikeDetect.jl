@@ -10,11 +10,11 @@
     lanczos_with_extend(apply_A, q1, n; tol, qwin) -> (a, b)
 
 Run up to `n` steps of the Lanczos iteration with full reorthogonalization,
-monitor convergence of the diagonal entries, and extend the output Jacobi
+monitor convergence of the off-diagonal entries, and extend the output Jacobi
 matrix with a constant tail once the entries have stabilised.
 
 Convergence is declared when the standard deviation of the last `qwin`
-diagonal entries falls below `tol * |mean| + tol`.  Early exit also occurs
+off-diagonal entries falls below `tol * |mean| + tol`.  Early exit also occurs
 if the off-diagonal norm drops below machine epsilon.
 
 The returned arrays are extended by one entry: the final converged diagonal
@@ -67,9 +67,9 @@ function lanczos_with_extend(apply_A::Function, q1::AbstractVector, n::Integer;
             Q[:, j+1] = v / β
         end
 
-        # Convergence check: std of last qwin diagonal entries is small
-        if j >= qwin
-            window = a[j-qwin+1:j]
+        # Convergence check: std of last qwin off-diagonal entries is small
+        if j >= qwin && j < n
+            window = b[j-qwin+1:j]
             if std(window) < tol * abs(mean(window)) + tol
                 j_conv = j
                 break
@@ -78,9 +78,9 @@ function lanczos_with_extend(apply_A::Function, q1::AbstractVector, n::Integer;
     end
 
     # Extend: append one more copy of the converged tail values
-    a_out = vcat(a[1:j_conv], a[j_conv])
-    b_last = j_conv > 1 ? b[j_conv-1] : b[1]
-    b_out  = vcat(b[1:j_conv-1], b_last, b_last)
+    b_last = b[min(j_conv, n-1)]
+    a_out  = vcat(a[1:j_conv], a[j_conv])
+    b_out  = j_conv < n ? vcat(b[1:j_conv], b_last) : vcat(b, b_last, b_last)
 
     return a_out, b_out
 end
@@ -142,6 +142,128 @@ function stieltjes_estimate(α::Vector{Float64}, β::Vector{Float64}, z::Number)
 end
 
 """
+    stieltjes_jacobi(a, b, z) -> (m, γm, γp)
+
+Alternate Stieltjes transform estimator working directly from the Jacobi
+(tridiagonal) matrix entries `a` (diagonal) and `b` (off-diagonal), as
+returned by `lanczos_with_extend`.  Both vectors must have the same length n,
+with the final two entries of each equal, marking the semi-infinite constant tail.
+
+Support endpoints:  γ₋ = a∞ − 2b∞,  γ₊ = a∞ + 2b∞  (a∞ = a[end], b∞ = b[end]).
+
+The Stieltjes transform m(z) = (J_ext − zI)⁻¹₁₁ is evaluated via the Schur
+complement backward recursion (no Cholesky factorisation required):
+
+    f_tail = ( (a∞ − z) + √((a∞ − z)² − 4b∞²) ) / (2b∞²)
+    f_k    = 1 / (a[k] − z − b[k]² f_{k+1}),    k = n−1, …, 1
+    m      = f₁
+"""
+function stieltjes_jacobi(a::Vector{Float64}, b::Vector{Float64}, z::Number)
+    n = length(a)
+    length(b) == n || throw(ArgumentError("a and b must have equal length (use lanczos_with_extend output)"))
+    n ≥ 2 || error("need at least 2 entries")
+
+    a∞ = a[n]
+    b∞ = b[n]
+    γm = a∞ - 2*b∞
+    γp = a∞ + 2*b∞
+
+    f = ((a∞ - z) - sqrt(complex((a∞ - z) - 2*b∞))*sqrt(complex((a∞ - z) + 2*b∞))) / (2*b∞^2)
+
+    for k = n-1:-1:1
+        f = 1 / (a[k] - z - b[k]^2 * f)
+    end
+
+    return f, γm, γp
+end
+
+"""
+    cholesky_averaging!(all_α, all_β, navg)
+
+In-place per-run tail stabilisation and cross-run tail synchronisation for a
+collection of Cholesky factor pairs `(α, β)`.
+
+For each pair, the last `navg` entries of the α and β tails are replaced by
+their within-run means.  The per-run tail means are then averaged across all
+runs, and every pair's tail region is overwritten with this common value so
+all runs share the same asymptotic behaviour.
+
+Implements Algorithm SR.3 of arXiv:2504.03066 as a standalone function.
+"""
+function cholesky_averaging!(all_α::Vector, all_β::Vector, navg::Integer)
+    k = length(all_α)
+    α_tails = zeros(k)
+    β_tails = zeros(k)
+
+    for j = 1:k
+        αj = all_α[j];  nα = length(αj)
+        βj = all_β[j];  nβ = length(βj)
+        αt = mean(αj[max(1, nα - navg) : nα - 1])
+        βt = mean(βj[max(1, nβ - navg + 1) : nβ])
+        αj[max(1, nα - navg) : nα - 1] .= αt
+        αj[nα] = αt
+        βj[max(1, nβ - navg + 1) : nβ] .= βt
+        α_tails[j] = αt
+        β_tails[j] = βt
+    end
+
+    α_common = mean(α_tails)
+    β_common = mean(β_tails)
+    for j = 1:k
+        αj = all_α[j];  nα = length(αj)
+        βj = all_β[j];  nβ = length(βj)
+        αj[max(1, nα - navg) : nα] .= α_common
+        βj[max(1, nβ - navg + 1) : nβ] .= β_common
+    end
+    return nothing
+end
+
+function geomean(bvec)
+    n = length(bvec)
+    (prod(bvec))^(1/n)
+end
+
+"""
+    jacobi_averaging!(all_a, all_b, navg)
+
+In-place per-run tail stabilisation and cross-run tail synchronisation for a
+collection of Jacobi matrix pairs `(a, b)` as returned by
+`lanczos_with_extend` (both vectors have equal length, last two entries
+identical).
+
+Mirrors `cholesky_averaging!` but operates directly on the tridiagonal Jacobi
+entries, so no Cholesky factorisation is required beforehand.
+"""
+function jacobi_averaging!(all_a::Vector, all_b::Vector, navg::Integer; sig = 0.01)
+    k = length(all_a)
+    a_tails = zeros(k)
+    b_tails = zeros(k)
+
+    for j = 1:k
+        aj = all_a[j];  na = length(aj)
+        bj = all_b[j];  nb = length(bj)
+        at = mean(aj[max(1, na - navg) : na - 1])
+        bt = geomean(bj[max(1, nb - navg) : nb - 1])
+        aj[max(1, na - navg) : na - 1] .= at
+        aj[na] = at
+        bj[max(1, nb - navg) : nb - 1] .= bt
+        bj[nb] = bt
+        a_tails[j] = at
+        b_tails[j] = bt
+    end
+
+    a_common = mean(a_tails)
+    b_common = geomean(b_tails)*(1+sig) ## this is a hack.  Need to work it out.
+    for j = 1:k
+        aj = all_a[j];  na = length(aj)
+        bj = all_b[j];  nb = length(bj)
+        aj[max(1, na - navg) : na] .= a_common
+        bj[max(1, nb - navg) : nb] .= b_common
+    end
+    return nothing
+end
+
+"""
     spike_detect(apply_A, N, k; nsteps, navg) -> (γm, γp, m0, cholesky_list)
 
 Stochastic Lanczos spectral estimation with per-run tail stabilisation and
@@ -149,13 +271,7 @@ cross-run tail synchronisation.
 
 For each of `k` independent Lanczos runs on the N-dimensional system:
 1. Compute the Cholesky factorisation of the resulting Jacobi matrix.
-2. Stabilise the tail of that run by replacing its last `navg` entries with
-   their mean (SR.3 applied independently per run).
-
-Then average the stabilised tail values across all `k` runs to obtain a common
-tail, and replace every run's tail region with this common value so all runs
-share the same asymptotic behaviour.  All `k` Cholesky factor pairs are
-returned; the first is used for spike detection.
+2. Call `cholesky_averaging` to stabilise and synchronise the tails.
 
 This avoids the near-degeneracy problem of the (A ⊗ Iₖ) trick, where
 floating-point perturbations turn k exactly-repeated eigenvalues into k
@@ -181,10 +297,9 @@ function spike_detect(apply_A::Function, N::Integer, k::Integer;
                       nsteps::Integer = max(5, ceil(Int, 4 * log(N))),
                       navg::Integer   = max(2, ceil(Int, nsteps / 4)))
 
-    # ── SR.1: k independent Lanczos runs on the N-dimensional system ─────────
+    # ── SR.1: k independent Lanczos runs ─────────────────────────────────────
     all_α = Vector{Vector{Float64}}(undef, k)
     all_β = Vector{Vector{Float64}}(undef, k)
-
     for j = 1:k
         q = randn(N)
         q /= norm(q)
@@ -192,30 +307,8 @@ function spike_detect(apply_A::Function, N::Integer, k::Integer;
         all_α[j], all_β[j] = cholesky_jacobi(a_jac, b_jac)
     end
 
-    # ── SR.3 (per run): stabilise each run's tail independently ──────────────
-    α_tails = zeros(k)
-    β_tails = zeros(k)
-    for j = 1:k
-        αj = all_α[j];  nα = length(αj)
-        βj = all_β[j];  nβ = length(βj)
-        αt = mean(αj[max(1, nα - navg) : nα - 1])
-        βt = mean(βj[max(1, nβ - navg + 1) : nβ])
-        αj[max(1, nα - navg) : nα - 1] .= αt
-        αj[nα] = αt
-        βj[max(1, nβ - navg + 1) : nβ] .= βt
-        α_tails[j] = αt
-        β_tails[j] = βt
-    end
-
-    # ── Cross-run tail sync: replace each run's tail with the common mean ─────
-    α_common = mean(α_tails)
-    β_common = mean(β_tails)
-    for j = 1:k
-        αj = all_α[j];  nα = length(αj)
-        βj = all_β[j];  nβ = length(βj)
-        αj[max(1, nα - navg) : nα] .= α_common
-        βj[max(1, nβ - navg + 1) : nβ] .= β_common
-    end
+    # ── SR.3: tail stabilisation and cross-run synchronisation ───────────────
+    cholesky_averaging!(all_α, all_β, navg)
 
     cholesky_list = [(all_α[j], all_β[j]) for j = 1:k]
 
@@ -335,4 +428,130 @@ end
 
 function rational_factor(cholesky_list::CholeskyList, x::Real)
     mean(rational_factor(cj[1], cj[2], x) for cj in cholesky_list)
+end
+
+"""
+    solve_mhat_analytic(CC, CD, DD, z) -> (m, u, λ_inside)
+
+Direct, non-iterative solution of the self-consistent equation
+
+    m⁻¹ = CC - z·I - CD·(m⁻¹ + DD)⁻¹·CD*
+
+on the branch with Im m ≻ 0. Coefficients: CC = ĈĈ*, CD = ĈD̂*, DD = D̂D̂*
+(all Hermitian). Requires imag(z) > 0.
+
+The substitution u = (m⁻¹ + DD)⁻¹ CD* yields the quadratic matrix equation
+
+    CD·u² + (z·I - CC - DD)·u + CD* = 0,    m = (CC - z·I - CD·u)⁻¹.
+
+Solved via the 2n×2n companion pencil. Because CD* = (CD)*, the 2n eigenvalues
+come in reciprocal pairs (λ, 1/λ̄); for imag(z) > 0 exactly n lie inside the
+unit disk. Branch selection takes the n eigenvalues of smallest modulus, which
+is robust near the real axis where a geometric |λ|<1 threshold fails.
+"""
+function solve_mhat_analytic(CC::AbstractMatrix, CD::AbstractMatrix,
+                             DD::AbstractMatrix, z::Number; disk_tol::Real=1e-9)
+    imag(z) > 0 || throw(ArgumentError("need imag(z) > 0"))
+    n  = LinearAlgebra.checksquare(CC)
+    T  = complex(float(promote_type(eltype(CC), eltype(CD), eltype(DD), typeof(z))))
+    In = Matrix{T}(I, n, n)
+    Zn = zeros(T, n, n)
+
+    CCt = Matrix{T}(CC); CDt = Matrix{T}(CD); DDt = Matrix{T}(DD)
+    A  = CDt
+    B  = z*In - CCt - DDt
+    Cq = CDt'
+
+    L0 = [Zn In; -Cq -B]
+    L1 = [In Zn;  Zn  A]
+    F  = eigen(L0, L1)
+    λ  = F.values
+    Vtop = F.vectors[1:n, :]
+
+    p      = sortperm(abs.(λ))
+    inside = p[1:n]
+    gap    = abs(λ[p[n+1]]) - abs(λ[p[n]])
+    gap > disk_tol || @warn("inside/outside moduli barely separated (gap=$gap): z is near the spectrum; use z + iη.")
+
+    V = Vtop[:, inside]
+    Λ = Diagonal(λ[inside])
+    u = V * Λ * (V \ In)
+    m = inv(CCt - z*In - CDt * u)
+    return m, u, λ[inside]
+end
+
+"""
+    bloch_matrix(Chat, Dhat, θ) -> Hermitian matrix
+
+Symbol matrix 𝒜(θ) = (Ĉ - e^{-iθ} D̂)(Ĉ - e^{-iθ} D̂)*, Hermitian ≥ 0.
+A real energy x lies in the a.c. spectrum iff x ∈ spec 𝒜(θ) for some θ ∈ [0, 2π).
+"""
+function bloch_matrix(Chat::AbstractMatrix, Dhat::AbstractMatrix, θ::Real)
+    G = Chat .- cis(-θ) .* Dhat
+    return Hermitian(G * G')
+end
+
+_bandvals(Chat, Dhat, θ) = eigvals(bloch_matrix(Chat, Dhat, θ))
+
+function _vertex(_, x, k)
+    (k == 1 || k == length(x)) && return x[k]
+    d = x[k-1] - 2x[k] + x[k+1]
+    abs(d) < 1e-14 && return x[k]
+    return x[k] - (x[k-1] - x[k+1])^2 / (8d)
+end
+
+function _merge(iv; tol = 1e-7)
+    isempty(iv) && return iv
+    s = sort(iv; by = first)
+    out = [collect(s[1])]
+    for (a, b) in s[2:end]
+        if a ≤ out[end][2] + tol
+            out[end][2] = max(out[end][2], b)
+        else
+            push!(out, [a, b])
+        end
+    end
+    return [(o[1], o[2]) for o in out]
+end
+
+"""
+    spectral_support(Chat, Dhat; ngrid=4000)
+
+Compute the support of the measure recovered from the self-consistent equation
+via the band structure of the Bloch matrix 𝒜(θ), θ ∈ [0, 2π).
+
+Returns a NamedTuple:
+  intervals  :: Vector{Tuple}  — connected components of the support
+  edges      :: Vector         — their endpoints (outer branch points)
+  van_hove   :: Vector         — interior critical values (density singularities)
+  θgrid, bands               — sampled grid and n sorted band curves (ngrid × n)
+"""
+function spectral_support(Chat::AbstractMatrix, Dhat::AbstractMatrix; ngrid::Integer = 4000)
+    n = size(Chat, 1)
+    θ = range(0, 2π; length = ngrid + 1)[1:end-1]
+    W = Matrix{Float64}(undef, ngrid, n)
+    for (i, t) in enumerate(θ)
+        W[i, :] = _bandvals(Chat, Dhat, t)
+    end
+
+    intervals = Tuple{Float64,Float64}[]
+    vanhove   = Float64[]
+    for j in 1:n
+        col = @view W[:, j]
+        kmin = argmin(col); kmax = argmax(col)
+        push!(intervals, (_vertex(θ, col, kmin), _vertex(θ, col, kmax)))
+        d = diff(col)
+        for k in 2:length(d)
+            if sign(d[k-1]) * sign(d[k]) < 0
+                push!(vanhove, _vertex(θ, col, k))
+            end
+        end
+    end
+
+    supp     = _merge(intervals)
+    edges    = sort!(collect(Iterators.flatten(supp)))
+    interior = sort!(filter(x -> any(a + 1e-6 < x < b - 1e-6 for (a, b) in supp), vanhove))
+
+    return (intervals = supp, edges = edges, van_hove = interior,
+            θgrid = collect(θ), bands = W)
 end

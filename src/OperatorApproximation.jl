@@ -24,8 +24,10 @@ export Domain, GridDomain, Basis, Derivative, Evaluation, Ultraspherical, Chebys
     RationalMappedAxis, MappedSemiAxis, LaguerreSemiAxis, LaguerrePoly, LaguerreFun, roots,
     FourierTransform, Shift, FastMultiplication, pad, IdentityOperator,
     JacobiRHP, JacobiRHSolver, GeneralizedJacobiRHP, GeneralizedJacobiRHSolver,
-    gmres,
-    lanczos_with_extend, cholesky_jacobi, stieltjes_estimate, spike_detect, count_spikes
+    gmres, lanczos_with_extend, cholesky_jacobi, stieltjes_estimate, stieltjes_jacobi,
+    cholesky_averaging!, jacobi_averaging!, spike_detect, count_spikes,
+    block_lanczos, block_cholesky_jacobi,
+    solve_mhat_analytic, bloch_matrix, spectral_support
 
 function clearCauchycache()
     empty!(memoize_cache(cauchy))
